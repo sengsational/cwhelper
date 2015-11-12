@@ -1,0 +1,916 @@
+This is Registry.java after I updated it for the current jna.
+
+I later regressed it back to it's original form.
+
+package org.cwepg.reg;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import com.sun.jna.platform.win32.Advapi32;
+import com.sun.jna.platform.win32.WinBase;
+import com.sun.jna.platform.win32.WinError;
+import com.sun.jna.platform.win32.WinNT;
+import com.sun.jna.platform.win32.WinReg;
+import com.sun.jna.platform.win32.WinReg.HKEY;
+import com.sun.jna.platform.win32.WinReg.HKEYByReference;
+import com.sun.jna.ptr.IntByReference;
+
+
+/**
+ * Methods for accessing the Windows Registry. Only String and DWORD values supported at the moment.
+ */
+public class Registry {
+  private static final HashMap rootKeyMap = new HashMap();
+  static {
+	  rootKeyMap.put("HKEY_CLASSES_ROOT", WinReg.HKEY_CLASSES_ROOT);
+	  rootKeyMap.put("HKEY_CURRENT_USER", WinReg.HKEY_CURRENT_USER);
+	  rootKeyMap.put("HKEY_LOCAL_MACHINE", WinReg.HKEY_LOCAL_MACHINE);
+	  rootKeyMap.put("HKEY_USERS", WinReg.HKEY_USERS);
+  }
+  
+  /**
+   * Testing.
+   *
+   * @param args arguments
+   * @throws java.lang.Exception on error
+   */
+  public static void main(String[] args) throws Exception {
+	  String result = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SYSTEM\\CurrentControlSet\\Control\\ProductOptions", "ProductType");
+      if (result == null) throw new Exception("The value was not found in the registry");
+	  System.out.println("result [" + result + "]");
+  }
+
+  /**
+   * Gets one of the root keys.
+   *
+   * @param key key type
+   * @return root key
+   */
+  private static HKEY getRegistryRootKey(String key) {
+    Advapi32 advapi32;
+    HKEYByReference pHandle;
+    HKEY handle = new HKEY();
+    
+    advapi32 = Advapi32.INSTANCE;
+    pHandle = new HKEYByReference();
+    
+    if(advapi32.RegOpenKeyEx((WinReg.HKEY)(rootKeyMap.get(key)), null, 0, 0, pHandle) == WinError.ERROR_SUCCESS) {
+      handle = pHandle.getValue();
+    }
+    return(handle);
+  }
+  
+  /**
+   * Opens a key.
+   *
+   * @param rootKey root key
+   * @param subKeyName name of the key
+   * @param access access mode
+   * @return handle to the key or 0
+   */
+  private static HKEY openKey(String rootKey, String subKeyName, int access) {
+    Advapi32 advapi32;
+    HKEYByReference pHandle;
+    HKEY rootKeyHandle = new HKEY();
+
+    
+    advapi32 = Advapi32.INSTANCE;
+    rootKeyHandle = getRegistryRootKey(rootKey);
+    pHandle = new HKEYByReference();
+    
+    if(advapi32.RegOpenKeyEx(rootKeyHandle, subKeyName, 0, access, pHandle) == WinError.ERROR_SUCCESS) {
+      return(pHandle.getValue());
+      
+    } else {
+      return(new HKEY());
+    }
+  }
+  
+  /**
+   * Converts a Windows buffer to a Java String.
+   *
+   * @param buf buffer
+   * @throws java.io.UnsupportedEncodingException on error
+   * @return String
+   */
+  private static String convertBufferToString(byte[] buf) throws UnsupportedEncodingException {
+    return(new String(buf, 0, buf.length - 2, "UTF-16LE"));
+  }
+  
+  /**
+   * Converts a Windows buffer to an int.
+   *
+   * @param buf buffer
+   * @return int
+   */
+  private static int convertBufferToInt(byte[] buf) {
+   return(((int)(buf[0] & 0xff)) + (((int)(buf[1] & 0xff)) << 8) + (((int)(buf[2] & 0xff)) << 16) + (((int)(buf[3] & 0xff)) << 24)); 
+  }
+  
+  /**
+   * Read a String value.
+   *
+   * @param rootKey root key
+   * @param subKeyName key name
+   * @param name value name
+   * @throws java.io.UnsupportedEncodingException on error
+   * @return String or null
+   */
+  public static String getStringValue(String rootKey, String subKeyName, String name) throws UnsupportedEncodingException {
+    Advapi32 advapi32;
+    IntByReference pType, lpcbData;
+    byte[] lpData = new byte[1];
+    HKEY handle = new HKEY();
+    String ret = null;
+    
+    advapi32 = Advapi32.INSTANCE;
+    pType = new IntByReference();
+    lpcbData = new IntByReference();
+    handle = openKey(rootKey, subKeyName, WinNT.KEY_READ);
+    
+    if(!handle.equals(new HKEY())) {
+      
+      if(advapi32.RegQueryValueEx(handle, name, 0, pType, lpData, lpcbData) == WinError.ERROR_MORE_DATA) {
+        lpData = new byte[lpcbData.getValue()];
+
+        if(advapi32.RegQueryValueEx(handle, name, 0, pType, lpData, lpcbData) == WinError.ERROR_SUCCESS) {
+          ret = convertBufferToString(lpData);
+        }
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+
+  /**
+   * Read an int value.
+   * 
+   * 
+   * @return int or 0
+   * @param rootKey root key
+   * @param subKeyName key name
+   * @param name value name
+   */
+  public static int getIntValue(String rootKey, String subKeyName, String name) {
+    Advapi32 advapi32;
+    IntByReference pType, lpcbData;
+    byte[] lpData = new byte[1];
+    HKEY handle = new HKEY();
+    int ret = 0;
+    
+    advapi32 = Advapi32.INSTANCE;
+    pType = new IntByReference();
+    lpcbData = new IntByReference();
+    handle = openKey(rootKey, subKeyName, WinNT.KEY_READ);
+    
+    if(!handle.equals(new HKEY())) {
+      
+      if(advapi32.RegQueryValueEx(handle, name, 0, pType, lpData, lpcbData) == WinError.ERROR_MORE_DATA) {
+        lpData = new byte[lpcbData.getValue()];
+
+        if(advapi32.RegQueryValueEx(handle, name, 0, pType, lpData, lpcbData) == WinError.ERROR_SUCCESS) {
+          ret = convertBufferToInt(lpData);
+        }
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+  
+  /**
+   * Delete a value.
+   *
+   * @param rootKey root key
+   * @param subKeyName key name
+   * @param name value name
+   * @return true on success
+   */
+  public static boolean deleteValue(String rootKey, String subKeyName, String name) {
+    Advapi32 advapi32;
+    HKEY handle = new HKEY();
+    boolean ret = true;
+    
+    advapi32 = Advapi32.INSTANCE;
+    
+    handle = openKey(rootKey, subKeyName, WinNT.KEY_READ | WinNT.KEY_WRITE);
+    
+    if(!handle.equals(new HKEY())) {
+      if(advapi32.RegDeleteValue(handle, name) == WinError.ERROR_SUCCESS) {
+        ret = true;
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+  
+  /**
+   * Writes a String value.
+   *
+   * @param rootKey root key
+   * @param subKeyName key name
+   * @param name value name
+   * @param value value
+   * @throws java.io.UnsupportedEncodingException on error
+   * @return true on success
+   */
+  public static boolean setStringValue(String rootKey, String subKeyName, String name, String value) throws UnsupportedEncodingException {
+    Advapi32 advapi32;
+    HKEY handle = new HKEY();
+    byte[] data;
+    boolean ret = false;
+    //data = Arrays.copyOf(value.getBytes("UTF-16LE"), value.length() * 2 + 2);
+
+    byte[] fromArray = value.getBytes("UTF-16LE");
+    data = new byte[value.length() * 2 + 2];
+    for (int i = 0; i < fromArray.length; i++) {
+        data[i] = fromArray[i];
+    }
+    
+    advapi32 = Advapi32.INSTANCE;
+    handle = openKey(rootKey, subKeyName, WinNT.KEY_READ | WinNT.KEY_WRITE);
+    
+    if(!handle.equals(new HKEY())) {
+      if(advapi32.RegSetValueEx(handle, name, 0, WinNT.REG_SZ, data, data.length) == WinError.ERROR_SUCCESS) {
+        ret = true;
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+  
+  /**
+   * Writes an int value.
+   * 
+   * 
+   * @return true on success
+   * @param rootKey root key
+   * @param subKeyName key name
+   * @param name value name
+   * @param value value
+   */
+  public static boolean setIntValue(String rootKey, String subKeyName, String name, int value) {
+    Advapi32 advapi32;
+    HKEY handle = new HKEY();
+    byte[] data;
+    boolean ret = false;
+    
+    data = new byte[4];
+    data[0] = (byte)(value & 0xff);
+    data[1] = (byte)((value >> 8) & 0xff);
+    data[2] = (byte)((value >> 16) & 0xff);
+    data[3] = (byte)((value >> 24) & 0xff);
+    advapi32 = Advapi32.INSTANCE;
+    handle = openKey(rootKey, subKeyName, WinNT.KEY_READ | WinNT.KEY_WRITE);
+    
+    if(!handle.equals(new HKEY())) {
+      
+      if(advapi32.RegSetValueEx(handle, name, 0, WinNT.REG_DWORD, data, data.length) == WinError.ERROR_SUCCESS) {
+        ret = true;
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+  /**
+   * DRS 20090809 - Added Method 
+   * 
+   * Writes a binary value from byte array.
+   * 
+   * 
+   * @return true on success
+   * @param rootKey root key
+   * @param subKeyName key name
+   * @param name value name
+   * @param data byte array
+   */
+
+  public static boolean setBinaryValue(String rootKey, String subKeyName, String name, byte[] data) {
+    Advapi32 advapi32;
+    HKEY handle = new HKEY();
+    boolean ret = false;
+    
+    advapi32 = Advapi32.INSTANCE;
+    handle = openKey(rootKey, subKeyName, WinNT.KEY_READ | WinNT.KEY_WRITE);
+    
+    if(!handle.equals(new HKEY())) {
+      
+      if(advapi32.RegSetValueEx(handle, name, 0, WinNT.REG_BINARY, data, data.length) == WinError.ERROR_SUCCESS) {
+        ret = true;
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+  /**
+   * Check for existence of a value.
+   *
+   * @param rootKey root key
+   * @param subKeyName key name
+   * @param name value name
+   * @return true if exists
+   */
+  public static boolean valueExists(String rootKey, String subKeyName, String name) {
+    Advapi32 advapi32;
+    IntByReference pType, lpcbData;
+    byte[] lpData = new byte[1];
+    HKEY handle = new HKEY();
+    boolean ret = false;
+    
+    advapi32 = Advapi32.INSTANCE;
+    pType = new IntByReference();
+    lpcbData = new IntByReference();
+    handle = openKey(rootKey, subKeyName, WinNT.KEY_READ);
+    
+    if(!handle.equals(new HKEY())) {
+      
+      if(advapi32.RegQueryValueEx(handle, name, 0, pType, lpData, lpcbData) != WinError.ERROR_FILE_NOT_FOUND) {
+        ret = true;
+        
+      } else {
+        ret = false;
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+  
+  /**
+   * Create a new key.
+   *
+   * @param rootKey root key
+   * @param parent name of parent key
+   * @param name key name
+   * @return true on success
+   */
+  public static boolean createKey(String rootKey, String parent, String name) {
+    Advapi32 advapi32;
+    HKEYByReference hkResult;
+    IntByReference dwDisposition;
+    HKEY handle = new HKEY();
+    boolean ret = false;
+    
+    advapi32 = Advapi32.INSTANCE;
+    hkResult = new HKEYByReference();
+    dwDisposition = new IntByReference();
+    handle = openKey(rootKey, parent, WinNT.KEY_READ);
+    
+    if(!handle.equals(new HKEY())) {
+      
+      if(advapi32.RegCreateKeyEx(handle, name, 0, null, WinNT.REG_OPTION_NON_VOLATILE, WinNT.KEY_READ, null,
+         hkResult, dwDisposition) == WinError.ERROR_SUCCESS) {
+        ret = true;
+        advapi32.RegCloseKey(hkResult.getValue());
+        
+      } else {
+        ret = false;
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+  
+  /**
+   * Delete a key.
+   *
+   * @param rootKey root key
+   * @param parent name of parent key
+   * @param name key name
+   * @return true on success
+   */
+  public static boolean deleteKey(String rootKey, String parent, String name) {
+    Advapi32 advapi32;
+    HKEY handle = new HKEY();
+    boolean ret = false;
+    
+    advapi32 = Advapi32.INSTANCE;
+    handle = openKey(rootKey, parent, WinNT.KEY_READ);
+    
+    if(!handle.equals(new HKEY())) {
+      
+      if(advapi32.RegDeleteKey(handle, name) == WinError.ERROR_SUCCESS) {
+        ret = true;
+        
+      } else {
+        ret = false;
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    return(ret);
+  }
+  
+  /**
+   * Get all sub keys of a key.
+   *
+   * @param rootKey root key
+   * @param parent key name
+   * @return array with all sub key names
+   */
+  public static String[] getSubKeys(String rootKey, String parent) {
+    Advapi32 advapi32;
+    HKEY handle = new HKEY();
+    int dwIndex;
+    char[] lpName;
+    IntByReference lpcName;
+    WinBase.FILETIME lpftLastWriteTime;
+    TreeSet subKeys = new TreeSet();
+    
+    advapi32 = Advapi32.INSTANCE;
+    handle = openKey(rootKey, parent, WinNT.KEY_READ);
+    lpName = new char[256];
+    lpcName = new IntByReference(256);
+    lpftLastWriteTime = new WinBase.FILETIME();
+    
+    if(!handle.equals(new HKEY())) {
+      dwIndex = 0;
+      
+      while(advapi32.RegEnumKeyEx(handle, dwIndex, lpName, lpcName, null,
+            null, null, lpftLastWriteTime) == WinError.ERROR_SUCCESS) {
+        subKeys.add(new String(lpName, 0, lpcName.getValue()));
+        lpcName.setValue(256);
+        dwIndex++;
+      }
+      advapi32.RegCloseKey(handle);
+    }
+    
+    return (String[])subKeys.toArray(new String[]{});
+  }
+  
+  /**
+   * Get all values under a key.
+   *
+   * @param rootKey root key
+   * @param key jey name
+   * @throws java.io.UnsupportedEncodingException on error
+   * @return TreeMap with name and value pairs
+   */
+  public static TreeMap getValues(String rootKey, String key) throws UnsupportedEncodingException {
+    Advapi32 advapi32;
+    HKEY handle = new HKEY();
+    int dwIndex, result = 0;
+    char[] lpValueName;
+    byte[] lpData;
+    IntByReference lpcchValueName, lpType, lpcbData;
+    String name;
+    TreeMap values = new TreeMap(String.CASE_INSENSITIVE_ORDER);
+    
+    advapi32 = Advapi32.INSTANCE;
+    handle = openKey(rootKey, key, WinNT.KEY_READ);
+    lpValueName = new char[16384];
+    lpcchValueName = new IntByReference(16384);
+    lpType = new IntByReference();
+    lpData = new byte[1];
+    lpcbData = new IntByReference();
+    
+    if(!handle.equals(new HKEY())) {
+      dwIndex = 0;
+      
+      do {
+        lpcbData.setValue(0);
+        result = advapi32.RegEnumValue(handle, dwIndex, lpValueName, lpcchValueName, null,
+          lpType, lpData, lpcbData);
+        
+        if(result == WinError.ERROR_MORE_DATA) {
+          lpData = new byte[lpcbData.getValue()];
+          lpcchValueName =  new IntByReference(16384);
+          result = advapi32.RegEnumValue(handle, dwIndex, lpValueName, lpcchValueName, null,
+            lpType, lpData, lpcbData);
+          
+          if(result == WinError.ERROR_SUCCESS) {
+            name = new String(lpValueName, 0, lpcchValueName.getValue());
+            
+            switch(lpType.getValue()) {
+              case WinNT.REG_SZ:
+                //System.out.println("REG_SZ buffer " + lpData.length);
+                values.put(name, convertBufferToString(lpData));
+                break;
+              case WinNT.REG_DWORD:
+                //  System.out.println("REG_DWORD buffer " + lpData.length);
+                values.put(name, new Integer(convertBufferToInt(lpData)));
+                break;
+              case WinNT.REG_BINARY:
+                //  System.out.println("REG_BINARY buffer " + lpData.length);
+                values.put(name, lpData);
+                break;
+              default:
+                System.out.println("lpType " + lpType.getValue() + " not supported.  Not able to retrieve " + name);
+                break;
+            }
+          }
+        }
+        dwIndex++;
+      } while(result == WinError.ERROR_SUCCESS);
+      
+      advapi32.RegCloseKey(handle);
+    }
+    return(values);
+  }
+}
+=======================================================
+This is Kernel32 after altering to work with latest jna.
+
+package org.cwepg.svc;
+
+import java.util.Arrays;
+import java.util.List;
+
+import com.sun.jna.Native;
+import com.sun.jna.NativeLong;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+
+public interface Kernel32 extends W32API {
+    
+    Kernel32 INSTANCE = (Kernel32)Native.loadLibrary("kernel32", Kernel32.class, DEFAULT_OPTIONS);
+
+    //=============================================================================================
+    /*
+     * EXECUTION_STATE WINAPI SetThreadExecutionState(
+     * __in  EXECUTION_STATE esFlags
+     * );
+     */
+
+    int SetThreadExecutionState(int esFlags);
+
+    int ES_AWAYMODE_REQUIRED = 0x00000040; //  Enables away mode. This value must be specified with ES_CONTINUOUS. Away mode should be used only by media-recording and media-distribution applications that must perform critical background processing on desktop computers while the computer appears to be sleeping. See Remarks.    Windows Server 2003 and Windows XP/2000:  ES_AWAYMODE_REQUIRED is not supported.
+    int ES_CONTINUOUS = 0x80000000; //Informs the system that the state being set should remain in effect until the next call that uses ES_CONTINUOUS and one of the other state flags is cleared.
+    int ES_DISPLAY_REQUIRED = 0x00000002; //Forces the display to be on by resetting the display idle timer.
+    int ES_SYSTEM_REQUIRED = 0x00000001; //Forces the system to be in the working state by resetting the system idle timer.
+    int ES_USER_PRESENT = 0x00000004; //This value is not supported. If ES_USER_PRESENT is combined with other esFlags values, the call will fail and none of the specified states will be set.     Windows Server 2003 and Windows XP/2000:  Informs the system that a user is present and resets the display and system idle timers. ES_USER_PRESENT must be called with ES_CONTINUOUS.
+    
+    //=============================================================================================
+    /*
+     * HANDLE WINAPI CreateWaitableTimer(
+     *      __in_opt  LPSECURITY_ATTRIBUTES lpTimerAttributes,
+     *      __in      BOOL bManualReset,
+     *      __in_opt  LPCTSTR lpTimerName
+     *  );
+     */
+    
+    HANDLE CreateWaitableTimer(SECURITY_ATTRIBUTES lpTimerAttributes, boolean bManualReset, String lpTimerName);
+
+    public static class SECURITY_ATTRIBUTES extends Structure {
+        public int nLength = size();
+        public Pointer lpSecurityDescriptor;
+        public boolean bInheritHandle;
+        protected List getFieldOrder() {
+            return Arrays.asList(new String[] {"lpSecurityDescriptor", "bInheritHandle"});
+        }
+    }
+
+    /*
+     * typedef struct _SECURITY_ATTRIBUTES {
+     *  DWORD nLength;
+     *  LPVOID lpSecurityDescriptor;
+     *  BOOL bInheritHandle;
+     * } SECURITY_ATTRIBUTES, 
+     *   *PSECURITY_ATTRIBUTES, 
+     *   *LPSECURITY_ATTRIBUTES;
+     */
+
+    //=============================================================================================
+    /*
+     * BOOL WINAPI SetWaitableTimer(
+     *       __in      HANDLE hTimer,
+     *       __in      const LARGE_INTEGER* pDueTime,
+     *       __in      LONG lPeriod,
+     *       __in_opt  PTIMERAPCROUTINE pfnCompletionRoutine,
+     *       __in_opt  LPVOID lpArgToCompletionRoutine,
+     *       __in      BOOL fResume
+     *     );
+     */
+    
+    boolean SetWaitableTimer(HANDLE htimer, FILETIME pDueTime, NativeLong lPeriod, Pointer pfnCompletionRoutine, Pointer lpArgToCompletionRoutine, boolean fResume);
+
+    public static class FILETIME extends Structure {
+        public int dwLowDateTime = size();
+        public int dwHighDateTime = size();
+        @Override
+        protected List getFieldOrder() {
+            return Arrays.asList(new String[] {"dwLowDateTime", "dwHighDateTime"});
+        }
+    }
+    /*
+     * typedef struct _FILETIME {
+     *  DWORD dwLowDateTime;
+     *  DWORD dwHighDateTime;
+     * } FILETIME, 
+     *   *PFILETIME;
+     */
+    
+    //=============================================================================================
+    /*
+     * BOOL WINAPI CancelWaitableTimer(
+     *    __in  HANDLE hTimer
+     *  );
+     */
+    //=============================================================================================
+    int WaitForSingleObject(HANDLE hHandle, int dwMilliseconds);
+    
+    //=============================================================================================
+    /*
+     * BOOL WINAPI CloseHandle(
+     *      __in  HANDLE hObject
+     *  );
+     */
+    boolean CloseHandle(HANDLE hObject);
+
+    /*
+     * typedef struct _FILETIME {
+     *  DWORD dwLowDateTime;
+     *  DWORD dwHighDateTime;
+     * } FILETIME, 
+     *   *PFILETIME;
+     */
+    
+    //=============================================================================================
+    /*
+     * BOOL WINAPI CancelWaitableTimer(
+     *    __in  HANDLE hTimer
+     *  );
+     */
+    
+    boolean CancelWaitableTimer(HANDLE hTimer);
+}
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+========================================================================*****************************
+
+This is Shell32.java after reworking for new jna.
+
+
+package org.cwepg.svc;
+
+import java.util.Arrays;
+import java.util.List;
+
+import com.sun.jna.Native;
+import com.sun.jna.Structure;
+
+
+public interface Shell32 extends W32API {
+    
+    Shell32 INSTANCE = (Shell32)Native.loadLibrary("shell32", Shell32.class, DEFAULT_OPTIONS);
+
+    /*
+     * HICON ExtractIcon(      
+     *   HINSTANCE hInst,           [in] Handle to the instance of the application calling the function.
+     *   LPCTSTR lpszExeFileName,   [in] Pointer to a null-terminated string specifying the name of an executable file, DLL, or icon file.
+     *   UINT nIconIndex            [in] Specifies the zero-based index of the icon to retrieve.
+     * );
+     * 
+     * The return value is a handle to an icon. 
+     * If the file specified was not an executable file, DLL, or icon file, the return is 1. 
+     * If no icons were found in the file, the return value is NULL.
+     */
+    
+    HANDLE ExtractIcon(HANDLE hInst, String lpszExeFileName, int nIconIndex);
+    
+    //================================================================================
+    
+    /*
+     * BOOL Shell_NotifyIcon(      
+     *   DWORD dwMessage,			[in] A variable of type DWORD that specifies the action to be taken.
+     *   							NIM_ADD 0x00000000, NIM_MODIFY 0x00000001, NIM_DELETE 0x00000002
+     *   PNOTIFYICONDATA lpdata		[in] A pointer to a NOTIFYICONDATA structure.
+     * );
+     * 
+     * Returns TRUE if successful, or FALSE otherwise.
+     */
+    
+    boolean Shell_NotifyIcon(int dwMessage, NOTIFYICONDATA lpdata);
+    
+    /*
+     * typedef struct _NOTIFYICONDATA{
+     *   DWORD cbSize;				The size of this structure, in bytes.
+     *   HWND hWnd;					A handle to the window that receives notification messages associated with an icon in the taskbar status area.
+     *   								The Shell uses hWnd and uID to identify which icon to operate on when Shell_NotifyIcon is invoked.
+     *   UINT uID;					The application-defined identifier of the taskbar icon.
+     *   UINT uFlags;				Flags that either indicate which of the other members contain valid data.
+     *   								NIF_MESSAGE 0x00000001, NIF_ICON 0x00000002, NIF_TIP 0x00000004
+     *   UINT uCallbackMessage;		An application-defined message identifier. 
+     *   								For example, when the pointer moves over a taskbar icon, lParam is set to WM_MOUSEMOVE. 
+     *   HICON hIcon;				A handle to the icon to be added, modified, or deleted. 
+     *   
+     * #if (NTDDI_VERSION < NTDDI_WIN2K)
+	 *  TCHAR szTip[64];
+     * #endif
+     * #if (NTDDI_VERSION >= NTDDI_WIN2K)
+     *  TCHAR szTip[128];
+     *  DWORD dwState;
+     *  DWORD dwStateMask;
+     *  TCHAR szInfo[256];
+     *  union{
+     *    UINT  uTimeout;
+     *    UINT  uVersion;  // Used with Shell_NotifyIcon flag NIM_SETVERSION.
+     *  } DUMMYUNIONNAME;
+     *  TCHAR szInfoTitle[64];
+     *  DWORD dwInfoFlags;
+     *  # endif
+     *  #if (NTDDI_VERSION >= NTDDI_WINXP)
+     *   GUID guidItem;
+     *  #endif
+     *  }
+     */
+    
+    public static class NOTIFYICONDATA extends Structure {
+        public int cbSize;
+        public HANDLE hWnd;
+        public int uID;
+        public int uFlags;
+        public int uCallbackMessage;
+        public HANDLE hIcon;
+        public char[] szTip = new char[SZ_TIP_SIZE_XP];
+        /*
+        public char szTip1;
+        public char szTip2;
+        public char szTip3;
+        public char szTip4;
+        public char szTip5;
+        
+protected List getFieldOrder() {
+return Arrays.asList(new String[] { "cbSize", "hWnd", "uID", "uFlags", "uCallbackMessage", "hIcon", "szTip" });
+}
+        public char szTip6;
+        public char szTip7;
+        public char szTip8;
+        public char szTip9;
+        public char szTip10;
+        public char szTip11;
+        public char szTip12;
+        public char szTip13;
+        public char szTip14;
+        public char szTip15;
+        public char szTip16;
+        public char szTip17;
+        public char szTip18;
+        public char szTip19;
+        public char szTip20;
+        public char szTip21;
+        public char szTip22;
+        public char szTip23;
+        public char szTip24;
+        public char szTip25;
+        public char szTip26;
+        public char szTip27;
+        public char szTip28;
+        public char szTip29;
+        public char szTip30;
+        public char szTip31;
+        public char szTip32;
+        public char szTip33;
+        public char szTip34;
+        public char szTip35;
+        public char szTip36;
+        public char szTip37;
+        public char szTip38;
+        public char szTip39;
+        public char szTip40;
+        public char szTip41;
+        public char szTip42;
+        public char szTip43;
+        public char szTip44;
+        public char szTip45;
+        public char szTip46;
+        public char szTip47;
+        public char szTip48;
+        public char szTip49;
+        public char szTip50;
+        public char szTip51;
+        public char szTip52;
+        public char szTip53;
+        public char szTip54;
+        public char szTip55;
+        public char szTip56;
+        public char szTip57;
+        public char szTip58;
+        public char szTip59;
+        public char szTip60;
+        public char szTip61;
+        public char szTip62;
+        public char szTip63;
+        public char szTip64;
+        */
+        /*public int dwState;
+        public int dwStateMask;
+        public char[] szInfo = new char[256];
+        public int uTimeout_uVersion;
+        public char[] szInfoTitle = new char[64];
+        public int dwInfoFlags;
+        public char[] guidItem = new char[32]; // mapping might be wrong here
+        */
+        
+        public void setSzTip(String str){
+        	for (int i = 0; i < str.length() && i < SZ_TIP_SIZE_XP; i++){
+        		szTip[i] = str.charAt(i);
+        	}
+        }
+
+        @Override
+        protected List getFieldOrder() {
+            return Arrays.asList(new String[] { "cbSize", "hWnd", "uID", "uFlags", "uCallbackMessage", "hIcon", "szTip" });
+        }
+        
+        /*
+        public void setSzTip(String str) {
+        	try {
+        	szTip1 = str.charAt(0);
+        	szTip2 = str.charAt(1);
+        	szTip3 = str.charAt(2);
+        	szTip4 = str.charAt(3);
+        	szTip5 = str.charAt(4);
+        	szTip6 = str.charAt(5);
+        	szTip7 = str.charAt(6);
+        	szTip8 = str.charAt(7);
+        	szTip9 = str.charAt(8);
+        	szTip10 = str.charAt(9);
+            szTip11 = str.charAt(10);
+            szTip12 = str.charAt(11);
+            szTip13 = str.charAt(12);
+            szTip14 = str.charAt(13);
+            szTip15 = str.charAt(14);
+            szTip16 = str.charAt(15);
+            szTip17 = str.charAt(16);
+            szTip18 = str.charAt(17);
+            szTip19 = str.charAt(18);
+            szTip20 = str.charAt(19);
+            szTip21 = str.charAt(20);
+            szTip22 = str.charAt(21);
+            szTip23 = str.charAt(22);
+            szTip24 = str.charAt(23);
+            szTip25 = str.charAt(24);
+            szTip26 = str.charAt(25);
+            szTip27 = str.charAt(26);
+            szTip28 = str.charAt(27);
+            szTip29 = str.charAt(28);
+            szTip30 = str.charAt(29);
+            szTip31 = str.charAt(30);
+            szTip32 = str.charAt(31);
+            szTip33 = str.charAt(32);
+            szTip34 = str.charAt(33);
+            szTip35 = str.charAt(34);
+            szTip36 = str.charAt(35);
+            szTip37 = str.charAt(36);
+            szTip38 = str.charAt(37);
+            szTip39 = str.charAt(38);
+            szTip40 = str.charAt(39);
+            szTip41 = str.charAt(40);
+            szTip42 = str.charAt(41);
+            szTip43 = str.charAt(42);
+            szTip44 = str.charAt(43);
+            szTip45 = str.charAt(44);
+            szTip46 = str.charAt(45);
+            szTip47 = str.charAt(46);
+            szTip48 = str.charAt(47);
+            szTip49 = str.charAt(48);
+            szTip50 = str.charAt(49);
+            szTip51 = str.charAt(50);
+            szTip52 = str.charAt(51);
+            szTip53 = str.charAt(52);
+            szTip54 = str.charAt(53);
+            szTip55 = str.charAt(54);
+            szTip56 = str.charAt(55);
+            szTip57 = str.charAt(56);
+            szTip58 = str.charAt(57);
+            szTip59 = str.charAt(58);
+            szTip60 = str.charAt(59);
+            szTip61 = str.charAt(60);
+            szTip62 = str.charAt(61);
+            szTip63 = str.charAt(62);
+            szTip64 = '\u0000';
+        	} catch (Throwable t){}
+            
+        }
+        */
+
+    }
+
+    int SZ_TIP_SIZE = 64;
+    int SZ_TIP_SIZE_XP = 128;
+    int NIF_MESSAGE = 0x00000001;
+    int NIF_ICON = 0x00000002;
+    int NIF_TIP = 0x00000004;
+    int NIM_ADD = 0x00000000;
+    int NIM_MODIFY = 0x00000001;
+    int NIM_DELETE = 0x00000002;
+    int WM_MOUSEMOVE = 0x00000200;
+    //================================================================================
+}

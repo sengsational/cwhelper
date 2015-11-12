@@ -1,0 +1,54 @@
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <!-- Source for substitution: /wakeevent API call with hourtosend, minutetosend, durationminutes, parameters. -->
+  <!-- Typical API call recreate task master:  /wakeupevent?hourtosend=11&minutetosend=46&durationminutes=4&parameters=-auto%20-download. -->
+  <!-- Typical API call remove task: (durationminutes=0):  /wakeupevent?hourtosend=15&minutetosend=50&durationminutes=0. -->
+  <!-- Typical API call recreate task helper (no parameters):  /wakeupevent?hourtosend=11&minutetosend=46&durationminutes=4&parameters= -->
+  <!--                                                                                                             -->
+  <!-- yesterdaysDate: (from system clock) format: yyyy-mm-dd -->
+  <!-- scheduledRunTime:  (hourtosend and minutetosend from wakeevent API) format: hh:mm:ss -->
+  <!-- maximumRunMinutes: (durationminutes from wakeevent API) format: (integer) -->
+  <!-- executableDirectory (master): (program standard) format: including trailing backslash -->
+  <!-- executableDirectory (helper): (system32 directory) format: including trailing backslash -->
+  <!-- executable (master): "cw_epg.exe"
+  <!-- executable (helper): "cmd.exe"
+  <!-- autorunParameters (master): (parameters String from wakeevent API) -->
+  <!-- autorunParameters (helper): "/c start "CW_EPG Starting Automatic Scheduling" /min timout /t " (leadTimeSeconds for master, durationMinutes*60 plus leadTimeSeconds for helper) -->
+  <RegistrationInfo>
+    <Description>Performs daily update for CW_EPG scheduling</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <CalendarTrigger>
+      <StartBoundary>[yesterdaysDate]T[scheduledRunTime]</StartBoundary>
+      <ExecutionTimeLimit>PT[maximumRunMinutes]M</ExecutionTimeLimit>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>true</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>true</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>false</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>true</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>true</WakeToRun>
+    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>"[executableDirectory][executable]"</Command>
+      <Arguments>[autorunParameters]</Arguments>
+    </Exec>
+  </Actions>
+</Task>

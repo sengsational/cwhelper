@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="mailapi.jar"/>
+	<classpathentry kind="lib" path="smtp.jar"/>
+	<classpathentry kind="lib" path="hsqldb.jar"/>
+	<classpathentry kind="lib" path="ucanaccess-2.0.9.4.jar"/>
+	<classpathentry kind="lib" path="jackcess-2.0.8.jar"/>
+	<classpathentry kind="lib" path="commons-lang-2.6.jar"/>
+	<classpathentry kind="lib" path="commons-logging-1.1.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.6.0_45"/>
+	<classpathentry kind="lib" path="jnasmall.jar"/>
+	<classpathentry kind="output" path="classes"/>
+</classpath>
