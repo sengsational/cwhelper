@@ -23,7 +23,7 @@ public class Tester {
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
         boolean testApplicationHome = true;
         if (testApplicationHome) {
-            System.out.println("[" + System.getProperty("application.home") + "]");
+            System.out.println("[" + System.getProperty("application.home") + "]<");
         }
         
         boolean testArrayOut = false;
