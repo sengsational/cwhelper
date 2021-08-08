@@ -21,9 +21,11 @@ import com.sun.jna.platform.win32.Kernel32;
 public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
-        boolean testApplicationHome = true;
+        
+
+        boolean testApplicationHome = false;
         if (testApplicationHome) {
-            System.out.println("[" + System.getProperty("application.home") + "]<");
+            System.out.println("[" + System.getProperty("application.home") + "]");
         }
         
         boolean testArrayOut = false;

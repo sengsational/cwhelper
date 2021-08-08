@@ -10,6 +10,7 @@ import org.cwepg.hr.WakeupEvent;
 
 public class CwEpgCommandLine extends CommandLine {
 	
+    // DRS 20210728 - no references to this constructor
     public CwEpgCommandLine(String commands, int maxSeconds){
         String debug = "";
         cmds.add(CaptureManager.cwepgPath + "cw_epg.exe"); //DRS 20210621 Replaced path per Terry. DRS 20210327 - Removed path per Terry

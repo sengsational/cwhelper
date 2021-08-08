@@ -176,19 +176,24 @@ public class WakeupEvent extends TimedEvent implements Runnable {
         try {Thread.sleep(500);} catch (Exception e){}
         System.out.println(new Date() + " Triggering WakeupEvent.");
         if (validOsParameters()){
-            try {
-                WakeupEvent.activeAutorun = true;
-                cl = new CwEpgCommandLine(getAutorunFile());
-                System.out.println(new Date() + " START Running CommandLine.  Thread: " + WakeupEvent.runThread);
-                boolean goodResult = cl.runProcess(); // blocks
-                System.out.println(new Date() + " END   Running CommandLine.  Thread: " + WakeupEvent.runThread);
-                if (!goodResult){
-                    System.out.println(new Date() + " ERROR: WakeupEvent.trigger() failed to run command " + cl.getCommands() + "\n" + cl.getErrors() );
+            //DRS 20210728 - Added "for" around existing code, plus if/else
+            for (int tries = 2; tries > 0; tries--) {
+                try {
+                    WakeupEvent.activeAutorun = true;
+                    cl = new CwEpgCommandLine(getAutorunFile());
+                    System.out.println(new Date() + " START Running CommandLine.  Thread: " + WakeupEvent.runThread);
+                    boolean goodResult = cl.runProcess(); // blocks
+                    System.out.println(new Date() + " END   Running CommandLine.  Thread: " + WakeupEvent.runThread);
+                    if (!goodResult){
+                        System.out.println(new Date() + " ERROR: WakeupEvent.trigger() failed to run command " + cl.getCommands() + "\n" + cl.getErrors() );
+                    }
+                } catch (Throwable t) {
+                    System.out.println(new Date() +  " ERROR: Active autorun was interrupted. " + t.getMessage());
+                } finally {
+                    WakeupEvent.activeAutorun = false;
                 }
-            } catch (Throwable t) {
-                System.out.println(new Date() +  " ERROR: Active autorun was interrupted. " + t.getMessage());
-            } finally {
-                WakeupEvent.activeAutorun = false;
+                if (!cl.timedOut()) break;
+                else System.out.println(new Date() + (tries==2?" Retrying after time-out.":"Failed after 2 tries."));
             }
         } else {
             try {

@@ -35,7 +35,7 @@ public class BuildExeFromClassFiles {
         String version = "5,0,0,";
         String versionFileName = "version.txt";
         
-        String wDir = "C:\\my\\dev\\eclipsewrk\\CwHelperC\\";
+        String wDir = "C:\\my\\dev\\eclipsewrk\\CwHelper\\";
         String wDirLib = wDir + "CwHelper_lib\\";
 
         String revision = getRevision();
