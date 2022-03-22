@@ -116,5 +116,18 @@ public class PcClockSetter implements Runnable {
     public static void finish() {
         runningThread.interrupt();
     }
+    
+    public static void main(String[] args) {
+        int timeoutSeconds = 20;
+        boolean logResults = true;
+        PcClockSetter.getInstance(requestedOffset); // New thread created
+        while (PcClockSetter.isRunning() && timeoutSeconds-- > 0) {
+            try {Thread.sleep(1000); } catch (Exception e) {}
+        }
+        String result = PcClockSetter.adjustPcClock(10);
+        if (logResults) System.out.println(new Date() + " " + result);
+        PcClockSetter.finish(); // interrupts thread
+        
+    }
 
 }

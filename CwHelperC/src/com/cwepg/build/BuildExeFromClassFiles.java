@@ -17,33 +17,50 @@ import org.cwepg.hr.CaptureManager;
 
 public class BuildExeFromClassFiles {
     /**
-     * 
-     * This class  
+     *
+     * This class
      *          1) pulls the version from the source control system
      *          2) writes the version into the CwHelper_lib folder as "version.txt"
      *          3) updates the "version.txt" file inside of "cw_icons.jar" resource file
      *          4) packages the class files as an EXE file using Jar2Exe, creating CwHelper.exe
      *          5) zips the EXE file into CwHelper(version).zip (so it can be managed on a Google drive, that doesn't allow EXE files)
-     *          
+     *          6) renames the (already created) runnable jar file to include the version in the file name
+     *          7) signs the jar file with
+     *
      *  Typically, the zip file would be uploaded.
-     *  Manually, Eclipse IDE "Make runnable jar" can also be run and that result uploaded.  Manual addition of version in the file name is required.        
-     * 
+     *  Manually, Eclipse IDE "Make runnable jar" can also be run and that result uploaded.  Manual addition of version in the file name is required.
+     *
      */
+    public static final String PROJECT_DIRECTORY = "C:\\my\\dev\\gitrepo\\CwHelperC\\";
+    public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
+    public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
+    public static final String STOREPASS = "";
+    public static final String KEYPASS = "";
+    public static final String JRE_PATH = "C:\\Program Files\\Android\\Android Studio\\jre\\bin\\";
+    public static final String BASE_VERSION = "5-0-0-";
+    public static final String COMMA_VERSION = "5,0,0,";
+    public static final String DOT_VERSION = "5.0.0.";
 
     public static void main(String[] args) throws Exception {
-        
-        String version = "5,0,0,";
+
         String versionFileName = "version.txt";
-        
-        String wDir = "C:\\my\\dev\\eclipsewrk\\CwHelper\\";
+
+        String wDir = PROJECT_DIRECTORY;
         String wDirLib = wDir + "CwHelper_lib\\";
 
-        String revision = getRevision();
-        writeVersionToLibDirectory(version, revision, wDirLib + versionFileName);
-        writeVersionToJarFile(version, revision, wDirLib + versionFileName, wDirLib + "cw_icons.jar");
-        
-        String[] parms = {
-                        "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe",
+        boolean forceRevisionNumber = false; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        String revision = "999";
+        if (forceRevisionNumber) {
+            revision = "804";
+        } else {
+            revision = getRevisionFromSourceControl();
+        }
+
+        writeVersionToLibDirectory(COMMA_VERSION, revision, wDirLib + versionFileName);
+        writeVersionToJarFile(wDirLib + versionFileName, wDirLib + "cw_icons.jar");
+
+        String[] j2ewizBuildCwHelperParms = {
+                        J2E_WIZ,
                         "/jar ", wDir + "classes",
                         "/o", wDir + "CwHelper.exe",
                         "/m", "org.cwepg.hr.ServiceLauncher",
@@ -64,17 +81,17 @@ public class BuildExeFromClassFiles {
                         "/embed", wDirLib + "httpclient-4.0.1.jar",        //
                         "/embed", wDirLib + "httpcore-4.0.1.jar",          //
                         "/icon", "#" + wDir + "Cw_EPG.exe, 0#",
-                        "/pv", "5,0,0,0",
-                        "/fv",  "5,0,0," + revision,
-                        "/ve", "ProductVersion=5.0.0.0",
+                        "/pv", COMMA_VERSION + "0",
+                        "/fv",  COMMA_VERSION + revision,
+                        "/ve", "ProductVersion=" + DOT_VERSION + "0",
                         "/ve", "ProductName=CW_EPG",
-                        "/ve", "#LegalCopyright=Copyright (c) 2008 - 2021#",
-                        "/ve", "#SpecialBuild=5, 0, 0, " +  revision + "#",
+                        "/ve", "#LegalCopyright=Copyright (c) 2008 - 2022#",
+                        "/ve", "#SpecialBuild=" + COMMA_VERSION + " " +  revision + "#",
                         "/ve", "#FileDescription=Capture Manager#",
-                        "/ve", "FileVersion=5.0.0.*",
+                        "/ve", "FileVersion=" + DOT_VERSION + "*",
                         "/ve", "OriginalFilename=CwHelper.exe",
                         "/ve", "#Comments=Background Job for CW_EPG#",
-                        "/ve", "#CompanyName=CW_EPG Team# /ve #InternalName=5, 0, 0, 0#",
+                        "/ve", "#CompanyName=CW_EPG Team# /ve #InternalName=" + COMMA_VERSION + "0#",
                         "/ve", "#LegalTrademarks=CW_EPG Team#",
                         "/splash", wDir + "CW_Logo.jpg",
                         "/closeonwindow:false",
@@ -84,37 +101,69 @@ public class BuildExeFromClassFiles {
         //    parms[i] = parms[i].replaceAll("#", "\"");
         //    System.out.println("[" + parms[i] + "]");
         //}
-        
-        
-        if (buildClassesToExe(parms)) {
-            ProcessBuilder builder = new ProcessBuilder("C:\\Program Files\\Android\\Android Studio\\jre\\bin\\jar.exe", "-cMfv", "CwHelper_5-0-0-" + revision + ".zip", "CwHelper.exe");
-            builder.directory(new File(wDir));
-            //ProcessBuilder builder = new ProcessBuilder("C:\\Program Files\\Java\\jdk1.8.0_66\\bin\\jar.exe", "-verbose");
-            builder.redirectErrorStream(true);
-            Process process = builder.start();
-            InputStream is = process.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                System.out.println("output: [" + line + "]");
-                //if (line.contains("successfully")) processResult = true;
+
+
+        if (runOsProcess(j2ewizBuildCwHelperParms, "successfully", null)) {
+            String zipDestinationFileNameString = "CwHelper_" + BASE_VERSION + revision + ".zip";
+            File zipDestinationFile = new File(wDir + zipDestinationFileNameString);
+
+            // If destination already exists, rename it first
+            if (zipDestinationFile.exists()) {
+                int randomInt = (int)(Math.random() * 10000);
+                zipDestinationFile.renameTo(new File(wDir + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".zip"));
             }
-            
-            //Rename what we presume is the previously manually created "Runnable Jar"
-            File runnableJarFile = new File(wDir + "CwHelper.jar");
-            if (runnableJarFile.renameTo(new File(wDir + "CwHelper_5-0-0-" + revision + ".jar"))) {
-                System.out.println("CwHelper.jar renamed to CwHelper_5-0-0-" + revision + ".jar");
+
+            String[] zipTheExeParams = {JRE_PATH +"jar.exe", "-cMfv", zipDestinationFileNameString, "CwHelper.exe"};
+            if (runOsProcess(zipTheExeParams, "deflated", wDir)) {
+                //Rename what we presume is the previously manually created "Runnable Jar"
+                File runnableJarFile = new File(wDir + "CwHelper.jar");
+                File runnableJarFileNewName = new File(wDir + "CwHelper_" + BASE_VERSION + revision + ".jar");
+
+                // If destination already exists, rename it first
+                if (runnableJarFileNewName.exists()) {
+                    int randomInt = (int)(Math.random() * 10000);
+                    runnableJarFileNewName.renameTo(new File(wDir + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".jar"));
+                }
+
+                if (runnableJarFile.renameTo(runnableJarFileNewName)) {
+                    System.out.println("CwHelper.jar renamed to CwHelper_" + BASE_VERSION + revision + ".jar");
+                    String contentsOfVersionFile = getVersionFromJarFile("CwHelper_" + BASE_VERSION + revision + ".jar");
+                    System.out.println("Version inside the jar file: " + contentsOfVersionFile);
+                    if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
+                        System.out.println("version.txt is aligned");
+                        String[] signTheJarFile = {JRE_PATH +"jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
+                        if (runOsProcess(signTheJarFile, "jar signed.", null)) {
+                            String[] verifyTheJarFile = {JRE_PATH +"jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
+                            if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
+                                System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
+                            } else {
+                                System.out.println("ERROR: Unable to sign the jar file.");
+                            }
+                        }
+
+                    } else {
+                        System.out.println("ERROR!!!!!!!! The version.txt inside the jar file does not align with the revision [" + COMMA_VERSION +  revision + "] that we just renamed it to. ERROR!!!!!!!!!" );
+                    }
+
+                } else {
+                    System.out.println("Failed to rename " + runnableJarFile.getAbsolutePath() + " " + (runnableJarFile.exists()?"File Existed":"ERROR: FILE NOT FOUND"));
+                }
+
             } else {
-                System.out.println("Failed to rename CwHelper.jar");
+                System.out.println("ERROR: Exe not zipped into compressed file.");
             }
-            
+
+
         } else {
-            System.out.println("Exe not created, so no attempt to zip being made.");
+            System.out.println("ERROR: Exe not created, so no attempt to zip being made.");
         }
     }
 
-    private static void writeVersionToJarFile(String version, String revision, String versionFileName, String jarFileName) throws Exception {
+    private static String getVersionFromJarFile(String jarFileName) throws IOException {
+        return JarUpdater.getFileContent(jarFileName, "version.txt");
+    }
+
+    private static void writeVersionToJarFile(String versionFileName, String jarFileName) throws Exception {
         File[] contents = {new File(versionFileName)};
         File jarFile = new File(jarFileName);
 
@@ -137,30 +186,47 @@ public class BuildExeFromClassFiles {
         }
     }
 
-    private static boolean buildClassesToExe(String[] parms) throws Exception {
+    private static boolean runOsProcess(String[] parms, String requiredResult, String wDir) throws Exception {
+        System.out.println("\n--------------------- run OS process ----------------------------");
+        StringBuffer debugString = new StringBuffer();
+        debugString.append("runOsProcess with [").append(String.join(" ", parms)).append("] and create directory [").append(wDir).append("]\n");
         boolean processResult = false;
         ProcessBuilder builder = new ProcessBuilder(parms);
+        debugString.append("builder created.\n");
+        if (wDir != null) {
+            builder.directory(new File(wDir));
+            debugString.append("directory set to [").append(wDir).append("]\n");
+        }
         builder.redirectErrorStream(true);
+        debugString.append("starting process.\n");
         Process process = builder.start();
         InputStream is = process.getInputStream();
+        debugString.append("reading input stream.\n");
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        
+
         String line = null;
         while ((line = reader.readLine()) != null) {
             System.out.println("output: [" + line + "]");
-            if (line.contains("successfully")) processResult = true;
+            if (requiredResult !=null && line.contains(requiredResult)) processResult = true;
         }
+        if (requiredResult == null) processResult = true;
+
+        if (!processResult) {
+            System.out.println("DEBUG: " + debugString);
+        }
+        System.out.println("--------------------- END run OS process ----------------------------\n");
+
         return processResult;
     }
 
-    private static String getRevision() throws Exception {
+    private static String getRevisionFromSourceControl() throws Exception {
         //https://stackoverflow.com/a/14915348/897007
         ProcessBuilder builder = new ProcessBuilder("C:\\Program Files\\TortoiseSVN\\bin\\svn", "info", "svn://192.168.3.65/CwHelperB/src");
         builder.redirectErrorStream(true);
         Process process = builder.start();
         InputStream is = process.getInputStream();
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        
+
         String[] revision = {"Revision:","0"};
         String line = null;
         while ((line = reader.readLine()) != null) {

@@ -6,11 +6,15 @@ package com.cwepg.build;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -30,6 +34,27 @@ public class JarUpdater {
         }
 
     }
+
+    public static String getFileContent(String jarFileName, String fileName) throws IOException {
+        StringBuffer stringBuffer = new StringBuffer();
+        ZipFile zipFile = new ZipFile(jarFileName);
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while(entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            if (entry.getName().equals(fileName)) {
+                byte[] buf = new byte[1024];
+                System.out.println("Found " + fileName);
+                InputStream stream = zipFile.getInputStream(entry);
+                int len;
+                while ((len = stream.read(buf)) > 0) {
+                    stringBuffer.append(new String(buf));
+                }
+            }
+        }
+        zipFile.close();
+        return stringBuffer.toString();
+    }
+
 
     public static void updateZipFile(File zipFile, File[] files) throws IOException {
                // get a temp file
@@ -90,4 +115,5 @@ public class JarUpdater {
         out.close();
         tempFile.delete();
     }
+
 }
