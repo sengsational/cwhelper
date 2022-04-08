@@ -34,15 +34,18 @@ public class BuildExeFromClassFiles {
     public static final String PROJECT_DIRECTORY = "C:\\my\\dev\\gitrepo\\CwHelperC\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
-    public static final String STOREPASS = "";
-    public static final String KEYPASS = "";
+    public static String storePass = null;
+    public static String keyPass = null;
     public static final String JRE_PATH = "C:\\Program Files\\Android\\Android Studio\\jre\\bin\\";
     public static final String BASE_VERSION = "5-0-0-";
     public static final String COMMA_VERSION = "5,0,0,";
     public static final String DOT_VERSION = "5.0.0.";
 
     public static void main(String[] args) throws Exception {
-
+        
+        storePass = getTextFromKeyboard("Enter [" + KEYSTORE + "] password (blank for no jar signing): ");
+        keyPass = storePass; // Obviously depends on if you used the same password for both.  I did.
+        
         String versionFileName = "version.txt";
 
         String wDir = PROJECT_DIRECTORY;
@@ -80,7 +83,7 @@ public class BuildExeFromClassFiles {
                         "/embed", wDirLib + "ucanaccess-4.0.4.jar",        //
                         "/embed", wDirLib + "httpclient-4.0.1.jar",        //
                         "/embed", wDirLib + "httpcore-4.0.1.jar",          //
-                        "/icon", "#" + wDir + "Cw_EPG.exe, 0#",
+                        "/icon", "#" + wDir + "cw_logo16.ico, 0#",
                         "/pv", COMMA_VERSION + "0",
                         "/fv",  COMMA_VERSION + revision,
                         "/ve", "ProductVersion=" + DOT_VERSION + "0",
@@ -97,10 +100,10 @@ public class BuildExeFromClassFiles {
                         "/closeonwindow:false",
                         "/splashtitle", "#Please wait ...#"
                     };
-        //for (int i = 0; i < parms.length; i++) {
-        //    parms[i] = parms[i].replaceAll("#", "\"");
-        //    System.out.println("[" + parms[i] + "]");
-        //}
+        for (int i = 0; i < j2ewizBuildCwHelperParms.length; i++) {
+            j2ewizBuildCwHelperParms[i] = j2ewizBuildCwHelperParms[i].replaceAll("#", "\"");
+            System.out.println("[" + j2ewizBuildCwHelperParms[i] + "]");
+        }
 
 
         if (runOsProcess(j2ewizBuildCwHelperParms, "successfully", null)) {
@@ -131,16 +134,19 @@ public class BuildExeFromClassFiles {
                     System.out.println("Version inside the jar file: " + contentsOfVersionFile);
                     if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
                         System.out.println("version.txt is aligned");
-                        String[] signTheJarFile = {JRE_PATH +"jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
-                        if (runOsProcess(signTheJarFile, "jar signed.", null)) {
-                            String[] verifyTheJarFile = {JRE_PATH +"jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
-                            if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
-                                System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
-                            } else {
-                                System.out.println("ERROR: Unable to sign the jar file.");
+                        if (storePass != null && keyPass != null) {
+                            String[] signTheJarFile = {JRE_PATH +"jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",storePass,"-keypass",keyPass,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
+                            if (runOsProcess(signTheJarFile, "jar signed.", null)) {
+                                String[] verifyTheJarFile = {JRE_PATH +"jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
+                                if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
+                                    System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
+                                } else {
+                                    System.out.println("ERROR: Unable to sign the jar file.");
+                                }
                             }
+                        } else {
+                            System.out.println("Not signing the jar due to lack of passwords.");
                         }
-
                     } else {
                         System.out.println("ERROR!!!!!!!! The version.txt inside the jar file does not align with the revision [" + COMMA_VERSION +  revision + "] that we just renamed it to. ERROR!!!!!!!!!" );
                     }
@@ -157,6 +163,22 @@ public class BuildExeFromClassFiles {
         } else {
             System.out.println("ERROR: Exe not created, so no attempt to zip being made.");
         }
+    }
+
+    private static String getTextFromKeyboard(String prompt) {
+        System.out.print(prompt);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            return(reader.readLine());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            System.out.println("");
+            if (reader != null) {
+                try { reader.close(); } catch (IOException e) { }
+            }
+        }
+        return null;
     }
 
     private static String getVersionFromJarFile(String jarFileName) throws IOException {
