@@ -84,6 +84,7 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>channel</td><td>ie 44.5</td><td>Get a list of all captures with matching channelKey (optional)</td></tr>\n");
         buf.append("<tr><td>-</td><td>filename</td><td>ie (anything in the filename you've configured)</td><td>Get a list of all captures with matching targetFile (optional)</td></tr>\n");
         buf.append("<tr><td>/sortchannels</td><td>-</td><td>-</td><td>Sorts HDHR channels (only) by signal strength.  After using /capture with channelname=*, and getting sample recordings, executing this function will re-arrange cw_epg's channel_maps.txt by swapping pairs of same channels.  For instance, if 11.3 on HDHR tuner 0 was higher in the channel_maps.txt than 11.3 on HDHR tuner 1,  but the latter had a better signal, the two would be swapped.  And this continues for all mapped channels.</td></tr>\n");
+        buf.append("<tr><td>-</td><td>dayshistory</td><td>ie 30</td><td>Maximum number of days old to look for signal strength (optional).  Defaults to 14.</td></tr>\n");
         buf.append("<tr><td>/path</td><td>root</td><td>ie drives or c:\\somePath</td><td>Get a list of folders below the root specified.</td></tr>\n");
         buf.append("<tr><td>/shutdown</td><td>-</td><td>-</td><td>Stop active captures, if any, and stop the service.  The web interface stops too.</td></tr>\n");
         buf.append("<tr><td>/log</td><td>-</td><td>-</td><td>Displays current log file.</td></tr>\n");

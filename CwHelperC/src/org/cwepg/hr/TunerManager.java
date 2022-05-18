@@ -1152,18 +1152,26 @@ public class TunerManager {
             Map<String,Channel> channelMap = this.getTuner(tunerString).lineUp.channels;
             Map<String,Channel> compressedChannelMap = new TreeMap<String,Channel>();
             Set<String> keySet = channelMap.keySet();
+            System.out.print("The tuner [" + tunerString + "] had a channeMap of size [" + channelMap.size() + "]");
+            System.out.println((channelMap.size()<2)?" <<<<< ERROR":"");
             // DRS 20190120 - compress out the subchannels (the tuner tunes to the frequency that contains all subchannels)
             int i = 0; 
             StringBuffer foundFrequencies = new StringBuffer();
             for (Iterator<String> iter = keySet.iterator(); iter.hasNext(); i++) {
                 String key = iter.next();
                 Channel aChannel = channelMap.get(key);
+                if(aChannel.frequency == null) {
+                    System.out.println(new Date() + " ERROR: tuner [" + tunerString + "] is reporting a null frequency. [" + aChannel + "]");
+                }
                 String foundFrequency = aChannel.frequency + "|";
                 if (foundFrequencies.indexOf(foundFrequency) < 0) {
                     compressedChannelMap.put(key, aChannel);
                     foundFrequencies.append(foundFrequency);
                 } 
             }
+            
+            if (compressedChannelMap.size() < 2) System.out.println(new Date() + " ERROR: " + compressedChannelMap.size() + " channels found on the tuner!!  Should be more.");
+            System.out.println(new Date() + " Frequencies for [" + tunerString + "].  The tuner had [" + foundFrequencies + "] frequencies.");
             
             ArrayList<Slot> slotList = slot.split(compressedChannelMap.size());
             i = 0;
@@ -1188,11 +1196,11 @@ public class TunerManager {
     }
     
     //  DRS 20110215 - Added method
-    public String sortChannelMap() {
-        TreeMap<String, CaptureDetails> channelsMapWithCaptureDetails = CaptureDataManager.getInstance().getSignalStrengthByChannelAndTuner();
+    public String sortChannelMap(long daysOldLimit) {
+        TreeMap<String, CaptureDetails> channelsMapWithCaptureDetails = CaptureDataManager.getInstance().getSignalStrengthByChannelAndTuner(daysOldLimit);
         if (channelsMapWithCaptureDetails.size() == 0) return "No HDHR signal strength history found";
         
-        // Get channel sort from cw_epg file
+        // Get current channels from cw_epg "channel_maps.txt" file
         TreeMap<Integer, CwEpgChannelRow> numberedMapOfCwEpgChannelRow = new TreeMap<Integer,CwEpgChannelRow>();
         List<String>headers = null;
         CSVReader reader = null;
@@ -1218,6 +1226,9 @@ public class TunerManager {
         
         // Make an empty Map to hold the strength-sorted items
         TreeMap<String, CaptureDetails> strengthSortedChannelsMapWithCaptureDetails = new TreeMap<String, CaptureDetails>();
+        // Make an empty Map to hold the channels that are unmapped (got a recording, but there is no map)
+        TreeMap<String, CaptureDetails> missingChannelsMapWithCaptureDetails = new TreeMap<String, CaptureDetails>();
+        // Loop through the last 500 capture details, it's newest to oldest.
         Iterator<String> iter = channelsMapWithCaptureDetails.keySet().iterator();
         while(iter.hasNext()){
             String key = (String)iter.next();
@@ -1226,13 +1237,22 @@ public class TunerManager {
             Integer strengthNumber = details.getStrengthValue();
             strengthSortedChannelsMapWithCaptureDetails.put(channelNumber + "::" + strengthNumber, details);
         }
-        // (now we have channelsMapWithCaptureDetails sorted by signal strength called "strengthSortedChannelsMapWithCaptureDetails")
+        // (now we have channelsMapWithCaptureDetails sorted by channelNumber and signal strength called "strengthSortedChannelsMapWithCaptureDetails")
         
         Iterator<String> iter2 = strengthSortedChannelsMapWithCaptureDetails.keySet().iterator();
         while (iter2.hasNext()) {
             String key = iter2.next();
             System.out.println("proof of strenght sortation: " + key + " " + strengthSortedChannelsMapWithCaptureDetails.get(key).getStrengthSummary());
         }
+        //proof of strenght sortation: 21.3:1-8vsb::100035 21.3:1-8vsb::1010CC54-0 tunsnq:85 tmiss:0
+        //proof of strenght sortation: 21.3:1-8vsb::100042 21.3:1-8vsb::1013FADA-0 tunsnq:71 tmiss:0
+        //proof of strenght sortation: 21.3:1-8vsb::100132 21.3:1-8vsb::1013FADA-1 tunsnq:100 tmiss:51
+        //proof of strenght sortation: 21.3:1-8vsb::100571 21.3:1-8vsb::1010CC54-1 tunsnq:36 tmiss:244
+        //proof of strenght sortation: 21.4:1-8vsb::100035 21.4:1-8vsb::1010CC54-0 tunsnq:85 tmiss:0
+        //proof of strenght sortation: 21.4:1-8vsb::100042 21.4:1-8vsb::1013FADA-0 tunsnq:71 tmiss:0
+        //proof of strenght sortation: 21.4:1-8vsb::100132 21.4:1-8vsb::1013FADA-1 tunsnq:100 tmiss:51
+        //proof of strenght sortation: 21.4:1-8vsb::100571 21.4:1-8vsb::1010CC54-1 tunsnq:36 tmiss:244
+        
         // (now we have printed channelsMapWithCaptureDetails sorted by signal strength called "strengthSortedChannelsMapWithCaptureDetails")
 
         // Make an empty numbered list to hold future numbered map of CwEpgChannelRow
@@ -1242,8 +1262,9 @@ public class TunerManager {
         // For each item from channelsMapWithCaptureDetailsSortedBySignalStrength
         iter2 = strengthSortedChannelsMapWithCaptureDetails.keySet().iterator();
         while (iter2.hasNext()) {
-            CaptureDetails details = strengthSortedChannelsMapWithCaptureDetails.get(iter2.next());// key like 11.3:1-8vsb::100030, that second part is strength
-            String channelTunerKey = details.getChannelTunerKey();
+            String iteratorKey = iter2.next();
+            CaptureDetails details = strengthSortedChannelsMapWithCaptureDetails.get(iteratorKey);// key like 11.3:1-8vsb::100030, that second part is strength
+            String channelTunerKey = details.getChannelTunerKey(); //  [channelKey + "::" + tunerName], for example "21.6:1-8vsb::1013FADA-1"
             boolean found = false;
             
             //   Find the matching item in numberedMapOfCwEpgChannelRow
@@ -1251,7 +1272,7 @@ public class TunerManager {
             while (iter3.hasNext()) {
                 Integer keyFromCwEpgChannelRowMap = iter3.next();
                 CwEpgChannelRow aRow = numberedMapOfCwEpgChannelRow.get(keyFromCwEpgChannelRowMap);
-                String aRowChannelTuner = aRow.getFormattedChannelTuner();
+                String aRowChannelTuner = aRow.getFormattedChannelTuner(); // for example "21.6:1-8vsb::1013FADA-1"
                 if (channelTunerKey.startsWith(aRowChannelTuner)) {
                     System.out.println("FOUND<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ADDED TO NEW LIST<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " + channelTunerKey + " aRowChannelTuner " + aRowChannelTuner);
                     channelsSorted.add(aRow);
@@ -1262,8 +1283,9 @@ public class TunerManager {
                 }
             }
             if (!found) {
-                System.out.println("Looking for " + channelTunerKey + " was not found in CwEpgChannelRows ");
                 //   If not found, we have an unmapped channel, make a note of it 
+                System.out.println("Looking for " + channelTunerKey + " was not found in CwEpgChannelRows ");
+                missingChannelsMapWithCaptureDetails.put(iteratorKey, details);
             }
             
         }
@@ -1286,26 +1308,6 @@ public class TunerManager {
             channelsSorted.add(aRow);
         }
         
-
-        /*
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        // Make the sorter object and use it
-        ChannelMapSorter channelMapSorter = new ChannelMapSorter(channelsMapWithCaptureDetails, numberedMapOfCwEpgChannelRow, headers);
-        TreeMap<Integer, CwEpgChannelRow> channelsSorted = channelMapSorter.getSorted();
-        if (numberedMapOfCwEpgChannelRow.size() != channelsSorted.size()) return "Error in sorting.  No changes made.";
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        System.out.println(" >>>>>>>>>>>>>>  Delete this logic and start with a new method to sort the numbered map <<<<<<<<<<<<<<<<<<<<<<<");
-        */
-        
         // Write out the sorted map
         CSVWriter writer = null;
         try {
@@ -1325,7 +1327,14 @@ public class TunerManager {
             e.printStackTrace();
             return  message;
         }
-        
+
+        iter2 = missingChannelsMapWithCaptureDetails.keySet().iterator();
+        while (iter2.hasNext()) {
+            CaptureDetails details = missingChannelsMapWithCaptureDetails.get(iter2.next()); 
+            System.out.println("Recording from " + details.scheduledStart + " on " + details.channelName + " tuner " + details.tunerName + " was not included.");
+        }
+        System.out.println("A total of " + missingChannelsMapWithCaptureDetails.size() + " recordings were not included.");
+
         return "Signal strength data was used for " + (sizeOfOriginal - sizeOfDefault) + " channels.  " + sizeOfDefault + " channels were placed at the bottom, unsorted, for a total of " + sizeOfOriginal +".";
     }
     

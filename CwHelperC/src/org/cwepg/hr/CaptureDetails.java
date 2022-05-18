@@ -55,13 +55,34 @@ public class CaptureDetails implements Comparable, Cloneable {
     String devbps = "-1";
     private CwEpgChannelRow cwEpgChannelRow;
     static final String[] fieldNames = {
-        "tableKey",
-        "tunerName","channelKey","channelName","scheduledStart","startEvent",
-        "scheduledEnd","targetFile","title","machineName","endEvent",
-        "tunch","tunlock","tunss","tunsnq","tunseq",
-        "tundbg","devresync","devoverflow","tsbps","tsut",
-        "tste","tsmiss","tscrc","fltbps","netpps",
-        "neterr","netstop"};
+        "tableKey", //1
+        "tunerName", //2
+        "channelKey", //3
+        "channelName", //4
+        "scheduledStart", //5
+        "startEvent", //6
+        "scheduledEnd", //7
+        "targetFile", //8
+        "title", //9
+        "machineName", //10
+        "endEvent", //11
+        "tunch", //12
+        "tunlock", //13
+        "tunss", //14
+        "tunsnq", //15
+        "tunseq", //16
+        "tundbg", //17
+        "devresync", //18
+        "devoverflow", //19
+        "tsbps", //20
+        "tsut", //21
+        "tste", //22
+        "tsmiss", //23
+        "tscrc", //24
+        "fltbps", //25
+        "netpps", //26
+        "neterr", //27
+        "netstop"}; //28
     static final int[] sortOrder = {1,2,3,7,8,4,5,6,10,11,12,13,14,21,22,23,24,25,26,27,15,16,17,18,19,20,9};
 
     public Object clone() throws CloneNotSupportedException { 
@@ -144,18 +165,28 @@ public class CaptureDetails implements Comparable, Cloneable {
         fields.append("channelName~");values.append("'" + this.channelName + "'~");
         if (this.scheduledStart != null){
             fields.append("scheduledStart~"); values.append(toDateFormattingStart + DBDTF.format(this.scheduledStart) + toDateFormattingEnd);
+        } else {
+            fields.append("scheduledStart~");values.append("' '~");
         }
         if (dateToUse != null){
             fields.append("startEvent~");values.append(toDateFormattingStart + DBDTF.format(dateToUse) + toDateFormattingEnd);
+        } else {
+            fields.append("startEvent~");values.append("' '~");
         }
         if (this.scheduledEnd != null){
             fields.append("scheduledEnd~");values.append(toDateFormattingStart + DBDTF.format(this.scheduledEnd) + toDateFormattingEnd);
+        } else {
+            fields.append("scheduledEnd~");values.append("' '~");
         }
         if (this.targetFile != null){
             fields.append("targetFile~");values.append("'" + this.targetFile.replaceAll("\'", "\'\'") + "'~");
+        } else {
+            fields.append("targetFile~");values.append("' '~");
         }
         if (this.title != null){
             fields.append("title~");values.append("'" + this.title.replaceAll("\'", "\'\'") + "'~");
+        } else {
+            fields.append("title~");values.append("' '~");
         }
         if (this.machineName != null){
             //DRS 20200802 - truncate machineName to 15 max
@@ -163,8 +194,12 @@ public class CaptureDetails implements Comparable, Cloneable {
                 this.machineName.substring(0, 15);
             }
             fields.append("machineName");values.append("'" + this.machineName.replaceAll("\'", "\'\'") + "'");
+        } else {
+            fields.append("machineName");values.append("' '~");
         }
         String[] result = new String[2];
+        boolean debug = false;
+        if (debug) System.out.println("DEBUG: CaptureDetails.getCaptureInsertData() fields: " + fields.toString());
         result[FIELDS] = fields.toString();
         result[VALUES] = values.toString();
         return result;
@@ -249,6 +284,7 @@ public class CaptureDetails implements Comparable, Cloneable {
 
     public void setFromDb(ResultSet rs, boolean debug) {
         try {
+            if (debug) System.out.println("DEBUG: setFromDb " + rs.getMetaData().getColumnCount() + " columns found." );
             tableKey = rs.getString("tableKey");
             tunerName = rs.getString("tunerName");
             channelKey = rs.getString("channelKey");
@@ -375,6 +411,8 @@ public class CaptureDetails implements Comparable, Cloneable {
         while (tok.hasMoreElements()) {
             String category = tok.nextToken().trim();
             String allData = tok.nextToken().trim();
+            boolean debug = false;
+            if (debug) System.out.println("DEBUG: category [" + category + "]   allData [" + allData + "]");
             // "tun: ch=8vsb:22 lock=8vsb ss=100 snq=100 seq=100
             // dbg=23870-8076\n"
             if (category.equals("tun")) {
@@ -415,6 +453,7 @@ public class CaptureDetails implements Comparable, Cloneable {
                 }
 
                 // ts: bps=19391072 ut=96 te=0 miss=4 crc=0\n" +
+                // ts: bps=19391072 te=0 crc=0\n" + <<< NEW TUNER (no ut, no miss)
             } else if (category.equals("ts")) {
                 StringTokenizer dataTok = new StringTokenizer(allData, "=");
                 while (dataTok.hasMoreTokens()) {
@@ -434,6 +473,7 @@ public class CaptureDetails implements Comparable, Cloneable {
                     }
                 }
                 // "flt: bps=15244544\n" +
+                // NEW TUNER: No flt section
             } else if (category.equals("flt")) {
                 StringTokenizer dataTok = new StringTokenizer(allData, "=");
                 while (dataTok.hasMoreTokens()) {
@@ -445,6 +485,7 @@ public class CaptureDetails implements Comparable, Cloneable {
                     }
                 }
                 // "net: pps=1451 err=0 stop=0";
+                // "net: bps=6569472 pps=1451 err=0 stop=0"; NEW TUNER, added bps=
             } else if (category.equals("net")) {
                 StringTokenizer dataTok = new StringTokenizer(allData, "=");
                 while (dataTok.hasMoreTokens()) {
@@ -455,6 +496,8 @@ public class CaptureDetails implements Comparable, Cloneable {
                         this.neterr = dataTok.nextToken(" ").replace('=',' ').trim();
                     } else if (type.equals("stop")){
                         this.netstop = dataTok.nextToken(" ").replace('=',' ').trim();
+                    } else if (type.equals("bps")) {
+                        this.fltbps = dataTok.nextToken(" ").replace('=', ' ').trim();
                     } else {
                         System.out.println(new Date() + " category net had unexpected type: " + type);
                     }
@@ -518,8 +561,11 @@ public class CaptureDetails implements Comparable, Cloneable {
     /*************************************** GETS FOR OUTPUT *********************************************/
     
     public String getHtmlHeadings() {
+        boolean debug = false;
         StringBuffer buf = new StringBuffer();
         String[] fields = getArray(FIELDS);
+        if (debug) System.out.println("DEBUG: fields[].length(): "+ fields.length);
+        if (debug) System.out.println("DEBUG: sortOrder.length(): "+ sortOrder.length);
         buf.append("<th>");
         for (int i = 0 ; i < sortOrder.length; i++){
             buf.append(fields[sortOrder[i]] + "</th><th>");
@@ -540,13 +586,17 @@ public class CaptureDetails implements Comparable, Cloneable {
     }
     
     private String[] getArray(int type){
+        boolean debug = false;
         boolean writeToDatabase = false;
         String allValues = this.getCaptureInsertData(false, writeToDatabase)[type] + "~" + this.getSignalQualityUpdateData(false)[type];
+        if (debug) System.out.println("CaptureDetails.getArray(" + type + ") allValues [" + allValues +"]");
         StringTokenizer tok = new StringTokenizer(allValues, "~");
         String[] values = new String[tok.countTokens()];
         int t = 0;
         while (tok.hasMoreTokens()){
-            values[t++] = tok.nextToken();
+            String nextToken = tok.nextToken();
+            if (debug) System.out.println("DEBUG: CaptureDetails.getArray(" + type + "):" + nextToken);
+            values[t++] = nextToken;
         }
         return values;
     }
@@ -591,24 +641,24 @@ public class CaptureDetails implements Comparable, Cloneable {
         return this.getChannelTunerKey() + " tunsnq:" + this.tunsnq + " tmiss:" + this.tsmiss;
     }
 
+    // DRS 20220513 - New tuners don't have "miss" and the tste appears to report something different, so going with only "snq"
     public Integer getStrengthValue() {
         Float value = Float.MAX_VALUE;
         try {
             //System.out.println("this.tunsnq " + this.tunsnq + " this.tsmiss " + this.tsmiss);
             Float snq = Float.parseFloat(this.tunsnq);
-            Float miss = Float.parseFloat(this.tsmiss);
-            Float tste = Float.parseFloat(this.tste);
-            
-            if ((tste > 10000) && (miss == 0)) miss = 500F; // if tste is large and miss zero, it means it didn't even create a file, so penalize the score big-time!
+            //Float miss = Float.parseFloat(this.tsmiss);
+            //Float tste = Float.parseFloat(this.tste);
+            //if ((tste > 10000) && (miss == 0)) miss = 500F; // if tste is large and miss zero, it means it didn't even create a file, so penalize the score big-time!
             
             //System.out.println("this.tunsnq " + snq + " this.tsmiss " + miss);
             
             Float valueOne = 3000F / snq;
             //System.out.println("valueOne " + valueOne);
             
-            Float valueTwo = miss * 2F;
+            //Float valueTwo = miss * 2F;
             
-            Float finalWeight = valueOne + valueTwo;
+            Float finalWeight = valueOne;// + valueTwo;
             
             //System.out.println("FinalWeight " + finalWeight);
             
@@ -616,7 +666,7 @@ public class CaptureDetails implements Comparable, Cloneable {
             value = finalWeight + 100000;
 
         } catch (Throwable t) {
-            System.out.println("Failed to parse values in signal strength. " + this.tunsnq + " " + this.tsmiss);
+            System.out.println("Failed to parse values in signal strength. " + this.tunsnq ); //+ " " + this.tsmiss);
         }
         return value.intValue();
     }
@@ -675,7 +725,7 @@ public class CaptureDetails implements Comparable, Cloneable {
                 connection = DriverManager.getConnection("jdbc:ucanaccess://" + CaptureManager.dataPath + CaptureDataManager.mdbFileName + ";singleConnection=true");
                 statement = connection.createStatement();
                 String query = "select * from " + CaptureDataManager.tableName + " where tableKey='200901021600|1013FADA-1|11.1:1-8vsb'";
-                System.out.println("Getting Capture Data using [" + query + "]");
+                System.out.println("6Getting Capture Data using [" + query + "]");
                 rs = statement.executeQuery(query);
                 while (rs.next()){
                     CaptureDetails details = new CaptureDetails();

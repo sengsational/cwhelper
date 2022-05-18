@@ -482,16 +482,19 @@ class TinyConnection implements Runnable {
                         // DRS 20110618 - Added 'if' block externalTuner
                         if (externalTunerValues != null){
                             tunerType = Tuner.EXTERNAL_TYPE;
+                            System.out.println(new Date() + " WARNING: Tuner.EXTERNAL_TYPE detected.  Uncommon.");
                             capture = tunerManager.getCaptureForChannelNameSlotAndTuner(channelName, slot, tunerString, protocol);
                             //capture = tunerManager.getCaptureForNewChannelNameSlotAndTuner(channelName, slot, tunerString, "unk");
                         } else if ("myhd".equalsIgnoreCase(tunerString)) { /******* MYHD **********/
                             tunerType = Tuner.MYHD_TYPE;
+                            System.out.println(new Date() + " WARNING: Tuner.MYHD_TYPE detected.  Uncommon.");
                             if (channelName == null || "".equals(channelName)) channelName = "0.0";
                             capture = tunerManager.getCaptureForMyHD(channelName, slot, tunerString, channelVirtual, rfChannel, protocol);
                         } else if (tunerString.toUpperCase().indexOf("MYHD") > -1){
                             postErrorMessage("Please use just 'myhd' for the tuner. The input is specified on channelvirtual.  See /help.");
                         } else if (tunerString.indexOf(".") > -1 ){ /******* FUSION **********/
                             tunerType = Tuner.FUSION_TYPE;
+                            System.out.println(new Date() + " WARNING: Tuner.FUSION_TYPE detected.  Uncommon.");
                             capture = tunerManager.getCaptureForChannelNameSlotAndTuner(channelName, slot, tunerString, protocol);
                         } else if (tunerString.indexOf("-") > -1){ /******* HDHR **********/
                             tunerType = Tuner.HDHR_TYPE;
@@ -716,7 +719,14 @@ class TinyConnection implements Runnable {
                 }
                 out.print(HEAD + event.getHtml() + FOOT);
             } else if (action.equals("/sortchannels")) { // ************* SORTCHANNELS ***************
-                String message = tunerManager.sortChannelMap();
+                long daysHistoryLong = 14; // Default to 2 weeks
+                try {
+                    String daysHistory = (String)request.get("dayshistory");
+                    daysHistoryLong = Long.parseLong(daysHistory);
+                } catch (Throwable t) {
+                    System.out.println(new Date() + " WARNING: /sortchannels missing dayshistory= parameter.  Using 14 days.");
+                }
+                String message = tunerManager.sortChannelMap(daysHistoryLong);
                 out.print(HEAD + message + FOOT);
                 // DRS 20200822 - Added 'else if' *****************UNDOCUMENTED FEATURE using hand-made frequency_tuner_priority
             } else if (action.equals("/sortchannels2")) { // ************* SORTCHANNELS2 ***************
@@ -797,8 +807,8 @@ class TinyConnection implements Runnable {
                             response += t.getMessage();
                         }
                     }
-                } catch (Exception e) { 
-                    response += e.getMessage(); 
+                } catch (Exception e) {
+                    response += e.getClass().getCanonicalName() + " " + e.getMessage(); 
                 }
                 System.out.println(new Date() + " " + response);
                 out.print(HEAD + response + FOOT);
@@ -828,7 +838,7 @@ class TinyConnection implements Runnable {
 		} catch (Exception e) {
             System.err.println(new Date() + " Error in TinyConnection.run");
             e.printStackTrace();
-            out.print(e.getMessage());
+            out.print(e.getClass().getName() + " " + e.getMessage());
             System.out.println(e.getMessage());
 		} finally {
             try {in.close();} catch (Exception e2) {/* ignore */}

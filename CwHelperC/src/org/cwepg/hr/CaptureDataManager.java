@@ -59,7 +59,10 @@ public class CaptureDataManager {
         PreparedStatement preparedStatement = null;
         String[] psStrings = new String[3];
         ResultSet rs = null;
+        boolean debug = false;
+
         try {
+            if (debug) System.out.println("DEBUG: Creating database connection.");
             connection = DriverManager.getConnection("jdbc:ucanaccess://" + CaptureManager.dataPath + CaptureDataManager.mdbFileName + ";singleConnection=true");
             String query = "select " + limitSqlText + " * from " + CaptureDataManager.tableName;
             
@@ -96,10 +99,19 @@ public class CaptureDataManager {
                 preparedStatement.setString(j++, psStrings[i]);
                 debugPsStrings += psStrings[i] + ", ";
             }
-            System.out.println("Getting Capture Data using [" + query + whereBuf.toString() + "] with search as [" + debugPsStrings + "]");
+            System.out.println("1Getting Capture Data using [" + query + whereBuf.toString() + "] with search as [" + debugPsStrings + "]");
             rs = preparedStatement.executeQuery();
-            
-            //String idList = "";
+            //System.out.println("after prepared statement. 1Getting Capture Data using [" + query + whereBuf.toString() + "] with search as [" + debugPsStrings + "]");
+
+            // NOTE: rs.last() is not supported
+            //int resultSetCount = 0;
+            //if (rs != null) {
+            //    rs.last();    // moves cursor to the last row
+            //    resultSetCount = rs.getRow(); // get row id 
+            //    rs.beforeFirst(); // put it back the way we found it
+            //}
+            //if (debug) System.out.println("Execution of prepared statement rs.count() " + resultSetCount );
+
             while (rs.next()){
                 CaptureDetails details = new CaptureDetails();
                 details.setFromDb(rs, false);
@@ -110,9 +122,11 @@ public class CaptureDataManager {
             if (preparedStatement != null) preparedStatement.close();
             connection.close();
         } catch (SQLException e) {
+            System.out.println("SQLException: " + e.getMessage());
             System.err.println(new Date() + " CaptureDataManager.getRecentCaptures:");
             e.printStackTrace();
         } finally {
+            //System.out.println("Closing record set.");
             try { if (rs != null) rs.close(); } catch (Throwable t){}; 
             try { if (preparedStatement != null) preparedStatement.close(); } catch (Throwable t){};
             try { if (connection != null) connection.close(); } catch (Throwable t){}; 
@@ -129,14 +143,15 @@ public class CaptureDataManager {
             connection = DriverManager.getConnection("jdbc:ucanaccess://" + CaptureManager.dataPath + CaptureDataManager.mdbFileName + ";singleConnection=true");
             String query = "select " + limitSqlText + " * from " + CaptureDataManager.tableName;
             query += " order by tableKey desc";
-            System.out.println("Getting Capture Data using [" + query + "]");
+            System.out.println("2Getting Capture Data using [" + query + "]");
             statement = connection.createStatement();
             rs = statement.executeQuery(query);
-
+            //System.out.println("DEBUG rs " + rs.getMetaData());
             //String idList = "";
             while (rs.next()){
                 CaptureDetails details = new CaptureDetails();
-                details.setFromDb(rs, false);
+                boolean debug = false;
+                details.setFromDb(rs, debug);
                 if(detailsMap.get(details.tableKey)!= null) details.tableKey += "+"; //for the rare case when a restart causes a duplicate
                 detailsMap.put(details.tableKey, details);
                 //idList += details.tableKey + ",";
@@ -166,10 +181,10 @@ public class CaptureDataManager {
             statement = connection.createStatement();
             String query = "select * from " + CaptureDataManager.tableName + " where tunerName='" + fullName + "' order by tableKey desc"; // newest to oldest
             // DRS 20110215 - Added 'if' block
-            if (fullName.equals("ALL")){
+            if (fullName.equals("ALL")){ // This is only called from CaptureDataManager.getSignalStrengthForChannelAndTuner
                 query = "select top 500 * from " + CaptureDataManager.tableName + " where tunlock like '8vsb%' order by tableKey desc";  // newest to oldest
             }
-            System.out.println("Getting Capture Data using [" + query + "]");
+            System.out.println("3Getting Capture Data using [" + query + "]");
             rs = statement.executeQuery(query);
             //idList = "";
             while (rs.next()){
@@ -195,15 +210,23 @@ public class CaptureDataManager {
     }
     
     // DRS 20110215 - Added method
-    public TreeMap<String, CaptureDetails> getSignalStrengthByChannelAndTuner(){
+    public TreeMap<String, CaptureDetails> getSignalStrengthByChannelAndTuner(long daysHistory){
         TreeMap<String, CaptureDetails> detailsMap = getHistoricalCaptureDetailsForTuner("ALL");
         TreeMap<String, CaptureDetails> channelsMapWithCaptureDetails = new TreeMap<String, CaptureDetails>();
         String rfDone = ".";
+        String dateError = "";
         try {
         for (Object obj : detailsMap.keySet()) {
             String key = (String)obj;
             CaptureDetails details = detailsMap.get(key);
             String channelKey = details.channelKey;
+            try {
+                long daysOld = (new Date().getTime() - details.startEvent.getTime())/1000/60/60/24;
+                //System.out.println("DEBUG " + daysOld + " > " + daysHistory + " <<< true or false?");
+                if (daysOld > daysHistory) break;
+            } catch (Throwable t) {
+                dateError += " DateProblem " + channelKey; // This will make a long string if there are many bad dates.
+            }
             //System.out.println("Channel key: " + channelKey);
             //System.out.println("Tuner: " + details.tunerName);
             String channelRfAndTuner = channelKey.split("\\.")[0] + "::" + details.tunerName;
@@ -224,6 +247,7 @@ public class CaptureDataManager {
         } catch (Throwable t) {
             System.out.println("Throwable " + t.getMessage());
         }
+        if (dateError.length() > 0) System.out.println(new Date() + " ERROR: Recording(s) had bad start date: " + dateError);
         return channelsMapWithCaptureDetails;
     }
     
@@ -237,7 +261,7 @@ public class CaptureDataManager {
             connection = DriverManager.getConnection("jdbc:ucanaccess://" + CaptureManager.dataPath + CaptureDataManager.mdbFileName + ";singleConnection=true");
             statement = connection.createStatement();
             String query = "select top 10 * from " + CaptureDataManager.tableName + " order by tableKey desc";
-            System.out.println("Getting Capture Data using [" + query + "]");
+            System.out.println("4Getting Capture Data using [" + query + "]");
             rs = statement.executeQuery(query);
             while (rs.next()){
                 CaptureDetails details = new CaptureDetails();
@@ -398,7 +422,7 @@ public class CaptureDataManager {
                 connection = DriverManager.getConnection("jdbc:ucanaccess://" + localPath + CaptureDataManager.mdbFileName + ";singleConnection=true");
                 statement = connection.createStatement();
                 String query = "select top 50 * from " + CaptureDataManager.tableName + " order by tableKey desc";
-                System.out.println("Getting Capture Data using [" + query + "]");
+                System.out.println("5Getting Capture Data using [" + query + "]");
                 rs = statement.executeQuery(query);
                 while (rs.next()) {
                     CaptureDetails details = new CaptureDetails();

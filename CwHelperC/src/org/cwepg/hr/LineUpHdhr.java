@@ -538,6 +538,7 @@ public class LineUpHdhr extends LineUp {
                 }
                 if (!quiet) System.out.println("finished executing request with " + responseBody.length() + " characters received.");
                 //if (!quiet && responseBody.length() < 100) System.out.println("[" + responseBody + "]");
+                if (responseBody != null && responseBody.contains("Bad Request")) throw new Exception("Get page responded with 'Bad Request'");
                 return responseBody;
                 
             } catch (Exception e) {

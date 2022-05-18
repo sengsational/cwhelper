@@ -264,6 +264,12 @@ public class ChannelDigital extends Channel implements Comparable {
                 //this.pid = "0";
                 this.protocol = "8vsb";
             }
+            try {
+                this.frequency = "" + splitDottedChannel(getCleanedChannelName())[0]; //DRS 20220511
+            } catch (Exception e) {
+                System.out.println(new Date() + " ERROR: unable to get RF frequency for " + this.alphaDescription);
+                e.printStackTrace();
+            } 
         } else {
             // DRS 20181025 traditional existing code here
             this.protocol = getFromXml(hdhrXml, "Modulation");

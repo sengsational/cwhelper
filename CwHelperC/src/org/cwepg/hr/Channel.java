@@ -183,13 +183,17 @@ public class Channel {
 
     public void addAltChannels(Channel[] altChannelInput, String matchDescription, ArrayList<String> noCopyVirtuals) {
         if (altChannelList == null) altChannelList = new ArrayList<Channel>();
+        String lastAlphaDescriptionWithTuner = "";
         for (Channel inputChannel : altChannelInput) {
             String inputChannelVirtualString = inputChannel.getFullVirtualChannel(inputChannel.virtualHandlingRequired);
             if (noCopyVirtuals != null && noCopyVirtuals.contains(inputChannelVirtualString)) {
                 //System.out.println(new Date() + " Not adding " + inputChannelVirtualString + " as an alternate for " + matchDescription);
+            } else if ((inputChannel.alphaDescription + inputChannel.tuner.getFullName()).equals(lastAlphaDescriptionWithTuner)){
+                //System.out.println(new Date() + " Not adding " + lastAlphaDescriptionWithTuner + " since it's been added under that alphadescription||tunerFullName");
             } else {
                 addAltChannel(inputChannel, matchDescription);
             }
+            lastAlphaDescriptionWithTuner = inputChannel.alphaDescription + inputChannel.tuner.getFullName();
         }
     }
     
@@ -316,7 +320,8 @@ public class Channel {
                     + this.tuner.getDeviceId() + "\" tunerType=\"" 
                     + this.tuner.getType() + "\" channelDescription=\"" 
                     + this.channelDescription + "\" channelVirtual=\""
-                    + this.getFullVirtualChannel(virtualHandlingRequired) + "\" priority=\""
+                    + this.getFullVirtualChannel(virtualHandlingRequired) + "\" frequency=\""
+                    + this.frequency + "\" priority=\""
                     + this.priority + "\" alternates=\""
                     + this.getAlternatesString()
                     + "\"");
