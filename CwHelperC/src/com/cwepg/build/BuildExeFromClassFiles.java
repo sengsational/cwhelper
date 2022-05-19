@@ -17,6 +17,9 @@ import org.cwepg.hr.CaptureManager;
 
 public class BuildExeFromClassFiles {
     /**
+     * Before running this class, 
+     *      Commit the changes to source control (the version number is used later), then 
+     *      Use Eclipse IDE "Make runnable jar" process.
      * 
      * This class  
      *          1) pulls the version from the source control system
@@ -27,8 +30,7 @@ public class BuildExeFromClassFiles {
      *          6) renames the (already created) runnable jar file to include the version in the file name
      *          7) signs the jar file with 
      *          
-     *  Typically, the zip file would be uploaded.
-     *  Manually, Eclipse IDE "Make runnable jar" can also be run and that result uploaded.  Manual addition of version in the file name is required.        
+     * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
      */
     public static final String PROJECT_DIRECTORY = "C:\\my\\dev\\eclipsewrk\\CwHelper\\";

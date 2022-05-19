@@ -641,34 +641,26 @@ public class CaptureDetails implements Comparable, Cloneable {
         return this.getChannelTunerKey() + " tunsnq:" + this.tunsnq + " tmiss:" + this.tsmiss;
     }
 
-    // DRS 20220513 - New tuners don't have "miss" and the tste appears to report something different, so going with only "snq"
+    // DRS 20220519 - Rewrote this method based on observation of signal data values.
     public Integer getStrengthValue() {
-        Float value = Float.MAX_VALUE;
         try {
-            //System.out.println("this.tunsnq " + this.tunsnq + " this.tsmiss " + this.tsmiss);
-            Float snq = Float.parseFloat(this.tunsnq);
-            //Float miss = Float.parseFloat(this.tsmiss);
-            //Float tste = Float.parseFloat(this.tste);
-            //if ((tste > 10000) && (miss == 0)) miss = 500F; // if tste is large and miss zero, it means it didn't even create a file, so penalize the score big-time!
-            
-            //System.out.println("this.tunsnq " + snq + " this.tsmiss " + miss);
-            
-            Float valueOne = 3000F / snq;
-            //System.out.println("valueOne " + valueOne);
-            
-            //Float valueTwo = miss * 2F;
-            
-            Float finalWeight = valueOne;// + valueTwo;
-            
-            //System.out.println("FinalWeight " + finalWeight);
-            
-            //value = 3F / (100F + (Float.parseFloat(this.tunsnq))*1000F) + (Float.parseFloat(this.tsmiss) * 2F) + 1000000F; // Total seat of the pants guess at "best / better" viewing quality
-            value = finalWeight + 100000;
-
+            System.out.println(new Date() + "Values must be good to return a strength:  tunlock:" + this.tunlock + " tste:" + this.tste + " tunss:" + this.tunss + " tunsnq:" + this.tunsnq + " start:" + this.startEvent.getTime() + " end:" + this.endEvent.getTime());
+            float minutes = ((this.endEvent.getTime() - this.startEvent.getTime())/1000F)/60F;
+            float te = Float.parseFloat(this.tste);
+            float ss = Float.parseFloat(this.tunss);
+            float sq = Float.parseFloat(this.tunsnq);
+            if ("none".equals(this.tunlock)) return 0;
+            if (te/minutes/1000 > 10F) return 1;
+            if (te/minutes/1000 > 3F) return 2;
+            if (te/minutes/1000 > 0F) return 7;
+            if (ss < 100 && sq < 100) return 8;
+            if (ss == 100 && sq == 100) return 10;
+            return 9;
         } catch (Throwable t) {
-            System.out.println("Failed to parse values in signal strength. " + this.tunsnq ); //+ " " + this.tsmiss);
+            System.out.println(new Date() + " ERROR: Failed to parse values in get signal strength. " + this); 
+            System.out.println(new Date() + " ERROR: " + t.getClass().getName() + " " + t.getMessage());
         }
-        return value.intValue();
+        return -1;
     }
     /************************************* TESTING ***************************************/
     

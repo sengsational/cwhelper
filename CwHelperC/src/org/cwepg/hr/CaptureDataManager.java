@@ -230,8 +230,10 @@ public class CaptureDataManager {
             //System.out.println("Channel key: " + channelKey);
             //System.out.println("Tuner: " + details.tunerName);
             String channelRfAndTuner = channelKey.split("\\.")[0] + "::" + details.tunerName;
-            if (rfDone.contains(channelRfAndTuner)) continue;
-            rfDone += channelRfAndTuner;
+            if (rfDone.contains(channelRfAndTuner)) continue;  // if this RF already has details assigned, don't add it again.
+            rfDone += "|" + channelRfAndTuner + "|";
+            
+            // For all channels that match this RF, push the same capture details we found on the first one of this RF
             String tunerNameString = details.tunerName;
             ArrayList<String> sameRfChannels = TunerManager.getInstance().getSameRfChannels(tunerNameString, channelKey);
             for (String sisterChannel : sameRfChannels) {

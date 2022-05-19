@@ -1163,7 +1163,7 @@ public class TunerManager {
                 if(aChannel.frequency == null) {
                     System.out.println(new Date() + " ERROR: tuner [" + tunerString + "] is reporting a null frequency. [" + aChannel + "]");
                 }
-                String foundFrequency = aChannel.frequency + "|";
+                String foundFrequency = "|" + aChannel.frequency + "|";
                 if (foundFrequencies.indexOf(foundFrequency) < 0) {
                     compressedChannelMap.put(key, aChannel);
                     foundFrequencies.append(foundFrequency);
@@ -1228,7 +1228,7 @@ public class TunerManager {
         TreeMap<String, CaptureDetails> strengthSortedChannelsMapWithCaptureDetails = new TreeMap<String, CaptureDetails>();
         // Make an empty Map to hold the channels that are unmapped (got a recording, but there is no map)
         TreeMap<String, CaptureDetails> missingChannelsMapWithCaptureDetails = new TreeMap<String, CaptureDetails>();
-        // Loop through the last 500 capture details, it's newest to oldest.
+        // Loop through the capture details
         Iterator<String> iter = channelsMapWithCaptureDetails.keySet().iterator();
         while(iter.hasNext()){
             String key = (String)iter.next();
