@@ -18,6 +18,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.cwepg.hr.Capture;
 import org.cwepg.hr.CaptureManager;
 import org.cwepg.hr.DbCopier;
@@ -828,6 +834,14 @@ class TinyConnection implements Runnable {
                 } catch (Exception e) { 
                     response += e.getMessage(); 
                 }
+                System.out.println(new Date() + " " + response);
+                out.print(HEAD + response + FOOT);
+            } else if (action.equals("/token")) {
+                String username = (String)request.get("username");
+                String password = (String)request.get("password");
+                String url = "https://json.schedulesdirect.org/20141201/token";
+                String response = "Response to [" + url + "] was [" + HttpRequester.performPost(url, username, password, false) + "]";
+                response += "<br><br>" + HttpRequester.getLastError();
                 System.out.println(new Date() + " " + response);
                 out.print(HEAD + response + FOOT);
             } else {

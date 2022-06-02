@@ -114,18 +114,20 @@ public class CaptureDetails implements Comparable, Cloneable {
         executeDatabaseFunction("insert into", insertData[FIELDS], insertData[VALUES]);
     }
 
-    public void updateCaptureEndEvent(String signalDetails, int nonDotCount) {
+    public void updateCaptureEndEvent(String signalDetails, int nonDotCount, int durationMinutes) {
         loadDetails(signalDetails); // instance variables are set here, such as tsmiss
         this.endEvent = new Date(new Date().getTime() + 15000); // Add 15 seconds to the end time because it truncates seconds 
         String[] updateData = getSignalQualityUpdateData(true);
         executeDatabaseFunction("update", updateData[FIELDS], updateData[VALUES]);
+        int strengthValue = getStrengthValue(durationMinutes);
         // DRS 20170215 - Added 'if'
         try {
-            if (Integer.parseInt(tsmiss) > 99 || nonDotCount > 20) {
+            // DRS 20220519 - replaced tsmiss in decision instead of tsmiss, which isn't reported in HD4K tuner.
+            if (strengthValue < 7 || nonDotCount > 20) {
                 Emailer emailer = CaptureManager.getEmailer();
                 if (emailer != null){
                     if (emailer.isValid()){
-                        emailer.sendWarningEmail(tunerName, channelKey, targetFile, tsmiss, nonDotCount);
+                        emailer.sendWarningEmail(tunerName, channelKey, targetFile, tsmiss, nonDotCount, strengthValue);
                     } else {
                         throw new Exception("emailer was not valid.");
                     }
@@ -138,6 +140,7 @@ public class CaptureDetails implements Comparable, Cloneable {
         }
     }
     
+    /*
     public void insertAll(){
         boolean writeToDatabase = true;
         String[] insertData = getCaptureInsertData(true, writeToDatabase);
@@ -145,6 +148,7 @@ public class CaptureDetails implements Comparable, Cloneable {
         String[] updateData = getSignalQualityUpdateData(true);
         executeDatabaseFunction("update", updateData[FIELDS], updateData[VALUES]);
     }
+    */
 
     public String[] getCaptureInsertData(boolean useNow, boolean writeToDatabase) {
         String toDateFormattingStart = "TO_DATE('";
@@ -154,8 +158,9 @@ public class CaptureDetails implements Comparable, Cloneable {
             toDateFormattingEnd = "'~";
         }
         Date dateToUse = this.startEvent;
-        if (useNow){
+        if (useNow || this.startEvent == null){
             dateToUse = new Date();
+            this.startEvent = dateToUse;  // 20200512 - Fix unpopulated startEvent problem
         } 
         StringBuffer fields = new StringBuffer();
         StringBuffer values = new StringBuffer();
@@ -641,23 +646,39 @@ public class CaptureDetails implements Comparable, Cloneable {
         return this.getChannelTunerKey() + " tunsnq:" + this.tunsnq + " tmiss:" + this.tsmiss;
     }
 
-    // DRS 20220519 - Rewrote this method based on observation of signal data values.
+    
     public Integer getStrengthValue() {
+        int durationMinutes = 60;
+        if (this.endEvent != null && this.startEvent != null) {
+            durationMinutes = (int) ((this.endEvent.getTime() - this.startEvent.getTime()) / 1000 / 60);
+        } else {
+            System.out.println(new Date() + " ERROR: Unable to determine length of capture " + this.startEvent + " " + this.endEvent + " Using 60 minutes as a default.");
+        }
+        return getStrengthValue(durationMinutes);
+    }
+
+
+    // DRS 20220519 - Rewrote this method based on observation of signal data values.
+    public Integer getStrengthValue(int durationMinutes) {
+        if (durationMinutes < 0) {
+            System.out.println(new Date() + " ERROR: durationMinutes was not assigned.  Using 60 minutes.");
+            durationMinutes = 60;
+        }
+        String lastParsed = "(undefined)";
         try {
-            System.out.println(new Date() + "Values must be good to return a strength:  tunlock:" + this.tunlock + " tste:" + this.tste + " tunss:" + this.tunss + " tunsnq:" + this.tunsnq + " start:" + this.startEvent.getTime() + " end:" + this.endEvent.getTime());
-            float minutes = ((this.endEvent.getTime() - this.startEvent.getTime())/1000F)/60F;
-            float te = Float.parseFloat(this.tste);
-            float ss = Float.parseFloat(this.tunss);
-            float sq = Float.parseFloat(this.tunsnq);
+            System.out.println(new Date() + " Values must be good to return a strength:  tunlock:" + this.tunlock + " tste:" + this.tste + " tunss:" + this.tunss + " tunsnq:" + this.tunsnq );
+            float te = Float.parseFloat(this.tste); lastParsed = "te";
+            float ss = Float.parseFloat(this.tunss); lastParsed = "ss";
+            float sq = Float.parseFloat(this.tunsnq); lastParsed = "sq";
             if ("none".equals(this.tunlock)) return 0;
-            if (te/minutes/1000 > 10F) return 1;
-            if (te/minutes/1000 > 3F) return 2;
-            if (te/minutes/1000 > 0F) return 7;
+            if (te/durationMinutes/1000 > 10F) return 1;
+            if (te/durationMinutes/1000 > 3F) return 2;
+            if (te/durationMinutes/1000 > 0F) return 7;
             if (ss < 100 && sq < 100) return 8;
             if (ss == 100 && sq == 100) return 10;
             return 9;
         } catch (Throwable t) {
-            System.out.println(new Date() + " ERROR: Failed to parse values in get signal strength. " + this); 
+            System.out.println(new Date() + " ERROR: Failed to parse values in get signal strength. Last parsed [" + lastParsed + "]. " + this); 
             System.out.println(new Date() + " ERROR: " + t.getClass().getName() + " " + t.getMessage());
         }
         return -1;
@@ -701,7 +722,8 @@ public class CaptureDetails implements Comparable, Cloneable {
             CaptureDetails details = new CaptureDetails(capture);
             //String tableKey = "200911011305|1013FADA-1|11.1:1-8vsb";
             System.out.println(details);
-            details.updateCaptureEndEvent(data2, 0);
+            int durationMinutes = 30;
+            details.updateCaptureEndEvent(data2, 0, durationMinutes);
         }
         
         boolean testDatabaseRead = true;

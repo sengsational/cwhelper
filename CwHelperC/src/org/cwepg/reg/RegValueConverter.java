@@ -9,6 +9,7 @@ import java.util.Map;
 public class RegValueConverter {
 
     public static int getIntFromBinary(byte[] buf, int offset, int size) throws Exception {
+        if (buf == null)  throw new Exception("getIntFromBinary(): Data was null.");
         int result = -1;
         if (size == 4){
             result = (((int)(buf[offset] & 0xff)) + (((int)(buf[offset + 1] & 0xff)) << 8) + (((int)(buf[offset + 2] & 0xff)) << 16) + (((int)(buf[offset + 3] & 0xff)) << 24));

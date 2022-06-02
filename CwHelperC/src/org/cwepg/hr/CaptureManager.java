@@ -526,7 +526,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             capture.removeIcon();
             System.out.println(new Date() + " Saving capture details " + capture);
             try {
-                new CaptureDetails(capture).updateCaptureEndEvent(capture.getSignalQualityData(), capture.getNonDotCount());
+                int durationMinutes = capture.slot.getDurationMinutes();
+                new CaptureDetails(capture).updateCaptureEndEvent(capture.getSignalQualityData(), capture.getNonDotCount(), durationMinutes);
             } catch (Throwable t){
                 System.out.println(new Date() + " Could not save capture details! " + t.getMessage());
                 System.err.println(new Date() + " Could not save capture details! " + t.getMessage());

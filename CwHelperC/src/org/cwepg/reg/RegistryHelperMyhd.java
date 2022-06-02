@@ -81,13 +81,19 @@ public class RegistryHelperMyhd {
             int[][] favs = getFavoritesNumbers(data, favoriteCount);
             
             data = (byte[])map.get("INPUT1_CH_DATA_VCH_QAM");
-            addChannelsMyhd(data, input1Count, list, tuner, 1, favs[0]);
+            if (data == null) data = (byte[])map.get("INPUT1_CH_DATA_VCH");
+            if (data != null) addChannelsMyhd(data, input1Count, list, tuner, 1, favs[0]);
+            else System.out.println(new Date() + " ERROR: channel data not found for MyHD input 1 in the registry");
+
             data = (byte[])map.get("INPUT2_CH_DATA_VCH_QAM");
-            addChannelsMyhd(data, input2Count, list, tuner, 2, favs[1]);
+            if (data == null) data = (byte[])map.get("INPUT2_CH_DATA_VCH");
+            if (data != null) addChannelsMyhd(data, input2Count, list, tuner, 2, favs[1]);
+            else System.out.println(new Date() + " ERROR: channel data not found for MyHD input 2 in the registry");
+            
             
         } catch (Exception e) {
-            System.out.println(new Date() + " " + e.getMessage());
-            System.err.println(new Date() + " " + e.getMessage());
+            System.out.println(new Date() + " ERROR: getChannelsMyhd( tuner ) " + e.getClass().getName() + " " + e.getMessage());
+            System.err.println(new Date() + " ERROR: getChannelsMyhd( tuner ) " + e.getClass().getName() + " " + e.getMessage());
             e.printStackTrace();
         }
         return list;
@@ -109,44 +115,55 @@ public class RegistryHelperMyhd {
 
     private static void addChannelsMyhd(byte[] data, int inputCount, ArrayList<Channel> list, Tuner tuner, int iinput, int[] favs) throws Exception {
         Channel channel = null;
+        boolean stackTracePrinted = false;
         //01 00 00 00 00 00 00 00 (0-7)
         //1B 00 12 00 01 01 00 00 (8-15)
         //03 00 00 00 02 00 00 00 (16-23)
         for (int i = 0; i < inputCount; i++) {
-            int protocol = RegValueConverter.getIntFromBinary(data, i * 40,      4); //0,1,2,3      - 01 00 00 00   (1)
-            int signal = RegValueConverter.getIntFromBinary  (data, i * 40 + 4,  4); //4,5,6,7      - 00 00 00 00   (0)
-            int rf = RegValueConverter.getIntFromBinary      (data, i * 40 + 8,  1); //8            - 1B            (27)
-            int virm = RegValueConverter.getIntFromBinary    (data, i * 40 + 10, 2); //10,11        - 12 00         (18)
-            int virs = RegValueConverter.getIntFromBinary    (data, i * 40 + 12, 1); //12           - 01            (1)
-            int rfsub = RegValueConverter.getIntFromBinary   (data, i * 40 + 13, 1); //13           - 01            (1) 
-            int prog = RegValueConverter.getIntFromBinary    (data, i * 40 + 16, 4); //16           - 03 00 00 00   (3)
-            int srcid = RegValueConverter.getIntFromBinary   (data, i * 40 + 20, 4); //20           - 02 00 00 00   (2)
-            int input = iinput;
-            String description = RegValueConverter.getStringFromBinary(data, i * 40 + 24);
-            if (signal != 3){
-                channel = new Channel(description, tuner, protocol, signal, rf, virm, virs, rfsub, prog, input, srcid);
-                list.add(channel);
-            } else {
-                String airCat = "Cat";
-                String protocolString = "analogCable";
-                if (protocol == 1) {
-                    airCat = "Air";
-                    protocolString = "analogAir";
-                }
-                if (description != null && !description.trim().equals("")){
-                    channel = new ChannelAnalog(description, tuner, protocolString, rf, virm, airCat, input);
+            try {
+                int protocol = RegValueConverter.getIntFromBinary(data, i * 40,      4); //0,1,2,3      - 01 00 00 00   (1)
+                int signal = RegValueConverter.getIntFromBinary  (data, i * 40 + 4,  4); //4,5,6,7      - 00 00 00 00   (0)
+                int rf = RegValueConverter.getIntFromBinary      (data, i * 40 + 8,  1); //8            - 1B            (27)
+                int virm = RegValueConverter.getIntFromBinary    (data, i * 40 + 10, 2); //10,11        - 12 00         (18)
+                int virs = RegValueConverter.getIntFromBinary    (data, i * 40 + 12, 1); //12           - 01            (1)
+                int rfsub = RegValueConverter.getIntFromBinary   (data, i * 40 + 13, 1); //13           - 01            (1) 
+                int prog = RegValueConverter.getIntFromBinary    (data, i * 40 + 16, 4); //16           - 03 00 00 00   (3)
+                int srcid = RegValueConverter.getIntFromBinary   (data, i * 40 + 20, 4); //20           - 02 00 00 00   (2)
+                int input = iinput;
+                String description = RegValueConverter.getStringFromBinary(data, i * 40 + 24);
+                if (signal != 3){
+                    channel = new Channel(description, tuner, protocol, signal, rf, virm, virs, rfsub, prog, input, srcid);
                     list.add(channel);
-                } else{
-                    channel = new ChannelAnalog("" + rf, tuner, protocolString, rf, virm, airCat, input);
-                    list.add(channel);
-                }
-            }
-            if (channel != null){
-                for (int j = 0; j < favs.length; j++){
-                    if (favs[j] == i){
-                        channel.setFavorite();
-                        break;
+                } else {
+                    String airCat = "Cat";
+                    String protocolString = "analogCable";
+                    if (protocol == 1) {
+                        airCat = "Air";
+                        protocolString = "analogAir";
                     }
+                    if (description != null && !description.trim().equals("")){
+                        channel = new ChannelAnalog(description, tuner, protocolString, rf, virm, airCat, input);
+                        list.add(channel);
+                    } else{
+                        channel = new ChannelAnalog("" + rf, tuner, protocolString, rf, virm, airCat, input);
+                        list.add(channel);
+                    }
+                }
+                if (channel != null){
+                    for (int j = 0; j < favs.length; j++){
+                        if (favs[j] == i){
+                            channel.setFavorite();
+                            break;
+                        }
+                    }
+                }
+                
+            } catch (Throwable t) {
+                System.out.println(new Date() + " ERROR: addChannelsMyhd( tuner ) " + t.getClass().getName() + " " + t.getMessage());
+                System.err.println(new Date() + " ERROR: addChannelsMyhd( tuner ) " + t.getClass().getName() + " " + t.getMessage());
+                if (!stackTracePrinted) {
+                    t.printStackTrace();
+                    stackTracePrinted = true;
                 }
             }
         }

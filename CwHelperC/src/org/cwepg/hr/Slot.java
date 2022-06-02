@@ -523,4 +523,15 @@ public class Slot {
         return DFSS.format(end.getTime());
     }
 
+    public int getDurationMinutes() {
+        int durationMinutes = -1;
+        try {
+            Long ms = end.getTimeInMillis() - start.getTimeInMillis();
+            durationMinutes = (int) (ms / 1000 / 60);
+        } catch (Throwable t) {
+            System.out.println("ERROR: Unable to get duration minutes. " + t.getClass().getName() + " " + t.getMessage());
+        }
+        return durationMinutes;
+    }
+
 }

@@ -145,7 +145,7 @@ public class Emailer extends TimedEvent {
         }
     }
     
-    public void sendWarningEmail(String tunerName, String channelKey, String targetFile, String tsmiss, int nonDotCount) {
+    public void sendWarningEmail(String tunerName, String channelKey, String targetFile, String tsmiss, int nonDotCount, int strengthValue) {
         System.out.println(new Date() + " Sending quality problem email to " + Emailer.sendUsers);
         try {
             Session session = getSession();
@@ -160,7 +160,8 @@ public class Emailer extends TimedEvent {
             msg.setFrom(new InternetAddress(logonUser));
             msg.setRecipients(Message.RecipientType.TO, getToAddresses());
             msg.setSubject("Possible Poor Quality Recording");
-            msg.setContent("The file " + targetFile + " might have too many dropouts.  There were " + tsmiss + " misses, and " + nonDotCount + " continuity errors.  This was on tuner " + tunerName + " and channel " + channelKey + ".","text/plain");
+            String tsMissMessage = "-1".equals(tsmiss)?"":" there were " + tsmiss + " misses, ";
+            msg.setContent("The file " + targetFile + " might have too many dropouts.  The strength value was " + strengthValue + ", " + tsMissMessage + "and " + nonDotCount + " continuity errors.  This was on tuner " + tunerName + " and channel " + channelKey + ".","text/plain");
             SMTPTransport transport =(SMTPTransport)session.getTransport("smtp");//ok
             transport.connect();
             transport.sendMessage(msg, msg.getAllRecipients());
