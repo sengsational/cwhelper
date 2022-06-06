@@ -81,14 +81,14 @@ public class RegistryHelperMyhd {
             int[][] favs = getFavoritesNumbers(data, favoriteCount);
             
             data = (byte[])map.get("INPUT1_CH_DATA_VCH_QAM");
-            if (data == null) data = (byte[])map.get("INPUT1_CH_DATA_VCH");
+            //if (data == null) data = (byte[])map.get("INPUT1_CH_DATA_VCH"); // Data in the registry under this name is not formatted the same
             if (data != null) addChannelsMyhd(data, input1Count, list, tuner, 1, favs[0]);
-            else System.out.println(new Date() + " ERROR: channel data not found for MyHD input 1 in the registry");
+            else System.out.println(new Date() + " ERROR: channel data not found for MyHD input 1 in the registry.  No channels will be built.");
 
             data = (byte[])map.get("INPUT2_CH_DATA_VCH_QAM");
-            if (data == null) data = (byte[])map.get("INPUT2_CH_DATA_VCH");
+            //if (data == null) data = (byte[])map.get("INPUT2_CH_DATA_VCH"); // Data in the registry under this name is not formatted the same
             if (data != null) addChannelsMyhd(data, input2Count, list, tuner, 2, favs[1]);
-            else System.out.println(new Date() + " ERROR: channel data not found for MyHD input 2 in the registry");
+            else System.out.println(new Date() + " ERROR: channel data not found for MyHD input 2 in the registry.  No channels will be built.");
             
             
         } catch (Exception e) {
