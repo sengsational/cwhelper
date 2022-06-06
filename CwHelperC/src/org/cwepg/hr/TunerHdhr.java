@@ -269,6 +269,10 @@ public class TunerHdhr extends Tuner {
             }
         }
     }
+
+    public void setIpAddress(String ipAddressTuner) {
+        this.ipAddressTuner = ipAddressTuner;
+    }
     
     public String getFullName() {
         return this.id + "-" + this.number;

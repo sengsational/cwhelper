@@ -91,12 +91,17 @@ public class TunerManager {
             Tuner existingTuner = tuners.get(iter.next());
             if (refreshedTuners.contains(existingTuner)){
                 // The two lists contain the same item.
-                // This means we don't need to do anything.
-                // We just remove the tuner from the refreshedTuners list
-                // (since anything left in the list, we will be adding later).
+                // DRS 20220606 - Added 7 - Copy over the IP from the refreshed tuner to the existing tuner, then we just remove the tuner from the refreshedTuners list  (since anything left in the list, we will be adding later).
+                boolean refreshLineup = true;
+                if (existingTuner instanceof TunerHdhr) {
+                    TunerHdhr existingHdhrTuner = (TunerHdhr)existingTuner;
+                    TunerHdhr matchingTuner = getMatchingTuner(refreshedTuners, existingTuner);
+                    existingHdhrTuner.setIpAddress(matchingTuner.ipAddressTuner);
+                    refreshLineup = false; // no need to refresh lineup...only the IP address changed.
+                }
                 refreshedTuners.remove(existingTuner);
                 // but the old (existing tuner) might have different lineup, so refresh that
-                refreshLineup(existingTuner); // THIS CLEARS ANY EXISTING CHANNELS
+                if (refreshLineup) refreshLineup(existingTuner); // THIS CLEARS ANY EXISTING CHANNELS // DRS 20220606 - Added Conditional
             } else {
                 // this existing tuner is changed or deleted
                 // see if we can find it by name
@@ -157,7 +162,16 @@ public class TunerManager {
         return this.tuners.size();
 	}
 	
-	// DRS 20190422 - Added method
+	// DRS 20220606 - Added method
+	private static TunerHdhr getMatchingTuner(ArrayList<Tuner> refreshedTuners, Tuner existingTuner) {
+	    for (Tuner tuner : refreshedTuners) {
+            if (tuner.equals(existingTuner)) return (TunerHdhr)tuner;
+        }
+	    System.out.println(new Date() + " ERROR: Did not find matching tuner for " + existingTuner.id);
+        return (TunerHdhr)existingTuner;
+    }
+
+    // DRS 20190422 - Added method
 	// DRS 20210415 - Changed non-responsive tuners to instance variable (delete later) - Concurrent Modification Exception
     public void removeHdhrByUrl(String url) {
         nonResponsiveTuners = new ArrayList<Tuner>();
@@ -382,17 +396,17 @@ public class TunerManager {
         TreeSet<String> devices = new TreeSet<String>(); // Working list.  May include non-live to start with, added from discover.txt.
 
         // Get file devices (from last discover.txt file)
-        String fileDiscoverText = getFileDiscoverText();
-        ArrayList<String> fileDevices = findTunerDevicesFromText(fileDiscoverText, false); // each string looks like this "hdhomerun device 1010CC54 found at 192.168.3.209"
-        System.out.println(new Date() + " Got " + fileDevices.size() + " items from discover.txt");
+        String fileDiscoverText = getFileDiscoverText(); // each fileDiscoverText line looks like this "hdhomerun device 1010CC54 found at 192.168.3.209"
+        ArrayList<String> fileDevices = findTunerDevicesFromText(fileDiscoverText, false); // returns a List of String like [1076C3A7, 1075D4B1, 1080F19F]  
         devices.addAll(fileDevices);
+        System.out.println(new Date() + " Got " + fileDevices.size() + " items from discover.txt [" + getDeviceIpMapAsString(devices) + "]");
 
         // Get live devices
         String liveDiscoverText = getLiveDiscoverText(CaptureManager.discoverRetries, CaptureManager.discoverDelay);
         ArrayList<String> liveDevices = findTunerDevicesFromText(liveDiscoverText, true); // devices.txt is always written out here (we read the old one already).
-        System.out.println(new Date() + " Got " + liveDevices.size() + " items from active discover command.");
+        System.out.println(new Date() + " Got " + liveDevices.size() + " items from active discover command. [" +  getDeviceIpMapAsString(devices) + "]");
         devices.addAll(liveDevices);
-        System.out.println(new Date() + " Total of  " + devices.size() + " items, accounting for duplication.");
+        System.out.println(new Date() + " Total of  " + devices.size() + " items, accounting for duplication. [" +  getDeviceIpMapAsString(devices) + "]");
         
         // Only if we picked-up a different device from the discover.txt file do we go into this logic that eliminates devices that do not come alive on retry
         if (liveDevices.size() < devices.size() ) {
@@ -404,9 +418,18 @@ public class TunerManager {
         // DRS 20181103 - Adding IP address to HDHR tuners
         // DRS 20220605 - Comment 1, Add 1 - always use live discover text for IP addresses.
         //HashMap<String, String> ipAddressMap = getIpMap(fileDiscoverText, liveDiscoverText);
-        HashMap<String, String> ipAddressMap = getIpMap("", liveDiscoverText);
+        HashMap<String, String> ipAddressMap = getIpMap(fileDiscoverText, liveDiscoverText);
+
+        // DRS 20220606 - Added 6 - Debug
+        //System.out.print(new Date() + " DEBUG: [");
+        //Set<String> keys = ipAddressMap.keySet();
+        //for (String key : keys) {
+        //    System.out.print(key + " " + ipAddressMap.get(key) + ", ");
+        //}
+        //System.out.println("]");
+
         // DRS 20181025 - Adding model to HDHR tuners
-        HashMap<String, Integer> liveModelMap = getLiveModelMap(liveDevices, 1, CaptureManager.discoverDelay, ipAddressMap);
+        HashMap<String, Integer> liveModelMap = getLiveModelMap(liveDevices, 1, CaptureManager.discoverDelay);
         
         // Loop final list of devices
         for (String device : devices) {
@@ -425,6 +448,21 @@ public class TunerManager {
         return tunerList;
     }
     
+    // DRS 20220606 - Added method
+    private static String getDeviceIpMapAsString(TreeSet<String> devices) {
+        StringBuffer buf = new StringBuffer();
+        for (String device : devices) {
+            buf.append(device).append("/n");
+        }
+        HashMap<String, String> ipAddressMap = getIpMap("", buf.toString());
+        buf = new StringBuffer();
+        Set<String> keys = ipAddressMap.keySet();
+        for (String key : keys) {
+            buf.append(key).append(" ").append(ipAddressMap.get(key)).append(", ");
+        }
+        return buf.toString();
+    }
+
     //DRS 20130126 - Added method
     private int getTunerCountFromRegistry(String device) {
         int tunerCount = 2; // minimum number is 2, even if we can't get this data out of the registry
@@ -450,7 +488,7 @@ public class TunerManager {
     private TreeSet<String> eliminateDevicesThatDoNotComeAliveOnRetry(TreeSet<String> devices, ArrayList<String> liveDevices, ArrayList<String> fileDevices) {
         boolean writeOutputToFile = true; // this is the best discover.txt file we'll have, go ahead and write it.
         HashSet<String> deadDevices = new HashSet<String>();
-        for (String device : devices) {
+        for (String device : devices) {  // device is just something like "1076C3A7"
             boolean reallyDeadDevice = true;
             if (liveDevices.contains(device)){
                 // Fine.  Device is live and we will add it later
@@ -541,36 +579,21 @@ public class TunerManager {
 
 
     // DRS 20181025 - Added Method
-    private HashMap<String, Integer> getLiveModelMap(ArrayList<String> liveDevices, int retryCount, int retryDelay, HashMap<String,String> ipAddressMap) {
+    // DRS 20220606 - Removed ipAddress (not needed), Removed dead code.
+    private HashMap<String, Integer> getLiveModelMap(ArrayList<String> liveDevices, int retryCount, int retryDelay) {
         HashMap<String, Integer> liveCapabilityMap = new HashMap<String, Integer>();
         devices:
         for (String device : liveDevices) {
             for (int j = retryCount; j > 0; j--) {
                 try {
-                    String ipAddress = ipAddressMap.get(device);
-                    
                     String vChannelResponseString = getLiveVchannelText(device).toUpperCase();      // Old tuners say "...UNKNOWN...", New tuners say "" or "...RESOURCE LOCKED..." or (something else)
                     String hwmodelResponseString = getLiveModelText(device).toUpperCase();          // Old tuners say "...HDHR-US...", New tuners say (something else)
                     
                     //boolean liveModelIsEmpty = vChannelResponseString.isEmpty();                            // Possible New tuner
                     boolean vChannelResponseContainsUnknown = vChannelResponseString.contains("UNKNOWN");   // Old tuner for sure
                     boolean liveModelContainsKnownOldModel = hwmodelResponseString.contains("HDHR-US") || hwmodelResponseString.contains("HDHR3-US") ;   // DRS 20191219 - Added HDHR3-US as old   // Old tuner for sure
-                    boolean hasShortLineupXml = false;
                     
-                    boolean shortLineupDetectionEnabled = false; // DRS 20191219 - Removed short lineup xml
-                    if (shortLineupDetectionEnabled) {
-                        if (!(vChannelResponseContainsUnknown || liveModelContainsKnownOldModel)) { // if NOT an old tuner (for sure), it could be a new tuner that we need to treat as old
-                            String lineupResponseString =  getXmlOutputFromDevice(ipAddress, false);        // New tuners with proper firmware won't have only an XML envelope without content
-                            if (lineupResponseString.equals("(short lineup)")) {
-                                hasShortLineupXml = true;
-                                System.out.println(new Date() + " This tuner had a short lineup.  Getting treated as 'old' tuner.");
-                            } else if (lineupResponseString.equals("(unavailable)")) {
-                                System.out.println(new Date() + " Unable to get lineup xml from tuner.  Leaving as new tuner.");
-                            }
-                        }
-                    }
-                    
-                    boolean isOldTuner = vChannelResponseContainsUnknown || liveModelContainsKnownOldModel || hasShortLineupXml;
+                    boolean isOldTuner = vChannelResponseContainsUnknown || liveModelContainsKnownOldModel;
                     if (CaptureManager.allTraditionalHdhr) {
                         if (!isOldTuner) System.out.println(new Date() + " isOldTuner set to true (override) based on allTraditionalHdhr setting.");
                         isOldTuner = true;
@@ -920,7 +943,9 @@ public class TunerManager {
         return selectedTuner;
     }
     
+    // returns a list of String like [1076C3A7, 1075D4B1, 1080F19F] 
     private ArrayList<String> findTunerDevicesFromText(String output, boolean writeToFile) {
+        // output looks like this [hdhomerun device 1076C3A7 found at 169.254.246.92]
     	ArrayList<String> result = new ArrayList<String>();
     	try {
 			BufferedReader in = new BufferedReader(new StringReader(output));
@@ -934,7 +959,7 @@ public class TunerManager {
                     if (t.equals("device") && tok.hasMoreTokens()){
                         String deviceId = tok.nextToken();
                         try {
-                            Integer.parseInt(deviceId, 16);
+                            Integer.parseInt(deviceId, 16); // just a validation... we don't actually use the converted value.
                             result.add(deviceId);
                         } catch (Throwable e){
                             // System.out.println(deviceId + " followed the word device, but wasn't hex string");
@@ -2211,7 +2236,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             liveMap.add("1010CC54");
             liveMap.add("1013FADA");
             HashMap<String, String> ipAddressMap = new HashMap<String, String>();
-            HashMap<String, Integer> liveModelMap = tm.getLiveModelMap(liveMap, 1, 5, ipAddressMap);
+            HashMap<String, Integer> liveModelMap = tm.getLiveModelMap(liveMap, 1, 5);
             for (String key : liveModelMap.keySet()){
                 System.out.println("key: " + key + " value: " + liveModelMap.get(key));
             }
