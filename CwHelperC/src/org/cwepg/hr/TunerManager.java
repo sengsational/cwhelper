@@ -383,7 +383,7 @@ public class TunerManager {
 
         // Get file devices (from last discover.txt file)
         String fileDiscoverText = getFileDiscoverText();
-        ArrayList<String> fileDevices = findTunerDevicesFromText(fileDiscoverText, false);
+        ArrayList<String> fileDevices = findTunerDevicesFromText(fileDiscoverText, false); // each string looks like this "hdhomerun device 1010CC54 found at 192.168.3.209"
         System.out.println(new Date() + " Got " + fileDevices.size() + " items from discover.txt");
         devices.addAll(fileDevices);
 
@@ -402,7 +402,9 @@ public class TunerManager {
         }
 
         // DRS 20181103 - Adding IP address to HDHR tuners
-        HashMap<String, String> ipAddressMap = getIpMap(fileDiscoverText, liveDiscoverText);
+        // DRS 20220605 - Comment 1, Add 1 - always use live discover text for IP addresses.
+        //HashMap<String, String> ipAddressMap = getIpMap(fileDiscoverText, liveDiscoverText);
+        HashMap<String, String> ipAddressMap = getIpMap("", liveDiscoverText);
         // DRS 20181025 - Adding model to HDHR tuners
         HashMap<String, Integer> liveModelMap = getLiveModelMap(liveDevices, 1, CaptureManager.discoverDelay, ipAddressMap);
         
@@ -941,7 +943,7 @@ public class TunerManager {
                 }
 			}
 			in.close();
-			// if we get valid discover output, write the file
+			// if we get valid discover output, write the file - overwriting, not appending
 			if (result.size() > 0 && writeToFile){
 				BufferedWriter out = new BufferedWriter(new FileWriter(CaptureManager.dataPath + "discover.txt"));
 				out.write(new String(buf));
@@ -952,7 +954,17 @@ public class TunerManager {
 		return result;
 	}
     
-    private HashMap<String, String> getIpMap(String fileDiscoverText, String liveDiscoverText) {
+    // discover text looks like this [hdhomerun device 1075D4B1 found at 192.168.1.16]
+    // discover text input to hmap might look like this:
+    //    1076C3A7 169.254.217.171 <<< Conflict
+    //    1075D4B1 192.168.1.16
+    //    1080F19F 192.168.1.18
+    //    1076C3A7 169.254.3.188  <<< Conflict
+    //    1075D4B1 192.168.1.16
+    //    1080F19F 192.168.1.18
+    //    The conflict must go to the liveDiscoverText, not the fileDiscoverText
+    
+    private static HashMap<String, String> getIpMap(String fileDiscoverText, String liveDiscoverText) {
         HashMap<String, String> result = new HashMap<String, String>();
         for (int i = 0; i < 2; i++ ) {
             try {
@@ -2134,8 +2146,19 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
     }
     
     public static void main(String[] args) throws Exception {
+        boolean testIpMap = true;
+        if (testIpMap) {
+            String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.3.188\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
+            fileDiscoverText = "";
+            String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.217.171\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
+            HashMap<String, String> ipMap = getIpMap(fileDiscoverText, liveDiscoverText);
+            Set keys = ipMap.keySet();
+            for (Object object : keys) {
+                System.out.println(object + " " + ipMap.get(object));
+            }
+        }
         
-        boolean testChannelSort = true;
+        boolean testChannelSort = false;
         if (testChannelSort) {
             TunerManager.skipFusionInit = true;
             TunerManager.skipRegistryForTesting = true;
