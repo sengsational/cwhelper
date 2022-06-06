@@ -19,7 +19,8 @@ public class BuildExeFromClassFiles {
     /**
      * Before running this class, 
      *      Commit the changes to source control (the version number is used later), then 
-     *      Use Eclipse IDE "Make runnable jar" process.
+     *      Run the main method here, ending in "...CwHelper.jar ERROR: FILE NOT FOUND", then
+     *      Use Eclipse IDE "Make runnable jar" process (the version number will be aligned by this second run).
      * 
      * This class  
      *          1) pulls the version from the source control system
@@ -28,7 +29,7 @@ public class BuildExeFromClassFiles {
      *          4) packages the class files as an EXE file using Jar2Exe, creating CwHelper.exe
      *          5) zips the EXE file into CwHelper(version).zip (so it can be managed on a Google drive, that doesn't allow EXE files)
      *          6) renames the (already created) runnable jar file to include the version in the file name
-     *          7) signs the jar file with 
+     *          7) signs the jar file
      *          
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
