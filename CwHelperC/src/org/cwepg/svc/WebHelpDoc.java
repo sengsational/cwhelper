@@ -89,11 +89,6 @@ public class WebHelpDoc {
         buf.append("<tr><td>/shutdown</td><td>-</td><td>-</td><td>Stop active captures, if any, and stop the service.  The web interface stops too.</td></tr>\n");
         buf.append("<tr><td>/log</td><td>-</td><td>-</td><td>Displays current log file.</td></tr>\n");
         buf.append("<tr><td>/properties</td><td>-</td><td>-</td><td>Displays properties held in the CaptureManager.</td></tr>\n");
-        buf.append("<tr><td>/dbcopy</td><td>-</td><td>-</td><td>Copy cw_epg.mdb from the source to the local machine</td></tr>\n");
-        buf.append("<tr><td>-</td><td>source</td><td>ie 192.168.1.45</td><td>IP number or name of the machine with the share.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>share</td><td>-</td><td>Share name. Optional. Defaults to CW_EPG_DATA.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>timeout</td><td>-</td><td>Timeout in seconds.  Defaults to 20 seconds.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>lastresult</td><td>ie true</td><td>Optional, but if not specified, the command will return immediately (not waiting for the final result).  Also may be specified alone, after an earlier /dbcopy.</td></tr>\n");
         buf.append("<tr><td>/emailer</td><td>-</td><td>-</td><td>DEPRICATED (do not use).  Use CW-EPG emailer instead.  Sends email alerts for recent recordings, scheduled recordings, and disk capacity.</td></tr>\n");
         buf.append("<tr><td>-</td><td>hourtosend</td><td>ie 16</td><td>To send at 4:30 PM (defaults to 5PM)</td></tr>\n");
         buf.append("<tr><td>-</td><td>minutetosend</td><td>ie 30</td><td>To send at 4:30 PM (defaults to 5PM)</td></tr>\n");

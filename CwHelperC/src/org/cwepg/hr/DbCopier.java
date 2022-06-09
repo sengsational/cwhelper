@@ -9,8 +9,9 @@ import java.util.Date;
 import org.cwepg.svc.CommandLine;
 import org.cwepg.svc.DbCopyCommandLine;
 
-public class DbCopier implements Runnable {
+public class DbCopier { //implements Runnable {
     
+    /*
     static DbCopier copier = null;
     static final String DEFAULT_SHARE = "CW_EPG_DATA";
     int timeout = 20;
@@ -90,7 +91,7 @@ public class DbCopier implements Runnable {
     }
     
     public static void main(String[] args) {
-        DbCopier copier = DbCopier.getInstance();
+        //DbCopier copier = DbCopier.getInstance();
         
         boolean testCopyAndReturn = false;
         if (testCopyAndReturn){
@@ -121,5 +122,5 @@ public class DbCopier implements Runnable {
         }
         
     }
-
+    */
 }

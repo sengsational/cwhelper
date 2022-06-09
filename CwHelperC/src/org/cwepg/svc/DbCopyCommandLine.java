@@ -8,7 +8,7 @@ import org.cwepg.hr.CaptureManager;
 import org.cwepg.reg.RegistryHelperMyhd;
 
 public class DbCopyCommandLine extends CommandLine {
-	
+	/*
     public DbCopyCommandLine(String commands, int maxSeconds){
         //COPY /B \\<MasterIP>\CW_EPG_DATA\cw_epg.mdb <cw_epg data folder>\cw_epg.mdb 
         cmds.add("cmd.exe");
@@ -42,6 +42,7 @@ public class DbCopyCommandLine extends CommandLine {
         boolean goodResult = cl.runProcess(); // blocks
         if (!goodResult) throw new Exception("failed to handle " + cl.getCommands() + "\n" + cl.getErrors());
 	}
+	*/
 }
 
 

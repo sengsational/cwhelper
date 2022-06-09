@@ -683,26 +683,26 @@ class TinyConnection implements Runnable {
                 } else {
                     out.print(HEAD + tunerManager.getLastReason() + FOOT);
                 }
-            } else if (action.equals("/dbcopy")){ // ************* DBCOPY ***************
+            //} else if (action.equals("/dbcopy")){ // ************* DBCOPY ***************
                 //dbcopy?source=<MasterIP>&share=<share name>&lastresult=true
-                String source = (String)request.get("source");
-                String share = (String)request.get("share");
-                String timeout = (String)request.get("timeout");
-                String lastResult = (String)request.get("lastresult");
-                DbCopier copier = DbCopier.getInstance();
-                try {
-                    if (lastResult == null && source != null){
-                        copier.startCopyAndReturn(source, share, timeout);
-                        out.print(HEAD + copier.getLastResult() + FOOT);
-                    } else if (source != null) {
-                        copier.copyAndWait(source, share, timeout);
-                        out.print(HEAD + copier.getLastResult() + FOOT);
-                    } else {
-                        throw new Exception("Need at least 'source' specified.");
-                    }
-                } catch (Exception e) {
-                    out.print(HEAD + "No dbcopy done: " + e.getMessage() + FOOT);
-                }
+            //    String source = (String)request.get("source");
+            //    String share = (String)request.get("share");
+            //    String timeout = (String)request.get("timeout");
+            //    String lastResult = (String)request.get("lastresult");
+            //    DbCopier copier = DbCopier.getInstance();
+            //    try {
+            //        if (lastResult == null && source != null){
+            //            copier.startCopyAndReturn(source, share, timeout);
+            //            out.print(HEAD + copier.getLastResult() + FOOT);
+            //        } else if (source != null) {
+            //            copier.copyAndWait(source, share, timeout);
+            //            out.print(HEAD + copier.getLastResult() + FOOT);
+            //        } else {
+            //            throw new Exception("Need at least 'source' specified.");
+            //        }
+            //    } catch (Exception e) {
+            //        out.print(HEAD + "No dbcopy done: " + e.getMessage() + FOOT);
+            //    }
             } else if (action.equals("/wakeupevent")){ // ************* WAKEUPEVENT ***************
                 String hourToSend = (String)request.get("hourtosend");
                 String minuteToSend = (String)request.get("minutetosend");
