@@ -1668,14 +1668,15 @@ public class TunerManager {
         } catch (Exception e){
             System.out.println(new Date() + "ERROR: Failed to parse sequence number " + e.getMessage());
         }
+        List<Capture> captures = getCaptures();
         int i = 0;
         boolean found = false;
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
-            Tuner tuner = iter.next();
-            List<Capture> captures = tuner.captures;
-            for (int j = 0; j < captures.size(); j++, i++){
-                if (seq == i){
-                    foundCapture = captures.get(j);
+        // DRS 20220611 - Change iteration to not involve tuners.
+        for (Iterator<Capture> iter = captures.iterator(); iter.hasNext(); i++) {
+            Capture capture = iter.next();
+            if (capture != null){
+                if (i == seq) {
+                    foundCapture = captures.get(i);
                     found = true;
                     break;
                 }
