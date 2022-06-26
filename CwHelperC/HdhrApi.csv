@@ -1,0 +1,11 @@
+Action,Command Line ,Http
+List active tuners,hdhomerun_config discover,
+Display model name,hdhomerun_config FFFFFFFF get /sys/hwmodel,
+Set lock key,hdhomerun_config set /tuner<n>/lockkey <nnnn>,
+Set modulation and frequency,hdhomerun_config FFFFFFFF key <nnnn> set /tuner<n>/channel <modulation>:<freq|ch> ,
+Display stream info,hdhomerun_config FFFFFFFF key <nnnn> set /tuner<n>/streaminfo,
+Set MPEG program filter,hdhomerun_config FFFFFFFF key <nnnn> set /tuner<n>/program <program number> ,
+Save to file,hdhomerun_config FFFFFFFF key <nnnn> save /tuner<n> save <file name> ,
+Clear modulation and frequency,hdhomerun_config FFFFFFFF key <nnnn> set /tuner<n>/channel none,
+Clear lock key,hdhomerun_config FFFFFFFF key <nnnn> set /tuner<n>/lockkey none,
+Force clear lock key,hdhomerun_config FFFFFFFF set /tuner<n>/lockkey force,
