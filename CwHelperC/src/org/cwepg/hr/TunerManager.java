@@ -388,25 +388,30 @@ public class TunerManager {
     public List<Tuner> countTunersHdhr(boolean addDevice){
         ArrayList<Tuner> tunerList = new ArrayList<Tuner>(); // To be returned from this method.  Live (including retry to get live), and not disabled.
 
-        if (!new File(CaptureManager.hdhrPath + File.separator + "hdhomerun_config.exe").exists()){
-            System.out.println("Could not find [" + new File(CaptureManager.hdhrPath + File.separator + "hdhomerun_config.exe" + "]"));
-            return tunerList;   // if no exe exists, return an empty tuner list without doing any work. 
-        }
-        
         TreeSet<String> devices = new TreeSet<String>(); // Working list.  May include non-live to start with, added from discover.txt.
 
         // Get file devices (from last discover.txt file)
         String fileDiscoverText = getFileDiscoverText(); // each fileDiscoverText line looks like this "hdhomerun device 1010CC54 found at 192.168.3.209"
         ArrayList<String> fileDevices = findTunerDevicesFromText(fileDiscoverText, false); // returns a List of String like [1076C3A7, 1075D4B1, 1080F19F]  
         devices.addAll(fileDevices);
-        System.out.println(new Date() + " Got " + fileDevices.size() + " items from discover.txt [" + getDeviceIpMapAsString(devices) + "]");
+        System.out.println(new Date() + " Got " + fileDevices.size() + " items from discover.txt [" + getDeviceListAsString(devices) + "]"); //DRS 20220707 - Fix broken logging of devices
 
         // Get live devices
-        String liveDiscoverText = getLiveDiscoverText(CaptureManager.discoverRetries, CaptureManager.discoverDelay);
-        ArrayList<String> liveDevices = findTunerDevicesFromText(liveDiscoverText, true); // devices.txt is always written out here (we read the old one already).
-        System.out.println(new Date() + " Got " + liveDevices.size() + " items from active discover command. [" +  getDeviceIpMapAsString(devices) + "]");
+        ArrayList<String> liveDevices = null;
+        String liveDiscoverText = null;
+        if (CaptureManager.useHdhrCommandLine) {
+            liveDiscoverText = getLiveDiscoverText(CaptureManager.discoverRetries, CaptureManager.discoverDelay);
+        } else { //DRS 20220707 - Added getting discover from http if command line not available.
+            int maxSeconds = 2;
+            boolean quiet = false;
+            boolean isPost = false;
+            liveDiscoverText = LineUpHdhr.getPage("http://ipv4-api.hdhomerun.com/discover", maxSeconds, quiet, isPost);
+            liveDiscoverText = reformatWebDiscover(liveDiscoverText);
+        }
+        liveDevices = findTunerDevicesFromText(liveDiscoverText, true); // devices.txt is always written out here (we read the old one already).
+        System.out.println(new Date() + " Got " + liveDevices.size() + " items from active discover command. [" +  getDeviceListAsString(devices) + "]");
         devices.addAll(liveDevices);
-        System.out.println(new Date() + " Total of  " + devices.size() + " items, accounting for duplication. [" +  getDeviceIpMapAsString(devices) + "]");
+        System.out.println(new Date() + " Total of  " + devices.size() + " items, accounting for duplication. [" +  getDeviceListAsString(devices) + "]");
         
         // Only if we picked-up a different device from the discover.txt file do we go into this logic that eliminates devices that do not come alive on retry
         if (liveDevices.size() < devices.size() ) {
@@ -429,7 +434,12 @@ public class TunerManager {
         //System.out.println("]");
 
         // DRS 20181025 - Adding model to HDHR tuners
-        HashMap<String, Integer> liveModelMap = getLiveModelMap(liveDevices, 1, CaptureManager.discoverDelay);
+        HashMap<String, Integer> liveModelMap = null;
+        if (CaptureManager.useHdhrCommandLine) {
+            liveModelMap = getLiveModelMap(liveDevices, 1, CaptureManager.discoverDelay);
+        } else { //DRS 20220707 - Added getting model from http if command line unavailable.
+            liveModelMap = getLiveModelMapHttp(ipAddressMap);
+        }
         
         // Loop final list of devices
         for (String device : devices) {
@@ -437,28 +447,74 @@ public class TunerManager {
             int tunerCount = getTunerCountFromRegistry(device);
             for (int j = 0; j < tunerCount; j++){
                 Tuner aTuner = new TunerHdhr(device, j, addDevice, liveModelMap.get(device), ipAddressMap.get(device));  // may be automatically added to this.tuners map
-                if (!aTuner.isDisabled()){
+                boolean nonHttpTunerUnavailable = (aTuner instanceof TunerHdhr) && !CaptureManager.useHdhrCommandLine && !((TunerHdhr)aTuner).isHttpCapable();
+                if (!aTuner.isDisabled() && !nonHttpTunerUnavailable){
                     tunerList.add(aTuner);
                     aTuner.liveDevice = true;
+                } else if (nonHttpTunerUnavailable) {
+                    System.out.println(new Date() + " device " + device + "-" + j + " is not capable of http recording and hdhomerun_config.txt is unavailable, so not being added.");
                 } else {
                     System.out.println(new Date() + " device " + device + "-" + j + " is disabled, so not being added.");
                 }
             }
         }
+        if (!CaptureManager.useHdhrCommandLine){
+            System.out.println(new Date() + " Hdhr command line not configured [" + new File(CaptureManager.hdhrPath + File.separator + "hdhomerun_config.exe" + "]. CwHelper will attempt to use http capture methods."));
+        }
+        
+
         return tunerList;
     }
-    
+
+	//DRS 20220707 - Fix broken logging of devices 
+    private String reformatWebDiscover(String liveDiscoverText) {
+        StringBuffer reformattedBuf = new StringBuffer();
+        /*
+         *     
+    {
+        "DeviceID": "10A369BB",
+        "LocalIP": "192.168.3.186",
+        "BaseURL": "http://192.168.3.186",
+        "DiscoverURL": "http://192.168.3.186/discover.json",
+        "LineupURL": "http://192.168.3.186/lineup.json"
+    }
+
+         */
+        
+        try {
+            BufferedReader in = new BufferedReader(new StringReader(liveDiscoverText));
+            String lastDeviceId = "";
+            String lastLocalIp = "";
+                    
+            String l = null;
+            while ((l = in.readLine()) != null) {
+                if (l.contains("DeviceID")){
+                    String[] deviceLineItems = l.split(":");
+                    if (deviceLineItems.length == 2) {
+                        lastDeviceId = deviceLineItems[1].replace("\"","").replace(",", "").trim();
+                    }
+                }
+                if (l.contains("LocalIP")){
+                    String[] ipLineItems = l.split(":");
+                    if (ipLineItems.length == 2) {
+                        lastLocalIp = ipLineItems[1].replace("\"","").replace(",", "").trim();
+                        reformattedBuf.append("hdhomerun device " + lastDeviceId + " found at " + lastLocalIp + "\n");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(new Date() + " ERROR: unable to parse liveDiscoverText from URL.");
+            return "";
+        }
+        return reformattedBuf.toString();
+    }
+
     // DRS 20220606 - Added method
-    private static String getDeviceIpMapAsString(TreeSet<String> devices) {
+    // DRS 20220707 - Fix broken logging of devices
+    private static String getDeviceListAsString(TreeSet<String> devices) {
         StringBuffer buf = new StringBuffer();
         for (String device : devices) {
-            buf.append(device).append("/n");
-        }
-        HashMap<String, String> ipAddressMap = getIpMap("", buf.toString());
-        buf = new StringBuffer();
-        Set<String> keys = ipAddressMap.keySet();
-        for (String key : keys) {
-            buf.append(key).append(" ").append(ipAddressMap.get(key)).append(", ");
+            buf.append(device).append(", ");
         }
         return buf.toString();
     }
@@ -572,7 +628,7 @@ public class TunerManager {
         }
         String liveDiscoverText = "";
         try {liveDiscoverText = cl.getOutput();} catch (Throwable t) {}
-        System.out.println(new Date() + " liveDiscoverText [" + liveDiscoverText + "] Command line run :" + ok + " - " + rtError);
+        System.out.println(new Date() + " liveDiscoverText [\n" + liveDiscoverText + "] Command line run :" + ok + " - " + rtError);
         if (!ok) throw new Exception("Command line runtime error " + rtError);
         return liveDiscoverText;
     }
@@ -616,6 +672,16 @@ public class TunerManager {
         }
         return liveCapabilityMap;
     }
+    
+    //DRS 20220707 - Added Method
+    private HashMap<String, Integer> getLiveModelMapHttp(HashMap<String, String> ipAddressMap) {
+        HashMap<String, Integer> liveCapabilityMap = new HashMap<String, Integer>();
+        Set<String> keys = ipAddressMap.keySet();
+        for (String key : keys) {
+            liveCapabilityMap.put(key, TunerHdhr.VCHANNEL);
+        }
+        return liveCapabilityMap;
+    }    
 
     // DRS 20181025 - Added Method
     private String getLiveVchannelText(String device) throws Exception {
@@ -1022,7 +1088,7 @@ public class TunerManager {
     }
 
     // DRS 20210421 - Added method - Fail quicker on dead tuners during scan
-    private boolean respondsWithWebPage(TunerHdhr tuner) {
+    public boolean respondsWithWebPage(TunerHdhr tuner) {
         int maxTries = 3;
         return !LineUpHdhr.getPage("http://" + tuner.ipAddressTuner, 3, true, false, maxTries).isEmpty();
     }
@@ -1547,8 +1613,10 @@ public class TunerManager {
             }
             Capture trialCapture = null;
             //System.out.println("tuner type:" + tuner.getType() + " (should be " + Tuner.HDHR_TYPE + " or " + Tuner.FUSION_TYPE + ")");
-            if (tuner.getType() == Tuner.HDHR_TYPE){
+            if (tuner.getType() == Tuner.HDHR_TYPE && CaptureManager.useHdhrCommandLine){
                 trialCapture = new CaptureHdhr(slot, aChannel);
+            } else if (tuner.getType() == Tuner.HDHR_TYPE && !CaptureManager.useHdhrCommandLine){ // DRS 20220707 - Split processing between traditional and http.
+                trialCapture = new CaptureHdhrHttp(slot, aChannel);
             } else if (tuner.getType() == Tuner.FUSION_TYPE){
                 trialCapture = new CaptureFusion(slot, aChannel, false);
             } else if (tuner.getType() == Tuner.EXTERNAL_TYPE){

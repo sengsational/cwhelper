@@ -114,8 +114,8 @@ public class ServiceLauncher {
         if (new File(hdhrPath + File.separator + "hdhomerun_config.exe").exists()){
             System.out.println(new Date() + " Using hdhomerun_config.exe in " + hdhrPath + " as dictated by " + hdhrPathSource);
         } else {
-            System.out.println(new Date() + " ERROR: hdhomerun_config.exe not found in " + hdhrPath + " as dictated by " + hdhrPathSource);
-            System.out.println(new Date() + " ERROR: Captures will not work unless this is corrected.");
+            System.out.println(new Date() + " WARNING: hdhomerun_config.exe not found in " + hdhrPath + " as dictated by " + hdhrPathSource);
+            System.out.println(new Date() + " WARNING: Captures will only work on tuners with the http interface.");
         }
         
         //========================================================================START WEB SEVER (QUIT IF ALREADY RUNNING)
@@ -159,8 +159,8 @@ public class ServiceLauncher {
             if (new File(hdhrPath + File.separator + "hdhomerun_config.exe").exists()){
                 System.out.println(new Date() + " Using hdhomerun_config.exe in " + hdhrPath + " as dictated by " + hdhrPathSource);
             } else {
-                System.out.println(new Date() + " ERROR: hdhomerun_config.exe not found in " + hdhrPath + " as dictated by " + hdhrPathSource);
-                System.out.println(new Date() + " ERROR: Captures will not work unless this is corrected.");
+                System.out.println(new Date() + " WARNING: hdhomerun_config.exe not found in " + hdhrPath + " as dictated by " + hdhrPathSource);
+                System.out.println(new Date() + " WARNING: Captures will only work on tuners with the http interface.");
             }
         }
 

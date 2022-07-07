@@ -1,8 +1,10 @@
 package org.cwepg.hr;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -22,6 +24,7 @@ import org.cwepg.svc.HdhrCommandLine;
 public class LineUpHdhr extends LineUp {
     
     HdhrCommandLine mCommandLine = null;
+    private String liveXml;
 	
     public void scan(Tuner tuner, boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
         String extraInfo = "";
@@ -73,6 +76,16 @@ public class LineUpHdhr extends LineUp {
             boolean previousScanExists = checkForPreviousScan(tuner);
             debugBuf.append("validHdhrXmlExists:" + validHdhrXmlExists + " " + cableCardIgnoredMessage + " " + oldXmlFileIgnoredMessage + " ");
             debugBuf.append("previousScanExists:" + previousScanExists + "  ");
+            
+            // DRS 20220707 - Added 7 - Get scan from http if traditional processing not providing.
+            boolean liveXmlAvailable = false;
+            String liveXmlFileName = null;
+            if (!previousScanExists && !validHdhrXmlExists) {
+                liveXmlFileName = loadXmlFromDevice(tuner, maxSeconds);
+                if (liveXmlFileName != null) liveXmlAvailable = true;
+            }
+            debugBuf.append("liveXmlAvailable:" + liveXmlAvailable + " ");
+            
             System.out.println(new Date() + " " + debugBuf.toString());
             boolean useUpdatedLogic = true;
             if (useUpdatedLogic) {
@@ -81,6 +94,8 @@ public class LineUpHdhr extends LineUp {
                 } else if (previousScanExists){
                     scanOutput = getScanOutputFromFile(tuner);
                     loadChannelsFromScanOutput(scanOutput, tuner);
+                } else if (liveXmlAvailable) {
+                    loadChannelsFromXml(liveXmlFileName, airCatSource, tuner);
                 } else {
                     System.out.println(new Date() + " ERROR: no valid hdhr xml file and no previous scan file.");
                 }
@@ -119,6 +134,27 @@ public class LineUpHdhr extends LineUp {
         for (String programDefinition : programDefinitions) {
             addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
         }
+    }
+    
+    // DRS 20220707 - Added method for when traditional scan unavailable
+    private String loadXmlFromDevice(Tuner tuner, int maxSeconds) {
+        String liveXmlFileName = null;
+        String xmlOutput = scanAndGetXmlOutputFromDevice(tuner, 60);
+        if (xmlOutput == null || xmlOutput.length() == 0) {
+            return null;
+        }
+        // Save to xml to file
+        liveXmlFileName = CaptureManager.dataPath + "\\" + tuner.getFullName() + ".xml";
+        BufferedWriter out = null;
+        try {
+            out = new BufferedWriter(new FileWriter(liveXmlFileName));
+            out.write(xmlOutput + "\n");
+        } catch (Throwable t) {
+            System.out.println(new Date() + " ERROR: Could not write to " + liveXmlFileName + ": " + t.getMessage());
+        } finally {
+            try {out.close();} catch (Throwable t){}
+        }
+        return liveXmlFileName;
     }
     
     // Try to return the last three digits of the deviceId times 10000 or a random number
@@ -236,7 +272,7 @@ public class LineUpHdhr extends LineUp {
 
     String getRegistryXmlFileName(Tuner tuner) {
         String xmlFileName = null;
-        if (TunerManager.skipRegistryForTesting) return xmlFileName;
+        if (TunerManager.skipRegistryForTesting || !CaptureManager.useHdhrCommandLine) return xmlFileName;  //DRS 20220707 - no registry if command line unavailable.
         try {
             String location = "SOFTWARE\\Silicondust\\HDHomeRun\\Tuners\\" + tuner.getFullName();
             xmlFileName = Registry.getStringValue("HKEY_LOCAL_MACHINE", location, "Source");
@@ -251,7 +287,7 @@ public class LineUpHdhr extends LineUp {
 
     String getRegistryAirCatSource(Tuner tuner) {
         String airCatSource = null;
-        if (TunerManager.skipRegistryForTesting) return "air";
+        if (TunerManager.skipRegistryForTesting || !CaptureManager.useHdhrCommandLine) return "air"; //DRS 20220707 - no registry if command line unavailable.
         try {
             String location = "SOFTWARE\\Silicondust\\HDHomeRun\\Tuners\\" + tuner.getFullName();
             airCatSource = Registry.getStringValue("HKEY_LOCAL_MACHINE", location, "SourceType");
@@ -265,7 +301,7 @@ public class LineUpHdhr extends LineUp {
     }
     private String getRegistryCommonAppFolder() {
         String commonAppFolder = null;
-        if (TunerManager.skipRegistryForTesting) {
+        if (TunerManager.skipRegistryForTesting || !CaptureManager.useHdhrCommandLine) { //DRS 20220707 - no registry if command line unavailable.
             commonAppFolder = new File(".").getAbsolutePath();
             System.out.println("WARNING: default being used for commonAppFolder. [" + commonAppFolder + "]");
             return commonAppFolder;

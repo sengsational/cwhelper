@@ -28,6 +28,7 @@ public class TunerHdhr extends Tuner {
     boolean isVchannel = false;
     String ipAddressTuner;
     String ipAddressMachine;
+    private int httpCapability = -1;
     
     //////////// CONSTRUCTORS & RELATED ////////////////
     public TunerHdhr(String id, int number, boolean addDevice){
@@ -299,6 +300,13 @@ public class TunerHdhr extends Tuner {
         if (this.lineUp == null) return false;
         LineUpHdhr aLineUp = (LineUpHdhr)this.lineUp;
         return "Disabled".equals(aLineUp.getRegistryAirCatSource(this)) && "Disabled".equals(aLineUp.getRegistryXmlFileName(this));
+    }
+    
+    public boolean isHttpCapable() {
+        if (httpCapability < 0) {
+            httpCapability = TunerManager.getInstance().respondsWithWebPage(this)?1:0;
+        }
+        return httpCapability  == 1;
     }
 
     /*

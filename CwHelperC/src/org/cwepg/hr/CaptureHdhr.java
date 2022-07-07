@@ -636,6 +636,7 @@ public class CaptureHdhr extends Capture implements Runnable {
     
     // DRS 20181124 - new method
     public boolean checkExtendSlot(int minutes) {
+        if(!CaptureManager.useHdhrCommandLine) return false; //DRS 20220707 Extending recording not possible with http type.
         return getExtendedCapture(minutes) != null;
     }
 

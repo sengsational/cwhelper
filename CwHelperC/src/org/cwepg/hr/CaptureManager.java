@@ -92,6 +92,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static String alternateChannels = "";
     public static boolean allTraditionalHdhr = false;
     public static boolean rerunDiscover = false;
+    public static boolean useHdhrCommandLine = true; // DRS 20200707 - Added instance variable allow hdhr via http
     
     static HashSet<Capture> activeCaptures = new HashSet<Capture>(); // So we can nix them if the service ends
     
@@ -431,11 +432,12 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         for (Iterator iter = tunerManager.iterator(); iter.hasNext();) {
 			Tuner tuner = (Tuner) iter.next();
 			Calendar nextCaptureCalendarForTuner = tuner.getNextCaptureCalendar();
+			String startEnd = tuner.getStartEndFromLastCalendarInquiry(); // DRS 20220707 - For improved event logging
 			
 			// if our current nextCaptureCalendar is older than the one from the tuner, have this newer one take-over the lead
 			if (nextCaptureCalendarForTuner != null && (nextEventCalendar == null || nextEventCalendar.after(nextCaptureCalendarForTuner))){
 				nextEventCalendar = nextCaptureCalendarForTuner;
-				nextEventType = "capture";
+				nextEventType = "capture " + startEnd;
 			}
 		}
         // now we have the newest thing represented by the nextCaptureCalendar.
@@ -920,6 +922,10 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         String path = "";
         if (!CaptureManager.dataPath.equals("")){
             path = CaptureManager.dataPath + File.separator;
+        }
+        //DRS 20220707 - Set instance variable to know if traditional command line available.
+        if (!new File(CaptureManager.hdhrPath + File.separator + "hdhomerun_config.exe").exists()) {
+            CaptureManager.useHdhrCommandLine = false;
         }
         String propertiesFileNamePath = path + CaptureManager.propertiesFileName;
         if (!new File(propertiesFileNamePath).exists()) {

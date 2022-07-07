@@ -55,8 +55,8 @@ public class RegistryHelperMyhd {
     public static final int END_HOUR = 13;
     public static final int END_MINUTE = 14;
     public static final int FILENAME_DEFAULT_STYLE = 15;  //  MyHDs default filename style  (We don't use)
-    public static final int FILE_NAMING = 16;             //  MyHDs filenaming style  (We don’t use)
-    public static final int FOLDER_NAMING = 17;           //  MyHDs foldernaming style (We don’t use)
+    public static final int FILE_NAMING = 16;             //  MyHDs filenaming style  (We don?t use)
+    public static final int FOLDER_NAMING = 17;           //  MyHDs foldernaming style (We don?t use)
     public static final int WIDTH = 18;
     public static final String[] DESCRIPTION = {"alt input","physical channel", "virtual channel",
         "subchannel","one-time flag","year","month","date","day of the week",
@@ -428,6 +428,7 @@ public class RegistryHelperMyhd {
         }
     }
 
+    /*
     public static String getExternalEpgFile() {
         String externalEpgFileName = null;
         try {
@@ -445,12 +446,13 @@ public class RegistryHelperMyhd {
             System.out.println(new Date() + " ERROR: Could not set MyHD external file name [" + externalEpgFile + "]. " + e.getMessage());
         }
     }
+    */
     
     /*
      * Test Harness
      */
     public static void main(String[] args) throws Exception {
-        
+        /*
         boolean testSetEpgFileName = true;
         if (testSetEpgFileName){
             CaptureManager.getInstance("C:\\Program Files\\MyHDEpg\\\\", "C:\\Program Files\\Silicondust\\HDHomeRun\\\\", "C:\\Documents and Settings\\All Users\\Application Data\\CW_EPG\\\\");
@@ -463,6 +465,7 @@ public class RegistryHelperMyhd {
         if (testGetEpgFileName){
             System.out.println(RegistryHelperMyhd.getExternalEpgFile());
         }
+        */
         
         boolean testChannels = false;
         if (testChannels) {

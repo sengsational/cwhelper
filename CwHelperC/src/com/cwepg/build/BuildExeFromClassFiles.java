@@ -71,18 +71,21 @@ public class BuildExeFromClassFiles {
                         "/minjre","1.6",
                         "/platform","windows",
                         "/checksum",
-                        "/embed", wDirLib + "commons-lang-2.6.jar",        //
-                        "/embed", wDirLib + "commons-logging-1.1.3.jar",   //
-                        "/embed", wDirLib + "cw_icons.jar",                //
-                        "/embed", wDirLib + "hsqldb.jar",                  //
-                        "/embed", wDirLib + "jackcess-2.1.11.jar",         //
-                        "/embed", wDirLib + "jna-5.7.0.jar",               //
-                        "/embed", wDirLib + "jna-platform-5.7.0.jar",      //
-                        "/embed", wDirLib + "mailapi.jar",                 //
-                        "/embed", wDirLib + "smtp.jar",                    //
-                        "/embed", wDirLib + "ucanaccess-4.0.4.jar",        //
-                        "/embed", wDirLib + "httpclient-4.0.1.jar",        //
-                        "/embed", wDirLib + "httpcore-4.0.1.jar",          //
+                        "/embed", wDirLib + "commons-codec-1.15.jar",            //
+                        "/embed", wDirLib + "commons-lang-2.6.jar",              //
+                        "/embed", wDirLib + "commons-logging-1.1.3.jar",         //
+                        "/embed", wDirLib + "cw_icons.jar",                      //
+                        "/embed", wDirLib + "hsqldb.jar",                        //
+                        "/embed", wDirLib + "jackcess-2.1.11.jar",               //
+                        "/embed", wDirLib + "jna-5.7.0.jar",                     //
+                        "/embed", wDirLib + "jna-platform-5.7.0.jar",            //
+                        "/embed", wDirLib + "mailapi.jar",                       //
+                        "/embed", wDirLib + "smtp.jar",                          //
+                        "/embed", wDirLib + "ucanaccess-4.0.4.jar",              //
+                        "/embed", wDirLib + "httpclient-4.5.13.jar",             //
+                        "/embed", wDirLib + "httpcore-4.4.15.jar",               //
+                        "/embed", wDirLib + "httpasyncclient-4.1.5.jar",         //
+                        "/embed", wDirLib + "httpasyncclient-cache-4.1.5.jar",   //
                         "/icon", "#" + wDir + "cw_logo16.ico, 0#",
                         "/pv", COMMA_VERSION + "0",
                         "/fv",  COMMA_VERSION + revision,

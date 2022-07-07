@@ -32,6 +32,7 @@ public abstract class Tuner { //implements Comparable {
     
     int tunerType = -1;
     protected String recordPath = "";
+    private String startEndNextEvent; //DRS 20220707 - For improved event logging
     
     public Tuner(){
     }
@@ -120,10 +121,17 @@ public abstract class Tuner { //implements Comparable {
     	if (captureWithNextEvent != null){
     	    Calendar unhandledEvent = captureWithNextEvent.getUnhandledEvent();
     	    //System.out.println(new Date() + " [NEXTCAP DEBUG] Tuner " + this.id + this.number + " " + captureWithNextEvent.getTitle() + " " + captureWithNextEvent.getNextEvent() + " Next Event: " + SDF.format(unhandledEvent.getTime()));
+    	    this.startEndNextEvent = captureWithNextEvent.getStartHandled()?"end":"start"; // Only to clarify logging
     		return unhandledEvent;
     	}
     	return null;
     }
+    
+    // DRS 20220707 - Improve event logging
+    public String getStartEndFromLastCalendarInquiry() {
+        return this.startEndNextEvent;
+    }
+
     
 	public Capture getCaptureWithNextEventInLeadTime(long lead_time_ms) {
 		Capture nextCaptureInLeadTime = null;
