@@ -444,7 +444,7 @@ public class TunerManager {
         // Loop final list of devices
         for (String device : devices) {
             //DRS 20130126 - Added 1 - getTuner count for device
-            int tunerCount = getTunerCountFromRegistry(device);
+            int tunerCount = getTunerCountFromRegistryOrDevice(device, ipAddressMap);
             for (int j = 0; j < tunerCount; j++){
                 Tuner aTuner = new TunerHdhr(device, j, addDevice, liveModelMap.get(device), ipAddressMap.get(device));  // may be automatically added to this.tuners map
                 boolean nonHttpTunerUnavailable = (aTuner instanceof TunerHdhr) && !CaptureManager.useHdhrCommandLine && !((TunerHdhr)aTuner).isHttpCapable();
@@ -520,22 +520,45 @@ public class TunerManager {
     }
 
     //DRS 20130126 - Added method
-    private int getTunerCountFromRegistry(String device) {
+    private int getTunerCountFromRegistryOrDevice(String device, HashMap<String,String> ipAddressMap) {
         int tunerCount = 2; // minimum number is 2, even if we can't get this data out of the registry
-        int progress = -1;
-        try {
-            for (int i = 0; i < 6; i++){
-                progress = i;
-                String location = "SOFTWARE\\Silicondust\\HDHomeRun\\Tuners\\" + device + "-" + i;
-                boolean itemExists = false;
-                if (!TunerManager.skipRegistryForTesting) itemExists = Registry.valueExists("HKEY_LOCAL_MACHINE", location, "Source");
-                if (itemExists){
-                    int proposedCount = i + 1;
-                    if (proposedCount > tunerCount) tunerCount = proposedCount;
+        //DRS 20220708 - Added new code in 'if'
+        if (!CaptureManager.useHdhrCommandLine && ipAddressMap != null) {
+            Set<String> devices = ipAddressMap.keySet();
+            for (String deviceName : devices) {
+                System.out.println("key [" + deviceName + "] entry [" + ipAddressMap.get(device) + "]");
+                if (deviceName.equalsIgnoreCase(device)) {
+                    String discoverJson = LineUpHdhr.getPage("http://" + ipAddressMap.get(deviceName) + "/discover.json", 10, false, false);
+                    // System.out.println("discoverJson [" + discoverJson + "]"); //{"FriendlyName":"HDHomeRun FLEX 4K","ModelNumber":"HDFX-4K","FirmwareName":"hdhomerun_dvr_atsc3","FirmwareVersion":"20220203","DeviceID":"10A369BB","DeviceAuth":"MNsOdjqp7sSa4rEv76QuwBUI","BaseURL":"http://192.168.3.186:80","LineupURL":"http://192.168.3.186:80/lineup.json","TunerCount":4}
+                    int locTunerCount = discoverJson.indexOf("TunerCount\":");
+                    if (locTunerCount > -1) {
+                        try {
+                            tunerCount = Integer.parseInt(discoverJson.substring(locTunerCount + 12, locTunerCount + 13));
+                        } catch (Throwable t) {
+                            System.out.println(new Date() + " ERROR: Unable to find tuner count value in json response " + discoverJson);
+                        }
+                    } else {
+                        System.out.println(new Date() + " ERROR: Unable to find tuner count heading in json response " + discoverJson);
+                    }
+                    break;
                 }
             }
-        } catch (Exception e) {
-            if (progress < 2) System.out.println(new Date() + " ERROR: Could not count tuners for HDHomeRun for device " + device + ". Returning " + tunerCount + ". " + e.getMessage());
+        } else {
+            int progress = -1;
+            try {
+                for (int i = 0; i < 6; i++){
+                    progress = i;
+                    String location = "SOFTWARE\\Silicondust\\HDHomeRun\\Tuners\\" + device + "-" + i;
+                    boolean itemExists = false;
+                    if (!TunerManager.skipRegistryForTesting) itemExists = Registry.valueExists("HKEY_LOCAL_MACHINE", location, "Source");
+                    if (itemExists){
+                        int proposedCount = i + 1;
+                        if (proposedCount > tunerCount) tunerCount = proposedCount;
+                    }
+                }
+            } catch (Exception e) {
+                if (progress < 2) System.out.println(new Date() + " ERROR: Could not count tuners for HDHomeRun for device " + device + ". Returning " + tunerCount + ". " + e.getMessage());
+            }
         }
         return tunerCount;
     }
@@ -553,7 +576,7 @@ public class TunerManager {
                 System.out.println(new Date() + " " + device + " was NOT live.");
                 // Device not live, but is contained in the discover.txt.  Might need time to start-up.
                 //DRS 20130126 - moved code out into new method
-                if (deviceHasValidCapture(device)){
+                if (deviceHasValidCapture(device, null)){
                     for (int retries = 0; retries < 3; retries++){
                         System.out.println(new Date() + " device " + device + " was not live, but had valid current or future captures.  Waiting 15 seconds to try again.");
                         try {Thread.sleep(15000);} catch (Exception e){};
@@ -751,9 +774,9 @@ public class TunerManager {
     
 
     //DRS 20130126 - Added method
-    private boolean deviceHasValidCapture(String device) {
+    private boolean deviceHasValidCapture(String device, HashMap<String, String> ipMap) {
         boolean localAddDevice = false;
-        int tunerCount = getTunerCountFromRegistry(device);
+        int tunerCount = getTunerCountFromRegistryOrDevice(device, ipMap);
         for (int i = 0; i < tunerCount; i++){
             if (hasValidCapture(new TunerHdhr(device, 0, localAddDevice).getCapturesFromFile())) return true;
         }
