@@ -156,7 +156,11 @@ public class TunerHdhr extends Tuner {
                     System.out.println(new Date() + " Default record path [" + this.recordPath + "] defined for " + this.getFullName() + " from a persisted scheduled capture." );
                 }
                 if (!capture.hasEnded()){
-                    addCaptureAndPersist(capture, writeIt);
+                    if (CaptureManager.useHdhrCommandLine) {
+                        addCaptureAndPersist(capture, writeIt);
+                    } else {
+                        addCaptureAndPersist(new CaptureHdhrHttp(l, this), writeIt);
+                    }
                     count++;
                 } else {
                     System.out.println(new Date() + " WARNING: Capture from file was in the past. " + capture);

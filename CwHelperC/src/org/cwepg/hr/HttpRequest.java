@@ -17,7 +17,7 @@ public class HttpRequest {
     protected boolean timedOut = false;
     protected int maxSeconds;
     
-    private int debug = 5;
+    private int debug = 0;
  
     protected long startedAtMs = -1;
     
@@ -59,6 +59,7 @@ public class HttpRequest {
                 System.out.println(new Date() + " Process interrupted. ");
             }
         }
+        proc.destroy();
         return proc.endStatus();
     }
 
@@ -89,7 +90,7 @@ public class HttpRequest {
         return ((new Date().getTime() - startedAtMs)/1000/60) + "";
     }
 
-    private void extendKillSeconds(int secondsToExtend) {
+    void extendKillSeconds(int secondsToExtend) {
         this.maxSeconds += secondsToExtend;
         System.out.println(new Date() + " HttpRequest timeout extended by " + secondsToExtend + " seconds to " + this.maxSeconds);
     }

@@ -286,11 +286,12 @@ public abstract class Capture implements Runnable, Comparable {
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
-        result = PRIME * result + ((channel == null) ? 0 : channel.hashCode());
-        result = PRIME * result + (isRecurring ? 1231 : 1237);
-        result = PRIME * result + ((slot == null) ? 0 : slot.hashCode());
-        result = PRIME * result + ((target == null) ? 0 : target.hashCode());
-        if (dc) System.out.println("\t\thashCode():" + result);
+        int[] results = {0,0,0,0,0,0,0,0};
+        result = PRIME * result + ((channel == null) ? 0 : channel.hashCode()); results[0] = result;
+        result = PRIME * result + (isRecurring ? 1231 : 1237);results[1] = result;
+        result = PRIME * result + ((slot == null) ? 0 : slot.hashCode());results[2] = result;
+        result = PRIME * result + ((target == null) ? 0 : target.hashCode());results[3] = result;
+        if (dc) System.out.println("\t\t" + getClass().getName() + " hashCode():" + result + " " + results[0] + " " + results[1] + " " + results[2] + " " + results[3] + " " + results[4]);
         return result;
     }
 
@@ -300,8 +301,10 @@ public abstract class Capture implements Runnable, Comparable {
             return true;
         if (obj == null)
             return false;
-        if (getClass() != obj.getClass())
+        if (getClass() != obj.getClass()) {
+            if (dc) System.out.println("\t\tNot the same class" + getClass().getName() + " ? " + obj.getClass().getName());
             return false;
+        }
         final Capture other = (Capture) obj;
         if (channel == null) {
             if (other.channel != null)

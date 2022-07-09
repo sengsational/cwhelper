@@ -11,6 +11,7 @@ import java.net.URLConnection;
 import java.nio.CharBuffer;
 import java.util.Date;
 import java.util.Scanner;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
 import org.apache.http.HttpException;
@@ -41,6 +42,7 @@ public class HttpProcess implements Runnable {
     private int tunerNumber;
     private String testingUrl;
     private String fileName;
+    private Future<File> future;
     private boolean ended = false;
     private boolean endStatus = false;
 
@@ -63,7 +65,7 @@ public class HttpProcess implements Runnable {
         CloseableHttpAsyncClient httpAsyncClient = null;
         boolean isPost = false;
         boolean quiet = false;
-        String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey + "?duration=" + durationSeconds;
+        String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey; //DRS 20220708 - Remove duration, so go until cancelled (was: + "?duration=" + durationSeconds;)
         if (testingUrl != null) {
             targetPage = testingUrl;
             if (testingUrl.startsWith("get")) {
@@ -77,6 +79,7 @@ public class HttpProcess implements Runnable {
         }
         
         long startedAtMs = new Date().getTime();
+        File result = null;
         try {
             if (!isPost) {
                 if (!quiet) System.out.println(new Date() + " Executing get request " + targetPage);
@@ -95,19 +98,22 @@ public class HttpProcess implements Runnable {
                 httpAsyncClient = HttpAsyncClients.createDefault();
                 httpAsyncClient.start();
                 System.out.println(new Date() + " HttpAsycClient started... executing get with zcConsumer with future.get().");
-                Future<File> future = httpAsyncClient.execute(HttpAsyncMethods.createGet(targetPage), zcConsumer, null);
-                File result = future.get(); // blocks
-                endStatus = true;
-                System.out.println(new Date() + " Response file length: " + result.length());
+                future = httpAsyncClient.execute(HttpAsyncMethods.createGet(targetPage), zcConsumer, null);
+                result = future.get(); // blocks.  Interrupt goes to CancellationException.
+                endStatus = true; 
             } else {
                 System.out.println(new Date() + " Post not implemented in HttpProcess.");
             }
             if (!quiet) System.out.println(new Date() + " Finished executing request.");
+        } catch (CancellationException c) {
+            System.out.println(new Date() + " Cancelled httpAsyncClient.execute()");
+            endStatus = true; 
         } catch (Exception e) {
             System.out.println(new Date() + " Failed to get http page [" + targetPage + "] " + e.getClass().getName() + " " + e.getMessage());
             endStatus = false;
         } finally {
             ended = true;
+            if (result != null) System.out.println(new Date() + " Response file length: " + result.length());
             if (httpAsyncClient != null) {
                 try {httpAsyncClient.close();} catch (Throwable t){System.out.println("WARNING: Unable to close http connection. " + t.getClass().getName() + " " + t.getMessage());}
             }
@@ -118,6 +124,10 @@ public class HttpProcess implements Runnable {
             endStatus = true; // ??
         }
         System.out.println(new Date() + "  HttpProcess.run() ending.");
+    }
+
+    public void destroy() {
+        future.cancel(true);
     }
     
     public boolean ended() {

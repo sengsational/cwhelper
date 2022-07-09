@@ -471,7 +471,7 @@ public class LineUpHdhr extends LineUp {
     // DRS 20181106 - Added method
     public static String getXmlOutputFromDevice(Tuner tuner, int maxSeconds) {
         TunerHdhr aTuner = (TunerHdhr)tuner;
-        String lineupPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.xml", maxSeconds, false, false);
+        String lineupPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.xml?tuning", maxSeconds, false, false);
         if (lineupPage.length() == 0) {
             System.out.println(new Date() + " ERROR: unable to get lineup xml.");
         }
@@ -542,7 +542,7 @@ public class LineUpHdhr extends LineUp {
             System.out.println(new Date() + " ERROR: Indication of scan completion never received.");
             return "";
         } else {
-            String lineupPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.xml", maxSeconds, false, false);
+            String lineupPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.xml?tuning", maxSeconds, false, false);
             if (lineupPage.length() == 0) {
                 System.out.println(new Date() + " ERROR: unable to get lineup xml.");
             }

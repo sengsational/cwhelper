@@ -11,6 +11,7 @@ import org.cwepg.svc.TinyWebServer;
 public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
     
     HttpRequest runningHttpRequest;
+    private boolean interrupted;
 
     public CaptureHdhrHttp(Slot slot, Channel channelDigital) {
         super(slot, channelDigital);
@@ -49,7 +50,7 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
                 String channel = "v" + this.channel.virtualChannel + "." + this.channel.virtualSubchannel;
                 runningHttpRequest = new HttpRequest(tuner.number, tuner.ipAddressTuner, channel, durationSeconds, this.target.getFileNameOrWatch(), killAfterSeconds);
                 goodResult = runningHttpRequest.runProcess(); // blocks
-                if (!goodResult) throw new Exception("failed to handle " + runningHttpRequest);
+                if (!interrupted && !goodResult) throw new Exception("failed to handle " + runningHttpRequest);
             } else {
                 System.out.println(new Date() + " 'Watch' not implemented on http.");
             }
@@ -59,6 +60,7 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
             System.err.println(new Date() + " CaptureHdhrHttp.run " + e.getMessage());
             e.printStackTrace();
         }
+        System.out.println(new Date() +  " CaptureHdhrHttp ending " + (interrupted?"after interrupt.":""));
     }
 
     @Override
@@ -69,9 +71,12 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
             } else {
                 if (this.slot.getRemainingSeconds() > 20) {
                     System.out.println(new Date() + " Interrupt not at the end of recording for http capture.");
+                    this.interrupted = true;
                     runningHttpRequest.interrupt();
                 } else {
-                    System.out.println(new Date() + " Interrupt at the end of recordings is not required for http captures.");
+                    System.out.println(new Date() + " Interrupt at the end of recording for http capture.");
+                    this.interrupted = true;
+                    runningHttpRequest.interrupt();
                 }
                 removeWakeup();
             }
@@ -90,7 +95,21 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
         System.out.println(new Date() + " Signal quality for http captures not implemented.");
         return "";
     }
-
+    
+    @Override
+    public boolean extendSlot(int minutes) {
+        if (checkExtendSlot(minutes)) {
+            slot.adjustEndTimeMinutes(minutes);
+            this.killAfterSeconds = this.killAfterSeconds += minutes * 60;
+            runningHttpRequest.extendKillSeconds(minutes * 60);
+            CaptureManager.requestInterrupt("extendSlot");
+            return true;
+        } else {
+            System.out.println(new Date() + " Not able to schedule with [" + this.channel.getCleanedChannelName() + "] [" + this.channel.tuner.getFullName() + "] [" + this.channel.protocol +"]");
+        }
+        return false;
+    }
+    
     public static void main (String[] args) throws Exception {
         
         boolean testWithCaptureManager = true;

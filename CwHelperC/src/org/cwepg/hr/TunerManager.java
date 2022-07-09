@@ -755,7 +755,7 @@ public class TunerManager {
                 System.out.println(new Date() + " ERROR: IP address for tuner not available. [" + ipAddress + "]");
                 return "(unavailable)";
             }
-            String lineupPage = LineUpHdhr.getPage("http://" + ipAddress + "/lineup.xml", CaptureManager.discoverDelay, quiet, false);
+            String lineupPage = LineUpHdhr.getPage("http://" + ipAddress + "/lineup.xml?tuning", CaptureManager.discoverDelay, quiet, false);
             if (lineupPage.length() == 0) {
                 System.out.println(new Date() + " ERROR: unable to get lineup xml.");
             } else if (lineupPage.length() < 100) {
