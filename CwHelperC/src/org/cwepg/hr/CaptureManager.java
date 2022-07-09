@@ -239,12 +239,14 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                             capture.target.setNextAvailablePort();
                             capture.configureDevice();
                             if (!capture.target.isWatch() && capture.target.mkdirsAndTestWrite(false, capture.target.fileName, 20) == false) throw new Exception (new Date() + " ERROR: The target directory of file [" + capture.target.getFileNameOrWatch() + "] was not writable.\n");
-                            new Thread(capture).start(); // <<======================
+                            Thread captureThread = new Thread(capture);
+                            captureThread.start(); // <<======================
                             //System.out.println(new Date() + " DEBUG: Returned to main thread.");
                             if (isSleepManaged) WakeupManager.preventSleep();
                             else System.out.println(new Date() + " not sleep managed.");
                             System.out.flush();
                             Thread.sleep(1000); //So log will appear in the "right" order
+                            if (!captureThread.isAlive()) throw new Exception("Capture.run() failed to start.");
                             capture.addIcon();
                             activeCaptures.add(capture);
                             System.out.println(new Date() + " There is/are " + activeCaptures.size() + " active capture after adding " + capture.getTitle());
@@ -766,6 +768,10 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     //}
     
     public static void setAllTraditionalHdhr(boolean allTraditionalHdhr) {
+        if (!CaptureManager.useHdhrCommandLine) {
+            System.out.println(new Date() + " the allTraditionalHdhr feature is not available with the current configuration.");
+            return;
+        }
         CaptureManager.allTraditionalHdhr = allTraditionalHdhr;
         saveSettings();
     }
@@ -926,6 +932,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         //DRS 20220707 - Set instance variable to know if traditional command line available.
         if (!new File(CaptureManager.hdhrPath + File.separator + "hdhomerun_config.exe").exists()) {
             CaptureManager.useHdhrCommandLine = false;
+            CaptureManager.allTraditionalHdhr = false;
         }
         String propertiesFileNamePath = path + CaptureManager.propertiesFileName;
         if (!new File(propertiesFileNamePath).exists()) {
@@ -969,6 +976,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                     CaptureManager.trayIcon = Boolean.parseBoolean(props.getProperty(key));
                 //} else if (key != null && key.equals("recreateIconUponWakeup")){
                 //    CaptureManager.recreateIconUponWakeup = Boolean.parseBoolean(props.getProperty(key)); DRS 20210301 -  Removed - No longer needed (used with now removed ClockChecker) 
+                } else if (key != null && key.equals("allTraditionalHdhr") && !CaptureManager.useHdhrCommandLine){
+                    CaptureManager.allTraditionalHdhr = false;
                 } else if (key != null && key.equals("allTraditionalHdhr")){
                     CaptureManager.allTraditionalHdhr = Boolean.parseBoolean(props.getProperty(key));
                 } else if (key != null && key.equals("rerunDiscover")){

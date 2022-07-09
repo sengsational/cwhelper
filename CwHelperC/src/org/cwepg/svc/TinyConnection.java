@@ -163,7 +163,9 @@ class TinyConnection implements Runnable {
                 //}
                 
                 setItem = (String)request.get("alltraditionalhdhr");
-                if (setItem != null ) {
+                if (!CaptureManager.useHdhrCommandLine) {
+                    out.print(HEAD + "allTraditionalHdhr unavailable for current configuration." + FOOT);
+                } else if (setItem != null ) {
                     goodSettingCount++;
                     if (setItem.equals("true")){
                         CaptureManager.setAllTraditionalHdhr(true);
