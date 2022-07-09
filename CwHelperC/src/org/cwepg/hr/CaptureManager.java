@@ -541,9 +541,17 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             try {
                 // stuff for finishing/removing ACTIVE captures
                 capture.deConfigureDevice();
-                capture.interrupt(); 
+                capture.interrupt(); // removes wakeup
                 if (activeCaptures.contains(capture)){
                     activeCaptures.remove(capture);
+                } else if (getSimilar(capture) != null){ // DRS 20220709 - Added 'else/if' - Remove extended captures, which for inexplicable reasons, don't match due to something going on with the slot change
+                    if (activeCaptures.size() == 1) {
+                        activeCaptures = new HashSet<Capture>(); // Sure-fire way to remove the capture if there is only one.
+                    } else {
+                        capture = getSimilar(capture);
+                        boolean removed = activeCaptures.remove(capture); // This doesn't seem to work (results in "FAILED", below)
+                        System.out.println(new Date() + (removed?" Removed":" FAILED to remove") + " similar capture [" + capture + "]");
+                    }
                 } else {
                     StringBuffer allCapturesDebug = new StringBuffer();
                     for (Iterator iter = activeCaptures.iterator(); iter.hasNext();) {
@@ -597,6 +605,22 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         } else {
             System.out.println(new Date() + " WARNING: CaptureManager.removeActiveCapture was passed a null object.");
         }
+    }
+
+    //DRS 20220709 - Added method - Attempt to fix problem where aciveCaptures.remove() wasn't working.  Still doesn't work.
+    private Capture getSimilar(Capture capture) {
+        Capture similarCapture = null;
+        for (Iterator iter = activeCaptures.iterator(); iter.hasNext();) {
+            Capture aCapture = (Capture) iter.next();
+            if (aCapture.getFileName().equals(capture.getFileName()) && aCapture.slot.start.equals(capture.slot.start) && aCapture.channel.equals(capture.channel)) {
+                //System.out.println("DEBUG: equals? " + aCapture.equals(capture));
+                //System.out.println("DEBUG: hashCode aCapture? " + aCapture.hashCode());
+                //System.out.println("DEBUG: hashCode  capture? " + capture.hashCode());
+                similarCapture = aCapture;
+                break;
+            }
+        }
+        return similarCapture;
     }
 
     public static synchronized void requestInterrupt(String who) {

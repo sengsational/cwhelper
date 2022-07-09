@@ -278,6 +278,7 @@ public class Slot {
     public int hashCode() {
         final int PRIME = 31;
         int result = 1;
+        //DRS 20220709 - Remove end from compare so that extended recordings will match.
         result = PRIME * result + ((end == null) ? 0 : end.hashCode());
         result = PRIME * result + ((start == null) ? 0 : start.hashCode());
         return result;

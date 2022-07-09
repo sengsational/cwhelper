@@ -347,17 +347,11 @@ public class CaptureHdhr extends Capture implements Runnable {
         }
         return captureTrayIcon.addIcon();
     }
-    private Capture getThisCapture(){
-        return this;
-    }
-    
 
     @Override
     public boolean removeIcon() {
-        if (captureTrayIcon == null) {
-            captureTrayIcon = new CaptureTrayIcon(this);
-        }
-        return captureTrayIcon.removeIcon(this);
+        if (captureTrayIcon == null) return true;
+        return captureTrayIcon.removeIcon();
     }
 
     public void run(){

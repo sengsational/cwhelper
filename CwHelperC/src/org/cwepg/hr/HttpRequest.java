@@ -35,6 +35,11 @@ public class HttpRequest {
         this.fileName = fileName;
         this.maxSeconds = maxSeconds;
     }
+    
+    public boolean checkAvailable() {
+        proc = new HttpProcess(tunerNumber, ipAddress, channelKey, 0, fileName);
+        return proc.checkAvailable();
+    }
 
     public boolean runProcess() {
         proc = new HttpProcess(tunerNumber, ipAddress, channelKey, durationSeconds, fileName);
@@ -92,6 +97,7 @@ public class HttpRequest {
 
     void extendKillSeconds(int secondsToExtend) {
         this.maxSeconds += secondsToExtend;
+        proc.extendDurationSeconds(secondsToExtend);
         System.out.println(new Date() + " HttpRequest timeout extended by " + secondsToExtend + " seconds to " + this.maxSeconds);
     }
     
@@ -102,4 +108,5 @@ public class HttpRequest {
     public String toString() {
         return this.ipAddress + " tuner" + this.tunerNumber + " " + this.channelKey + " " + this.fileName;
     }
+
 }

@@ -124,7 +124,7 @@ public class TrayIconManager implements Runnable {
 
     private boolean addIcon() {
         URL iconUrl = CaptureHdhr.class.getClassLoader().getResource("cw_logo16.gif");
-        System.out.println(new Date() + " [cw_rs16.GIF] URL:[" + iconUrl + "]");
+        //System.out.println(new Date() + " [cw_rs16.GIF] URL:[" + iconUrl + "]");
         Image imageFromIcon = null;
         if (iconUrl != null){
             ImageIcon imageIcon = new ImageIcon();

@@ -23,7 +23,12 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
     
     @Override
     public void configureDevice() throws Exception {
-        System.out.println(new Date() + " Configure device not required for http captures.");
+        TunerHdhr tuner = (TunerHdhr)channel.tuner;
+        killAfterSeconds = this.slot.getRemainingSeconds() + 120; // wait 2 minutes for normal end, and if not gone yet, kill it.
+        int durationSeconds = this.slot.getRemainingSeconds() - 1; // Ending a second early helps keep the logs from being jumbled.
+        String channel = "v" + this.channel.virtualChannel + "." + this.channel.virtualSubchannel;
+        runningHttpRequest = new HttpRequest(tuner.number, tuner.ipAddressTuner, channel, durationSeconds, this.target.getFileNameOrWatch(), killAfterSeconds);
+        if (!runningHttpRequest.checkAvailable()) throw new Exception("The device is not available. " + runningHttpRequest);
     }
     
     @Override
@@ -42,13 +47,7 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
         try {
             boolean goodResult = false;
             boolean isWatch = this.target.isWatch();
-            TunerHdhr tuner = (TunerHdhr)channel.tuner;
-            killAfterSeconds = this.slot.getRemainingSeconds() + 120; // wait 2 minutes for normal end, and if not gone yet, kill it.
-            int durationSeconds = this.slot.getRemainingSeconds() - 1; // Ending a second early helps keep the logs from being jumbled.
-            
             if (!isWatch){
-                String channel = "v" + this.channel.virtualChannel + "." + this.channel.virtualSubchannel;
-                runningHttpRequest = new HttpRequest(tuner.number, tuner.ipAddressTuner, channel, durationSeconds, this.target.getFileNameOrWatch(), killAfterSeconds);
                 goodResult = runningHttpRequest.runProcess(); // blocks
                 if (!interrupted && !goodResult) throw new Exception("failed to handle " + runningHttpRequest);
             } else {

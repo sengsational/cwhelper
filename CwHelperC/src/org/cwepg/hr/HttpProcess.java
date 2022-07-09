@@ -59,13 +59,42 @@ public class HttpProcess implements Runnable {
         this.fileName = fileName;
     }
     
+    public boolean checkAvailable() {
+        boolean available = false;
+        try {
+            String targetPage = "http://" + ipAddress + ":5004/auto" + "/" + channelKey + "?duration=0"; //DRS 20220709 - Changed target to include "auto" rather than specific tuner.  Nobody should notice we didn't use the specified tuner.  Only one physical cable input on the http-capable tuners, so no difference in signal. 
+            CloseableHttpAsyncClient httpAsyncClient = null;
+            File download = new File(fileName);
+            ZeroCopyConsumer<File> zcConsumer = new ZeroCopyConsumer<File>(download) {
+              @Override
+              protected File process(final HttpResponse response, final File file, final ContentType contentType) throws Exception {
+                  if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                      endStatus = false;
+                      throw new ClientProtocolException("Failed: " + response.getStatusLine());
+                  }
+                  return file;
+              }
+            }; 
+            httpAsyncClient = HttpAsyncClients.createDefault();
+            httpAsyncClient.start();
+            System.out.println(new Date() + " HttpAsycClient started... executing get with zcConsumer with future.get().");
+            future = httpAsyncClient.execute(HttpAsyncMethods.createGet(targetPage), zcConsumer, null);
+            future.get(); // blocks.  Interrupt goes to CancellationException.
+            available = true;
+        } catch (Throwable t) {
+            System.out.println(new Date() + " HttpProcess not available " + t.getClass().getName() + " " + t.getMessage());
+        }
+        return available;
+    }
+    
     @Override
     public void run() {
         System.out.println(new Date() + " HttpProcess.run() starting.");
         CloseableHttpAsyncClient httpAsyncClient = null;
         boolean isPost = false;
         boolean quiet = false;
-        String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey; //DRS 20220708 - Remove duration, so go until cancelled (was: + "?duration=" + durationSeconds;)
+        //String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey; //DRS 20220708 - Remove duration, so go until cancelled (was: + "?duration=" + durationSeconds;)
+        String targetPage = "http://" + ipAddress + ":5004/auto" + "/" + channelKey; //DRS 20220709 - Changed target to include "auto" rather than specific tuner.  Nobody should notice we didn't use the specified tuner.  Only one physical cable input on the http-capable tuners, so no difference in signal. 
         if (testingUrl != null) {
             targetPage = testingUrl;
             if (testingUrl.startsWith("get")) {
@@ -136,6 +165,10 @@ public class HttpProcess implements Runnable {
 
     public boolean endStatus() {
         return endStatus;
+    }
+    
+    public void extendDurationSeconds(int extendSeconds) {
+        this.durationSeconds += extendSeconds;
     }
 
     

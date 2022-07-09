@@ -297,18 +297,24 @@ public abstract class Capture implements Runnable, Comparable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
+            if (dc) System.out.println("\t\tThe same object. Equals is true.");
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
+            if (dc) System.out.println("\t\tThe compare was against a null object");
             return false;
+        }
         if (getClass() != obj.getClass()) {
             if (dc) System.out.println("\t\tNot the same class" + getClass().getName() + " ? " + obj.getClass().getName());
             return false;
         }
         final Capture other = (Capture) obj;
         if (channel == null) {
-            if (other.channel != null)
+            if (other.channel != null) {
+                if (dc) System.out.println("\t\tThe compare had null channel");
                 return false;
+            }
         } else if (!channel.equals(other.channel)){
             if (dc) System.out.println("\t\tNot same channel");
             return false;
@@ -318,19 +324,24 @@ public abstract class Capture implements Runnable, Comparable {
             return false;
         }
         if (slot == null) {
-            if (other.slot != null)
+            if (other.slot != null) {
+                if (dc) System.out.println("\t\tThe compare had null slot");
                 return false;
+            }
         } else if (!slot.equals(other.slot)){
             if (dc) System.out.println("\t\tNot same slot");
             return false;
         }
         if (target == null) {
-            if (other.target != null)
+            if (other.target != null) {
+                if (dc) System.out.println("\t\tThe compare had null target");
                 return false;
+            }
         } else if (!target.equals(other.target)){
             if (dc) System.out.println("\t\tNot same target");
             return false;
         }
+        if (dc) System.out.println("\t\tAll Comparisons passed.  The items are equal.");
         return true;
     }
 
