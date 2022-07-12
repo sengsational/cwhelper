@@ -17,6 +17,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -39,6 +40,7 @@ public class CaptureHdhr extends Capture implements Runnable {
     private int mNonDotCount;
     int killAfterSeconds;
     private CaptureTrayIcon captureTrayIcon;
+    private List<String> failedDeviceList = new ArrayList<String>();
     
     // used for scheduling new captures
     public CaptureHdhr(Slot slot, Channel channelDigital) {
@@ -91,7 +93,9 @@ public class CaptureHdhr extends Capture implements Runnable {
                 }
                 report("setLock", cl, false);
                 forceRequired = report(cl) != null && report(cl).indexOf("resource locked") > -1;
-                if (forceRequired) clearLockByForce(tuner.id, tuner.number);
+                //DRS 20220710 - Comment 1, Add 1 - Remove force recording...let this recording fail and later schedule a replacement, if possible.
+                //if (forceRequired) clearLockByForce(tuner.id, tuner.number);
+                if (forceRequired) throw new Exception("WARNING: The HDHR device was in use.  This capture will not proceed.");
             } while (commandFailure || (forceRequired && forceCount++ < 1));
     
             if (this.target.isWatch()){
@@ -354,6 +358,21 @@ public class CaptureHdhr extends Capture implements Runnable {
         return captureTrayIcon.removeIcon();
     }
 
+    //DRS 20220712 - Added 3 failed device list methods - Used to prevent rescheduling failed captures on the specified device.
+    public void addCurrentTunerToFailedDeviceList() {
+        //System.out.println("DEBUG: Adding [" + channel.tuner.getFullName() + "] to failed devices.");
+        this.failedDeviceList.add(channel.tuner.getFullName());
+    }
+
+    public List<String> getFailedDeviceList() {
+        return this.failedDeviceList ;
+    }
+
+    public void replaceFailedDeviceList(List<String> failedDeviceNames) {
+        System.out.println("DEBUG: failed device count " + failedDeviceNames.size());
+        this.failedDeviceList = failedDeviceNames;
+    }
+
     public void run(){
         try {
             boolean goodResult = false;
@@ -574,4 +593,11 @@ public class CaptureHdhr extends Capture implements Runnable {
         }
     }
 
+    // DRS 20220712 - Added class - Specific exception to know when to try to reschedule on a different tuner.
+    public class DeviceUnavailableException extends Exception {
+        private static final long serialVersionUID = 1L;
+        public DeviceUnavailableException(String message) {
+            super(message);
+        }
+    }
 }

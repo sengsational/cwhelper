@@ -62,7 +62,8 @@ public class HttpProcess implements Runnable {
     public boolean checkAvailable() {
         boolean available = false;
         try {
-            String targetPage = "http://" + ipAddress + ":5004/auto" + "/" + channelKey + "?duration=0"; //DRS 20220709 - Changed target to include "auto" rather than specific tuner.  Nobody should notice we didn't use the specified tuner.  Only one physical cable input on the http-capable tuners, so no difference in signal. 
+            //String targetPage = "http://" + ipAddress + ":5004/auto" + "/" + channelKey + "?duration=0"; //DRS 20220709 - Changed target to include "auto" rather than specific tuner.  Nobody should notice we didn't use the specified tuner.  Only one physical cable input on the http-capable tuners, so no difference in signal.
+            String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey + "?duration=0"; //DRS 20220711 - Changed back to tuner number.  We let it fail, then retry on another specific tuner. 
             CloseableHttpAsyncClient httpAsyncClient = null;
             File download = new File(fileName);
             ZeroCopyConsumer<File> zcConsumer = new ZeroCopyConsumer<File>(download) {
@@ -93,8 +94,8 @@ public class HttpProcess implements Runnable {
         CloseableHttpAsyncClient httpAsyncClient = null;
         boolean isPost = false;
         boolean quiet = false;
-        //String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey; //DRS 20220708 - Remove duration, so go until cancelled (was: + "?duration=" + durationSeconds;)
-        String targetPage = "http://" + ipAddress + ":5004/auto" + "/" + channelKey; //DRS 20220709 - Changed target to include "auto" rather than specific tuner.  Nobody should notice we didn't use the specified tuner.  Only one physical cable input on the http-capable tuners, so no difference in signal. 
+        String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey; //DRS 20220708 - Remove duration, so go until cancelled (was: + "?duration=" + durationSeconds;)
+        //String targetPage = "http://" + ipAddress + ":5004/auto" + "/" + channelKey; //DRS 20220709 - Changed target to include "auto" rather than specific tuner.  Nobody should notice we didn't use the specified tuner.  Only one physical cable input on the http-capable tuners, so no difference in signal. 
         if (testingUrl != null) {
             targetPage = testingUrl;
             if (testingUrl.startsWith("get")) {

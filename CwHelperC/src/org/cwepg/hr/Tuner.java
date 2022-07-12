@@ -53,11 +53,11 @@ public abstract class Tuner { //implements Comparable {
             return false;
         }
         if (!slotOpen(capture.slot)) {
-            if (verbose) System.out.println(new Date() + " Tuner.available() Slot not open.");
+            if (verbose) System.out.println(new Date() + " Tuner.available() Slot not open. " + this.getFullName());
             return false;
         }
         if (mustBeInLineup && !this.lineUp.contains(capture.channel)){
-            if (verbose) System.out.println(new Date() + " Tuner.available() Channel not in lineup.");
+            if (verbose) System.out.println(new Date() + " Tuner.available() Channel not in lineup. " + this.getFullName());
             return false;
         }
 		return true;

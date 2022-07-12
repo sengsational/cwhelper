@@ -115,11 +115,17 @@ public class CaptureDetails implements Comparable, Cloneable {
     }
 
     public void updateCaptureEndEvent(String signalDetails, int nonDotCount, int durationMinutes) {
-        loadDetails(signalDetails); // instance variables are set here, such as tsmiss
+        boolean httpType = false;
+        if (signalDetails != null && signalDetails.contains("\"Resource\":")) {
+            loadHttpDetails(signalDetails);
+            httpType = true;
+        } else {
+            loadDetails(signalDetails); // instance variables are set here, such as tsmiss
+        }
         this.endEvent = new Date(new Date().getTime() + 15000); // Add 15 seconds to the end time because it truncates seconds 
         String[] updateData = getSignalQualityUpdateData(true);
         executeDatabaseFunction("update", updateData[FIELDS], updateData[VALUES]);
-        int strengthValue = getStrengthValue(durationMinutes);
+        int strengthValue = getStrengthValue(durationMinutes, httpType);
         // DRS 20170215 - Added 'if'
         try {
             // DRS 20220519 - replaced tsmiss in decision instead of tsmiss, which isn't reported in HD4K tuner.
@@ -403,6 +409,23 @@ public class CaptureDetails implements Comparable, Cloneable {
         "";
         return statement;
     }
+    
+    private void loadHttpDetails(String data) {
+        if (data == null || data.equals("")) {
+            return;
+        }
+        String[] items = data.split(",");
+        for (String item : items) {
+            String[] nvp = item.split(":");
+            if (nvp[0].contains("SignalStrengthPercent")) {
+                this.tunss = nvp[1];
+            } else if (nvp[0].contains("SignalQualityPercent")){
+                this.tunsnq = nvp[1];
+            } else if (nvp[0].contains("SymbolQualityPercent")){
+                this.tunseq = nvp[1];
+            }
+        }
+    }
 
     private void loadDetails(String data) {
         if (data == null || data.equals("")) {
@@ -647,19 +670,19 @@ public class CaptureDetails implements Comparable, Cloneable {
     }
 
     
-    public Integer getStrengthValue() {
+    public Integer getStrengthValue(boolean httpType) {
         int durationMinutes = 60;
         if (this.endEvent != null && this.startEvent != null) {
             durationMinutes = (int) ((this.endEvent.getTime() - this.startEvent.getTime()) / 1000 / 60);
         } else {
             System.out.println(new Date() + " ERROR: Unable to determine length of capture " + this.startEvent + " " + this.endEvent + " Using 60 minutes as a default.");
         }
-        return getStrengthValue(durationMinutes);
+        return getStrengthValue(durationMinutes, httpType);
     }
 
 
     // DRS 20220519 - Rewrote this method based on observation of signal data values.
-    public Integer getStrengthValue(int durationMinutes) {
+    public Integer getStrengthValue(int durationMinutes, boolean httpType) {
         if (durationMinutes < 0) {
             System.out.println(new Date() + " ERROR: durationMinutes was not assigned.  Using 60 minutes.");
             durationMinutes = 60;
@@ -670,13 +693,17 @@ public class CaptureDetails implements Comparable, Cloneable {
             float te = Float.parseFloat(this.tste); lastParsed = "te";
             float ss = Float.parseFloat(this.tunss); lastParsed = "ss";
             float sq = Float.parseFloat(this.tunsnq); lastParsed = "sq";
-            if ("none".equals(this.tunlock)) return 0;
-            if (te/durationMinutes/1000 > 10F) return 1;
-            if (te/durationMinutes/1000 > 3F) return 2;
-            if (te/durationMinutes/1000 > 0F) return 7;
-            if (ss < 100 && sq < 100) return 8;
-            if (ss == 100 && sq == 100) return 10;
-            return 9;
+            if (!httpType) {
+                if ("none".equals(this.tunlock)) return 0;
+                if (te/durationMinutes/1000 > 10F) return 1;
+                if (te/durationMinutes/1000 > 3F) return 2;
+                if (te/durationMinutes/1000 > 0F) return 7;
+                if (ss < 100 && sq < 100) return 8;
+                if (ss == 100 && sq == 100) return 10;
+                return 9;
+            } else {
+                return (int)((ss + sq)/200F);
+            }
         } catch (Throwable t) {
             System.out.println(new Date() + " ERROR: Failed to parse values in get signal strength. Last parsed [" + lastParsed + "]. " + this); 
             System.out.println(new Date() + " ERROR: " + t.getClass().getName() + " " + t.getMessage());

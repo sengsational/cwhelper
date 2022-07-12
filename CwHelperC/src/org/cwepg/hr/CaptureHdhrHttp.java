@@ -28,7 +28,7 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
         int durationSeconds = this.slot.getRemainingSeconds() - 1; // Ending a second early helps keep the logs from being jumbled.
         String channel = "v" + this.channel.virtualChannel + "." + this.channel.virtualSubchannel;
         runningHttpRequest = new HttpRequest(tuner.number, tuner.ipAddressTuner, channel, durationSeconds, this.target.getFileNameOrWatch(), killAfterSeconds);
-        if (!runningHttpRequest.checkAvailable()) throw new Exception("The device is not available. " + runningHttpRequest);
+        if (!runningHttpRequest.checkAvailable()) throw new DeviceUnavailableException("The device is not available. " + runningHttpRequest);
     }
     
     @Override
@@ -42,6 +42,14 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
     }
 
     
+    private String getMatchingResourceString(String liveStatusText, String channelNumber, String alphaDescription) {
+        String[] resourceStrings = liveStatusText.split("\"}\"");
+        for (String resourceString : resourceStrings) {
+            if (resourceString.contains("VctNumber\":\"" + channelNumber) && resourceString.contains("VctName\":\"" + alphaDescription)) return resourceString;
+        }
+        return null;
+    }
+
     @Override
     public void run(){
         try {
@@ -91,8 +99,22 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
     
     @Override
     public String getSignalQualityData() {
-        System.out.println(new Date() + " Signal quality for http captures not implemented.");
-        return "";
+        TunerHdhr tuner = (TunerHdhr)channel.tuner;
+        String liveStatusText = LineUpHdhr.getPage("http://" + tuner.ipAddressTuner + "/status.json", 3, true, false);
+        String matchingResourceString = getMatchingResourceString(liveStatusText, this.channel.virtualChannel + "." + this.channel.virtualSubchannel, this.channel.alphaDescription);
+        //System.out.println("matchingResourceString " + matchingResourceString);
+        return matchingResourceString;
+        /*
+        "Resource":"tuner2",
+        "VctNumber":"3.1",
+        "VctName":"WBTV-DT",
+        "Frequency":527000000,
+        "SignalStrengthPercent":100,
+        "SignalQualityPercent":91,
+        "SymbolQualityPercent":100,
+        "TargetIP":"192.168.3.176",
+        "NetworkRate":4566880
+         */
     }
     
     @Override

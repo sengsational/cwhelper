@@ -34,6 +34,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.UIManager;
 
+import org.cwepg.hr.CaptureHdhr.DeviceUnavailableException;
 import org.cwepg.svc.HtmlSettingsDoc;
 import org.cwepg.svc.HtmlShutdownDoc;
 import org.cwepg.svc.HtmlVcrDoc;
@@ -94,7 +95,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static boolean rerunDiscover = false;
     public static boolean useHdhrCommandLine = true; // DRS 20200707 - Added instance variable allow hdhr via http
     
-    static HashSet<Capture> activeCaptures = new HashSet<Capture>(); // So we can nix them if the service ends
+    static ArrayList<Capture> activeCaptures = new ArrayList<Capture>(); //DRS 20220708 - Changed to ArrayList from HashSet because extended recordings didn't match hash
     
     private CaptureManager(){
         //ServiceStatusManager.setServiceStatusHandler(this); //DRS 20080822 Comment Service Specific Code
@@ -237,7 +238,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                         boolean successful = true;
                         try {
                             capture.target.setNextAvailablePort();
-                            capture.configureDevice();
+                            capture.configureDevice(); //DRS 20220711 - Add Comment - Can throw DeviceUnavailableException
                             if (!capture.target.isWatch() && capture.target.mkdirsAndTestWrite(false, capture.target.fileName, 20) == false) throw new Exception (new Date() + " ERROR: The target directory of file [" + capture.target.getFileNameOrWatch() + "] was not writable.\n");
                             Thread captureThread = new Thread(capture);
                             captureThread.start(); // <<======================
@@ -252,6 +253,30 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                             System.out.println(new Date() + " There is/are " + activeCaptures.size() + " active capture after adding " + capture.getTitle());
                             System.out.println(new Date() + " Handled START event for " + tuner.id + "-" + tuner.number + " " + capture.channel.channelKey + " " + capture.slot);
                             System.out.println(new Date() + " The file [" + capture.target.fileName +"] " + (new File(capture.target.fileName).exists()?"has been created.":"has NOT BEEN CREATED!"));
+                        // DRS 20220711 - Added catch - Attempt to reschedule if device unavailable.
+                        } catch (DeviceUnavailableException d) {
+                            successful = false;
+                            System.out.println(new Date() + " WARNING: Device for capture was unavailable! " + d.getMessage());
+                            if (capture instanceof CaptureHdhr) {
+                                System.out.println(new Date() + " Attempting to define and schedule a replacement for [" + capture + "]");
+                                CaptureHdhr captureHdhr = (CaptureHdhr)capture;
+                                captureHdhr.addCurrentTunerToFailedDeviceList();
+                                Capture replacementCapture = tunerManager.getReplacementCapture(captureHdhr);
+                                if (replacementCapture != null) {
+                                    try {
+                                        System.out.println(new Date() + " Created replacement [" + replacementCapture + "]");
+                                        replacementCapture.setTarget(capture.target);
+                                        scheduleCapture(replacementCapture, true);
+                                        System.out.println(new Date() + " Replacement scheduled ok.");
+                                    } catch (Exception e) {
+                                        System.out.println(new Date() + " Could not schedule replacement capture! " + e.getMessage());
+                                        System.err.println(new Date() + " Could not schedule replacement capture! " + e.getMessage());
+                                        e.printStackTrace();
+                                    }
+                                } else {
+                                    System.out.println(new Date() + " Unable to create replacement for  [" + capture + "]");
+                                }
+                             }
                         } catch (Exception e1) {
                             successful = false;
                             System.out.println(new Date() + " Could not start capture! " + e1.getMessage());
@@ -544,14 +569,6 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 capture.interrupt(); // removes wakeup
                 if (activeCaptures.contains(capture)){
                     activeCaptures.remove(capture);
-                } else if (getSimilar(capture) != null){ // DRS 20220709 - Added 'else/if' - Remove extended captures, which for inexplicable reasons, don't match due to something going on with the slot change
-                    if (activeCaptures.size() == 1) {
-                        activeCaptures = new HashSet<Capture>(); // Sure-fire way to remove the capture if there is only one.
-                    } else {
-                        capture = getSimilar(capture);
-                        boolean removed = activeCaptures.remove(capture); // This doesn't seem to work (results in "FAILED", below)
-                        System.out.println(new Date() + (removed?" Removed":" FAILED to remove") + " similar capture [" + capture + "]");
-                    }
                 } else {
                     StringBuffer allCapturesDebug = new StringBuffer();
                     for (Iterator iter = activeCaptures.iterator(); iter.hasNext();) {
@@ -605,22 +622,6 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         } else {
             System.out.println(new Date() + " WARNING: CaptureManager.removeActiveCapture was passed a null object.");
         }
-    }
-
-    //DRS 20220709 - Added method - Attempt to fix problem where aciveCaptures.remove() wasn't working.  Still doesn't work.
-    private Capture getSimilar(Capture capture) {
-        Capture similarCapture = null;
-        for (Iterator iter = activeCaptures.iterator(); iter.hasNext();) {
-            Capture aCapture = (Capture) iter.next();
-            if (aCapture.getFileName().equals(capture.getFileName()) && aCapture.slot.start.equals(capture.slot.start) && aCapture.channel.equals(capture.channel)) {
-                //System.out.println("DEBUG: equals? " + aCapture.equals(capture));
-                //System.out.println("DEBUG: hashCode aCapture? " + aCapture.hashCode());
-                //System.out.println("DEBUG: hashCode  capture? " + capture.hashCode());
-                similarCapture = aCapture;
-                break;
-            }
-        }
-        return similarCapture;
     }
 
     public static synchronized void requestInterrupt(String who) {

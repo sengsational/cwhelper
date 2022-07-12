@@ -521,9 +521,9 @@ public class TunerManager {
 
     //DRS 20130126 - Added method
     private int getTunerCountFromRegistryOrDevice(String device, HashMap<String,String> ipAddressMap) {
-        int tunerCount = 2; // minimum number is 2, even if we can't get this data out of the registry
+        int tunerCount = -1; // DRS 20220710 - Altered code to look first in http, fall back to registry, then finally default to 2.
         //DRS 20220708 - Added new code in 'if'
-        if (!CaptureManager.useHdhrCommandLine && ipAddressMap != null) {
+        if (ipAddressMap != null) {
             Set<String> devices = ipAddressMap.keySet();
             for (String deviceName : devices) {
                 System.out.println("key [" + deviceName + "] entry [" + ipAddressMap.get(device) + "]");
@@ -543,7 +543,9 @@ public class TunerManager {
                     break;
                 }
             }
-        } else {
+        } 
+        
+        if (tunerCount == -1) {
             int progress = -1;
             try {
                 for (int i = 0; i < 6; i++){
@@ -558,6 +560,10 @@ public class TunerManager {
                 }
             } catch (Exception e) {
                 if (progress < 2) System.out.println(new Date() + " ERROR: Could not count tuners for HDHomeRun for device " + device + ". Returning " + tunerCount + ". " + e.getMessage());
+            }
+            if (tunerCount == -1) {
+                System.out.println(new Date() + " WARNING: Unable to get tuner count for device " + device + " through http or the registry.");
+                tunerCount = 2; // minimum number is 2, even if we can't get this data out of the registry
             }
         }
         return tunerCount;
@@ -1271,6 +1277,42 @@ public class TunerManager {
         return capture;
     }
     
+    public Capture getReplacementCapture(CaptureHdhr capture) {
+        String channelName = capture.channel.getCleanedChannelName();
+        Slot slot = capture.slot.clone();
+        String protocol = capture.channel.protocol;
+        List<String> failedDeviceNames = capture.getFailedDeviceList(); // String like FFFFFFFF-n
+        List<Capture> availableCapturesList = getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol);
+        if (availableCapturesList == null || availableCapturesList.size() == 0) {
+            lastReason += "<br>getAvailableCapturesForChannelNameAndSlot returned no captures for " + channelName + " " + protocol + " " + slot; // <<<<<<<<<<<<<<<<<<20161214
+            System.out.println("DEBUG: " + (availableCapturesList==null?"available captures was null (empty)":"captures list was size zero " + availableCapturesList.size()));
+            System.out.println(tunerManager.lastReason + "<<<<<<<<<<< Last Reason");
+            return null;
+        }
+        CaptureHdhr replacementCaptureHdhr = null;
+        for (Capture possibleCapture : availableCapturesList) {
+            if (possibleCapture instanceof CaptureHdhr) {
+                replacementCaptureHdhr = (CaptureHdhr)possibleCapture;
+                if (tunerIsInFailedList(replacementCaptureHdhr.channel.tuner.getFullName(), failedDeviceNames)) continue;
+                
+                // If we get here, we found a good capture
+                replacementCaptureHdhr.replaceFailedDeviceList(failedDeviceNames); // Copy over the failed devices from the failed capture
+                return replacementCaptureHdhr;
+            } 
+        }
+        return null;
+    }
+    
+    private boolean tunerIsInFailedList(String fullName, List<String> failedDeviceNames) {
+        for (String failedDeviceName : failedDeviceNames) {
+            //System.out.println("DEBUG should be FFFFFFFF-n [" +  fullName + "] ?? [" + failedDeviceName + "]");
+            if (failedDeviceName.equals(fullName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // DRS 20110214 - Added method
     public ArrayList<Capture> getCapturesForAllChannels(String channelName, Slot slot, String tunerString, String protocol) {
         ArrayList<Capture> captureList = new ArrayList<Capture>();
@@ -1359,8 +1401,9 @@ public class TunerManager {
         while(iter.hasNext()){
             String key = (String)iter.next();
             CaptureDetails details = channelsMapWithCaptureDetails.get(key);
+            boolean httpType = "-1".equals(details.tste); // This value is populated in details from command line for new and old, but not http details.
             String channelNumber = key.split("::")[0];
-            Integer strengthNumber = details.getStrengthValue();
+            Integer strengthNumber = details.getStrengthValue(httpType);
             strengthSortedChannelsMapWithCaptureDetails.put(channelNumber + "::" + strengthNumber, details);
         }
         // (now we have channelsMapWithCaptureDetails sorted by channelNumber and signal strength called "strengthSortedChannelsMapWithCaptureDetails")
@@ -1586,7 +1629,7 @@ public class TunerManager {
         return returnMessage.toString();
     }
 
-
+    // Method not referenced in the project
     public CaptureHdhr getCaptureForNewChannelNameSlotAndTuner(String channelName, Slot slot, String tunerName, String protocol) throws Exception {
         // find or add tuner
         Tuner tuner = null;
@@ -1635,7 +1678,9 @@ public class TunerManager {
                 continue;
             }
             Capture trialCapture = null;
-            //System.out.println("tuner type:" + tuner.getType() + " (should be " + Tuner.HDHR_TYPE + " or " + Tuner.FUSION_TYPE + ")");
+            //System.out.println("DEBUG: tuner type:" + tuner.getType() + " (should be " + Tuner.HDHR_TYPE + " or " + Tuner.FUSION_TYPE + ")");
+            //System.out.println("DEBUG: slot [" + slot + "]");
+            //System.out.println("DEBUG: aChannel [" + aChannel + "]");
             if (tuner.getType() == Tuner.HDHR_TYPE && CaptureManager.useHdhrCommandLine){
                 trialCapture = new CaptureHdhr(slot, aChannel);
             } else if (tuner.getType() == Tuner.HDHR_TYPE && !CaptureManager.useHdhrCommandLine){ // DRS 20220707 - Split processing between traditional and http.
@@ -1646,7 +1691,8 @@ public class TunerManager {
                 trialCapture = new CaptureExternalTuner(slot, aChannel);
             }
             Double priority = new Double(aChannel.priority + Math.random()); // prevent identical priorities from getting lost 
-            if (trialCapture != null && tuner.available(trialCapture, true, false)){
+            boolean verbose = false; //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<SET TO FALSE FOR PRODUCTION
+            if (trialCapture != null && tuner.available(trialCapture, true, verbose)){
                 prioritizedCaptures.put(priority, trialCapture);
             } else {
                 this.lastReason += "<br>tuner " + tuner.getFullName() + " not available for " + trialCapture;
@@ -1743,8 +1789,9 @@ public class TunerManager {
     public void removeCapture(Capture capture) {
         Tuner aTuner = getTunerForCapture(capture);
         if (aTuner == null){
-            System.err.println(new Date() + " Could not find tuner for capture:\n" + capture);
-            System.err.println(this.getWebCapturesList(false));
+            //If tuner not found, the capture was deleted by sequence number earlier.
+            //System.err.println(new Date() + " Could not find tuner for capture:\n" + capture);
+            //System.err.println(this.getWebCapturesList(false));
         } else {
             aTuner.removeCapture(capture);
         }
