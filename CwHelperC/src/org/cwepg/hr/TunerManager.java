@@ -1280,6 +1280,7 @@ public class TunerManager {
     public Capture getReplacementCapture(CaptureHdhr capture) {
         String channelName = capture.channel.getCleanedChannelName();
         Slot slot = capture.slot.clone();
+        slot.adjustStartTimeToNowPlusLeadTimeSeconds(6);
         String protocol = capture.channel.protocol;
         List<String> failedDeviceNames = capture.getFailedDeviceList(); // String like FFFFFFFF-n
         List<Capture> availableCapturesList = getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol);

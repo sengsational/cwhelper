@@ -41,6 +41,7 @@ public class CaptureHdhr extends Capture implements Runnable {
     int killAfterSeconds;
     private CaptureTrayIcon captureTrayIcon;
     private List<String> failedDeviceList = new ArrayList<String>();
+    private boolean lockAcquired;
     
     // used for scheduling new captures
     public CaptureHdhr(Slot slot, Channel channelDigital) {
@@ -95,7 +96,12 @@ public class CaptureHdhr extends Capture implements Runnable {
                 forceRequired = report(cl) != null && report(cl).indexOf("resource locked") > -1;
                 //DRS 20220710 - Comment 1, Add 1 - Remove force recording...let this recording fail and later schedule a replacement, if possible.
                 //if (forceRequired) clearLockByForce(tuner.id, tuner.number);
-                if (forceRequired) throw new DeviceUnavailableException("WARNING: The HDHR device was in use.  This capture will not proceed.");
+                if (forceRequired) {
+                    this.lockAcquired = false;
+                    throw new DeviceUnavailableException("WARNING: The HDHR device was in use.  This capture will not proceed.");
+                } else {
+                    this.lockAcquired = true;
+                }
             } while (commandFailure || (forceRequired && forceCount++ < 1));
     
             if (this.target.isWatch()){
@@ -290,21 +296,25 @@ public class CaptureHdhr extends Capture implements Runnable {
             report("setTarget", cl);
             */
             //DRS 20130311 - Terry wanted me to add this
-            String[] setChannel = {tuner.id, "key", this.lockKey, "set", "/tuner" + tuner.number + "/channel", "none"};  
-            HdhrCommandLine cl = new HdhrCommandLine(setChannel, 5, false);
-            boolean goodResult = cl.runProcess();
-            if (!goodResult) throw new Exception("failed to handle " + cl.getCommands());
-            report("resetChannel", cl, false);
+            if (this.lockAcquired) {
+                String[] setChannel = {tuner.id, "key", this.lockKey, "set", "/tuner" + tuner.number + "/channel", "none"};  
+                HdhrCommandLine cl = new HdhrCommandLine(setChannel, 5, false);
+                boolean goodResult = cl.runProcess();
+                if (!goodResult) throw new Exception("failed to handle " + cl.getCommands());
+                report("resetChannel", cl, false);
             
-            //DRS 2018111 - Moved this code into the "not is watch" block.
-            System.out.println(new Date() + " HDHR event ended. Releasing the lock on tuner " + tuner.getFullName());
-            String[] releaseLock = {tuner.id, "key", this.lockKey, "set", "/tuner" + tuner.number + "/lockkey", "none"};  
-            cl = new HdhrCommandLine(releaseLock, 5, false);
-            goodResult = cl.runProcess();
-            if (!goodResult) throw new Exception("failed to handle " + cl.getCommands());
-            report("releaseLock", cl, false);
-            boolean forceRequired = report(cl) == null || (report(cl) != null && report(cl).indexOf("resource locked") > -1);
-            if (forceRequired) clearLockByForce(tuner.id, tuner.number);
+                //DRS 2018111 - Moved this code into the "not is watch" block.
+                System.out.println(new Date() + " HDHR event ended. Releasing the lock on tuner " + tuner.getFullName());
+                String[] releaseLock = {tuner.id, "key", this.lockKey, "set", "/tuner" + tuner.number + "/lockkey", "none"};  
+                cl = new HdhrCommandLine(releaseLock, 5, false);
+                goodResult = cl.runProcess();
+                if (!goodResult) throw new Exception("failed to handle " + cl.getCommands());
+                report("releaseLock", cl, false);
+                boolean forceRequired = report(cl) == null || (report(cl) != null && report(cl).indexOf("resource locked") > -1);
+                if (forceRequired) clearLockByForce(tuner.id, tuner.number);
+            } else {
+                System.out.println(new Date() + " HDHR event ended.  No channel clear or lock release required on tuner " + tuner.getFullName());
+            }
         } else {
             /*
             String[] setChannel = {tuner.id, "set", "/tuner" + tuner.number + "/channel", "none"};  

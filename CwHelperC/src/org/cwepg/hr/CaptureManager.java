@@ -265,7 +265,9 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                                 if (replacementCapture != null) {
                                     try {
                                         System.out.println(new Date() + " Created replacement [" + replacementCapture + "]");
-                                        replacementCapture.setTarget(capture.target);
+                                        String fileNameAppendRandom = "_" + (Math.random() + "").substring(3, 6);
+                                        Target replacementTarget = new Target(capture.target, captureHdhr, fileNameAppendRandom);
+                                        replacementCapture.setTarget(replacementTarget);
                                         scheduleCapture(replacementCapture, true);
                                         System.out.println(new Date() + " Replacement scheduled ok.");
                                     } catch (Exception e) {
@@ -958,6 +960,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         if (!new File(CaptureManager.hdhrPath + File.separator + "hdhomerun_config.exe").exists()) {
             CaptureManager.useHdhrCommandLine = false;
             CaptureManager.allTraditionalHdhr = false;
+            CaptureManager.isSleepManaged = true;
         }
         String propertiesFileNamePath = path + CaptureManager.propertiesFileName;
         if (!new File(propertiesFileNamePath).exists()) {
@@ -972,6 +975,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 String key = (String) iter.next();
                 if (key != null && key.equals("simulate")){
                     CaptureManager.simulate = Boolean.parseBoolean(props.getProperty(key));
+                } else if (key != null && key.equals("isSleepManaged") && !CaptureManager.useHdhrCommandLine){
+                    CaptureManager.isSleepManaged = true;
                 } else if (key != null && key.equals("isSleepManaged")){
                     CaptureManager.isSleepManaged = Boolean.parseBoolean(props.getProperty(key));
                 } else if (key != null && key.equals("fusionLeadTime")){

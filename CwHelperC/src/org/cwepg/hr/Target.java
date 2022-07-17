@@ -27,6 +27,12 @@ public class Target {
         this.valid = false;
     }
     
+    public Target(Target copyTarget, Capture copyCapture, String appendFileNameString) throws Exception {
+        this(copyTarget.fileName, copyTarget.title);
+        this.setFileName(copyTarget.fileName, "", "", copyCapture.getChannelProtocol(), Tuner.HDHR_TYPE, false, appendFileNameString);
+        this.valid = true;
+    }
+    
 	private Target(String fileNameComplete, String title) throws Exception {
         this.fileName = fileNameComplete;
         if (debug) System.out.println(new Date() + " DEBUGFUSION Target fileName [" + fileNameComplete + "]");
@@ -35,6 +41,7 @@ public class Target {
         this.machineName = InetAddress.getLocalHost().getHostName();
 	}
 
+    // Called from TinyConnection
     public Target(String fileName, String title, String defaultRecordPath, String analogFileExtension, String protocol, int tunerType) throws Exception {
         this(fileName, title);
         this.setFileName(fileName, defaultRecordPath, analogFileExtension, protocol, tunerType, false, null);
