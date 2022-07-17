@@ -779,6 +779,10 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     }
     
     public static void setSleepManaged(boolean isSleepManaged) {
+        if (!CaptureManager.useHdhrCommandLine) {
+            System.out.println(new Date() + " the isSleepManaged feature is not configurable with the current configuration.");
+            return;
+        }
         CaptureManager.isSleepManaged = isSleepManaged;
         saveSettings();
     }
@@ -796,7 +800,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     
     public static void setAllTraditionalHdhr(boolean allTraditionalHdhr) {
         if (!CaptureManager.useHdhrCommandLine) {
-            System.out.println(new Date() + " the allTraditionalHdhr feature is not available with the current configuration.");
+            System.out.println(new Date() + " the allTraditionalHdhr feature is not configurable with the current configuration.");
             return;
         }
         CaptureManager.allTraditionalHdhr = allTraditionalHdhr;
