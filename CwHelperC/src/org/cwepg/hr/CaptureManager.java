@@ -210,7 +210,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             sleeping = false;
 
             if (runFlag && wakeupEvent != null && wakeupEvent.isValid() && !WakeupEvent.isRunning() && wakeupEvent.isDue()){  //isDue() blocks for 2 seconds if called >1 time in 10 min
-                new Thread(wakeupEvent).start();
+                new Thread(wakeupEvent, "Thread-WakeupEvent").start();
                 if (CaptureManager.isSleepManaged) WakeupManager.preventSleep(); // DRS 20210322 - Added 1 - Moved from the WakeupEvent.run() method
                 try {Thread.sleep(100);} catch (Exception e){}; // prevent looping if this is still be due to run a few ms later
             }
@@ -240,7 +240,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                             capture.target.setNextAvailablePort();
                             capture.configureDevice(); //DRS 20220711 - Add Comment - Can throw DeviceUnavailableException
                             if (!capture.target.isWatch() && capture.target.mkdirsAndTestWrite(false, capture.target.fileName, 20) == false) throw new Exception (new Date() + " ERROR: The target directory of file [" + capture.target.getFileNameOrWatch() + "] was not writable.\n");
-                            Thread captureThread = new Thread(capture);
+                            Thread captureThread = new Thread(capture, "Thread-Capture" + capture.target.fileName);
                             captureThread.start(); // <<======================
                             //System.out.println(new Date() + " DEBUG: Returned to main thread.");
                             if (isSleepManaged) WakeupManager.preventSleep();
@@ -973,7 +973,13 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             props.load(reader);
             for (Iterator iter = props.keySet().iterator(); iter.hasNext();) {
                 String key = (String) iter.next();
-                if (key != null && key.equals("simulate")){
+                if (key !=null && key.equals("useHdhrCommandLine")) {
+                    CaptureManager.useHdhrCommandLine = Boolean.parseBoolean(props.getProperty(key));
+                    if (CaptureManager.useHdhrCommandLine == false) {
+                        CaptureManager.allTraditionalHdhr = false;
+                        CaptureManager.isSleepManaged = true;
+                    }
+                } else if (key != null && key.equals("simulate")){
                     CaptureManager.simulate = Boolean.parseBoolean(props.getProperty(key));
                 } else if (key != null && key.equals("isSleepManaged") && !CaptureManager.useHdhrCommandLine){
                     CaptureManager.isSleepManaged = true;
@@ -1085,7 +1091,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         } else if (WakeupEvent.isRunning) {
             wakeupEvent.interruptTimer(WakeupEvent.RESET);
         } else if (!WakeupEvent.hasCommand()){
-            new Thread(wakeupEvent).start();
+            new Thread(wakeupEvent, "Thread-WakupEvent" ).start();
             try {Thread.sleep(600);}catch(Exception e){}
         }
     }
@@ -1136,6 +1142,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 //"<tr><td>RecreateIconUponWakeup:</td><td>" + CaptureManager.recreateIconUponWakeup + "</td></tr>" + DRS 20210301 -  Removed - No longer needed (used with now removed ClockChecker)
                 "<tr><td>AllTraditionalHdhr:</td><td>" + CaptureManager.allTraditionalHdhr + "</td></tr>" + 
                 "<tr><td>RerunDiscover:</td><td>" + CaptureManager.rerunDiscover + "</td></tr>" + 
+                "<tr><td>UseHdhrCommandLine:</td><td>" + CaptureManager.useHdhrCommandLine + "</td></tr>" + 
                 "\n");
         xmlBuf.append(
                 "  <capture "+ 
@@ -1159,6 +1166,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 //"recreateIconUponWakeup=\"" + CaptureManager.recreateIconUponWakeup + "\" " + DRS 20210301 -  Removed - No longer needed (used with now removed ClockChecker)
                 "allTraditionalHdhr=\"" + CaptureManager.allTraditionalHdhr + "\" " + 
                 "rerunDiscover=\"" + CaptureManager.rerunDiscover + "\" " + 
+                "userHdhrCommandLine=\"" + CaptureManager.useHdhrCommandLine + "\" " + 
                 "/>\n");
         buf.append("</table>\n");
         xmlBuf.append("</xml>\n");

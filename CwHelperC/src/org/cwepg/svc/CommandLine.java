@@ -47,8 +47,8 @@ public class CommandLine {
     	}
     	StreamConverter myErrors = new StreamConverter(proc.getErrorStream(), "ERRORS", getOutputByByte);
     	StreamConverter myOutput = new StreamConverter(proc.getInputStream(), "OUTPUT", getOutputByByte);
-        Thread errorThread = new Thread(myErrors); errorThread.start();
-        Thread outputThread = new Thread(myOutput); outputThread.start();
+        Thread errorThread = new Thread(myErrors, "Thread-ErrorRedirect"); errorThread.start();
+        Thread outputThread = new Thread(myOutput, "Thread-OutputRedirect"); outputThread.start();
         System.out.println(new Date() + " CommandLine started with timeout at " + maxSeconds + " seconds."); //DRS 20150716 - Gets Here
         
         if (capture != null) { // if capture is not set, that signals we won't do this recordingMonitor

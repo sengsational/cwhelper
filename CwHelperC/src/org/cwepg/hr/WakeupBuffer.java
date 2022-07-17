@@ -46,7 +46,7 @@ public class WakeupBuffer implements Runnable {
         } else {
             WakeupBuffer buf = xGetInstance();
             isWaiting = true;
-            new Thread(buf).start();
+            new Thread(buf, "Thread-WakeupBuffer").start();
         }
         return;
     }

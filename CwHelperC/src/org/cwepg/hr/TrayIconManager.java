@@ -44,7 +44,7 @@ public class TrayIconManager implements Runnable {
     }
     
     private TrayIconManager() {
-        runningThread = new Thread(this);
+        runningThread = new Thread(this, "Thread-TrayIconManager");
         runningThread.start();
         try {Thread.sleep(100);} catch (Throwable t){};
     }

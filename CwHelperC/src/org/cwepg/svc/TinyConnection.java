@@ -60,7 +60,7 @@ class TinyConnection implements Runnable {
             try {client.close();} catch (IOException e2) {/* ignore */}
 			return;
 		}
-		(new Thread(this)).start();
+		(new Thread(this, "Thread-TinyConnection")).start();
 	}
 
 	public void run() {

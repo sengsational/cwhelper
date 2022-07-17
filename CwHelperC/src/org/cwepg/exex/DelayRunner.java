@@ -15,7 +15,7 @@ public class DelayRunner implements Runnable {
     
     public DelayRunner(String label) {
         this.label = label;
-        runningThread = new Thread(this);
+        runningThread = new Thread(this, "Thread-DelayRunner");
         runningThread.start();
     }
 

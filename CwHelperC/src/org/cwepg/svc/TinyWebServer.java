@@ -42,7 +42,7 @@ public class TinyWebServer implements Runnable {
             System.out.println(new Date() + " Error in TinyWebServer constructor " + e.getMessage());
         }
         if (listen_socket != null){
-            runningThread = new Thread(this);
+            runningThread = new Thread(this, "Thread-TinyWebServer");
             if (debug > 2) System.out.println(SDF.format(new Date()) + " TinyWebServer Start.");
             runningThread.start();
         } else {

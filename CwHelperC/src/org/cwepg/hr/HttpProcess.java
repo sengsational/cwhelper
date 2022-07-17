@@ -61,10 +61,10 @@ public class HttpProcess implements Runnable {
     
     public boolean checkAvailable() {
         boolean available = false;
+        CloseableHttpAsyncClient httpAsyncClient = null;
         try {
             //String targetPage = "http://" + ipAddress + ":5004/auto" + "/" + channelKey + "?duration=0"; //DRS 20220709 - Changed target to include "auto" rather than specific tuner.  Nobody should notice we didn't use the specified tuner.  Only one physical cable input on the http-capable tuners, so no difference in signal.
             String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey + "?duration=0"; //DRS 20220711 - Changed back to tuner number.  We let it fail, then retry on another specific tuner. 
-            CloseableHttpAsyncClient httpAsyncClient = null;
             File download = new File(fileName);
             ZeroCopyConsumer<File> zcConsumer = new ZeroCopyConsumer<File>(download) {
               @Override
@@ -78,12 +78,18 @@ public class HttpProcess implements Runnable {
             }; 
             httpAsyncClient = HttpAsyncClients.createDefault();
             httpAsyncClient.start();
-            System.out.println(new Date() + " HttpAsycClient started... executing get with zcConsumer with future.get().");
+            System.out.println(new Date() + " Checking availability of tuner right now on " + targetPage);
             future = httpAsyncClient.execute(HttpAsyncMethods.createGet(targetPage), zcConsumer, null);
             future.get(); // blocks.  Interrupt goes to CancellationException.
+            future.cancel(true);
             available = true;
         } catch (Throwable t) {
             System.out.println(new Date() + " HttpProcess not available " + t.getClass().getName() + " " + t.getMessage());
+        } finally {
+            if (future != null) future.cancel(true);
+            if (httpAsyncClient != null) {
+                try {httpAsyncClient.close();} catch (Throwable t){System.out.println("WARNING: Unable to close http connection. " + t.getClass().getName() + " " + t.getMessage());}
+            }
         }
         return available;
     }
@@ -136,13 +142,14 @@ public class HttpProcess implements Runnable {
             }
             if (!quiet) System.out.println(new Date() + " Finished executing request.");
         } catch (CancellationException c) {
-            System.out.println(new Date() + " Cancelled httpAsyncClient.execute()");
+            System.out.println(new Date() + " Cancelled httpAsyncClient.execute() on page [" + targetPage + "] " + c.getClass().getName() + " " + c.getMessage());
             endStatus = true; 
         } catch (Exception e) {
             System.out.println(new Date() + " Failed to get http page [" + targetPage + "] " + e.getClass().getName() + " " + e.getMessage());
             endStatus = false;
         } finally {
             ended = true;
+            if (future != null) future.cancel(true);
             if (result != null) System.out.println(new Date() + " Response file length: " + result.length());
             if (httpAsyncClient != null) {
                 try {httpAsyncClient.close();} catch (Throwable t){System.out.println("WARNING: Unable to close http connection. " + t.getClass().getName() + " " + t.getMessage());}
@@ -157,7 +164,7 @@ public class HttpProcess implements Runnable {
     }
 
     public void destroy() {
-        future.cancel(true);
+        future.cancel(true);  // Triggers cancellation exception in the run method
     }
     
     public boolean ended() {
@@ -201,7 +208,7 @@ public class HttpProcess implements Runnable {
             String fileName = (Math.random() + "").substring(3)+".ts";
             
             HttpProcess proc = new HttpProcess(tunerNumber, ipAddress, channelKey, durationSeconds, fileName);
-            Thread processThread = new Thread(proc);
+            Thread processThread = new Thread(proc, "Thread-" + fileName);
             processThread.start(); // does not block
             System.out.println("HttpProcess.main() sleeping for " + (durationSeconds + 15) + " seconds.");
             try {Thread.sleep((durationSeconds + 15) * 1000);} catch (Throwable t) {System.out.println("Thread sleep interupted " + t.getMessage());}

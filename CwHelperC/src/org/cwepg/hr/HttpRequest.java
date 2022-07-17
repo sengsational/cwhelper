@@ -43,7 +43,7 @@ public class HttpRequest {
 
     public boolean runProcess() {
         proc = new HttpProcess(tunerNumber, ipAddress, channelKey, durationSeconds, fileName);
-        Thread processThread = new Thread(proc);
+        Thread processThread = new Thread(proc, "Thread-" + ipAddress + "-Tuner" + tunerNumber + " " + fileName);
         startedAtMs = new Date().getTime();
         processThread.start(); // does not block
         

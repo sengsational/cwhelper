@@ -39,7 +39,7 @@ public class PcClockSetter implements Runnable {
 
     private PcClockSetter() {
         running = true;
-        runningThread = new Thread(this);
+        runningThread = new Thread(this, "Thread-PcClockSetter");
         runningThread.start();
     }
 
