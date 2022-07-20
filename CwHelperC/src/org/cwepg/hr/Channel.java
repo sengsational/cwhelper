@@ -287,7 +287,8 @@ public class Channel {
         if (this.altChannelList != null  && altChannelList.size() > 0) {
             //ArrayList<Channel> altChannelList = this.altChannelList;
             for (Channel channel : altChannelList) {
-                alternatesString.append(channel.priority).append(",");
+                //DRS 20220718 - Added 'if' - Fix duplication in alternates
+                if (alternatesString.indexOf(channel.priority + ",") < 0) alternatesString.append(channel.priority).append(", ");
             }
             alternatesString.delete(alternatesString.length()-1, alternatesString.length());
         }

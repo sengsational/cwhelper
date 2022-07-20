@@ -19,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,9 +42,9 @@ import org.cwepg.svc.HtmlVcrDoc;
 
 public class TunerManager {
 	
-	Map<String, Tuner> tuners = new TreeMap<String, Tuner>();
+	static Map<String, Tuner> tuners = new TreeMap<String, Tuner>();
 	static TunerManager tunerManager;
-    private String lastReason = "";
+    private static String lastReason = "";
 	Set<String> capvSet = new TreeSet<String>();
     Properties externalProps;
     private ArrayList<Tuner> nonResponsiveTuners = new ArrayList<Tuner>();
@@ -158,7 +159,7 @@ public class TunerManager {
             try {refreshLineup(tuner);} catch (Throwable t) {System.out.println(new Date() + " Problem refreshing lineup on new or changed tuner " + t.getMessage());};
         }
         mCountingTuners = false;
-        System.out.println(new Date() + " TunerManager.countTuners returned " + this.tuners.size() + " tuners.");
+        System.out.println(new Date() + " TunerManager.countTuners returned " + this.tuners.size() + " tuners.\n" + new Date() + " ============================================");
         return this.tuners.size();
 	}
 	
@@ -956,7 +957,7 @@ public class TunerManager {
         return externalTunerValues;
     }
     
-	public Iterator<Tuner> iterator(){
+	public static Iterator<Tuner> iterator(){
 		return tuners.values().iterator();
 	}
 
@@ -1277,7 +1278,8 @@ public class TunerManager {
         return capture;
     }
     
-    public Capture getReplacementCapture(CaptureHdhr capture) {
+    public static Capture getReplacementCapture(CaptureHdhr capture) {
+        if (capture == null) return null;
         String channelName = capture.channel.getCleanedChannelName();
         Slot slot = capture.slot.clone();
         slot.adjustStartTimeToNowPlusLeadTimeSeconds(6);
@@ -1287,24 +1289,45 @@ public class TunerManager {
         if (availableCapturesList == null || availableCapturesList.size() == 0) {
             lastReason += "<br>getAvailableCapturesForChannelNameAndSlot returned no captures for " + channelName + " " + protocol + " " + slot; // <<<<<<<<<<<<<<<<<<20161214
             System.out.println("DEBUG: " + (availableCapturesList==null?"available captures was null (empty)":"captures list was size zero " + availableCapturesList.size()));
-            System.out.println(tunerManager.lastReason + "<<<<<<<<<<< Last Reason");
+            System.out.println(lastReason + "<<<<<<<<<<< Last Reason");
             return null;
         }
         CaptureHdhr replacementCaptureHdhr = null;
+        Map<String, CaptureHdhr> allAvailableReplacements = new TreeMap<String, CaptureHdhr>();
         for (Capture possibleCapture : availableCapturesList) {
             if (possibleCapture instanceof CaptureHdhr) {
                 replacementCaptureHdhr = (CaptureHdhr)possibleCapture;
-                if (tunerIsInFailedList(replacementCaptureHdhr.channel.tuner.getFullName(), failedDeviceNames)) continue;
-                
-                // If we get here, we found a good capture
-                replacementCaptureHdhr.replaceFailedDeviceList(failedDeviceNames); // Copy over the failed devices from the failed capture
-                return replacementCaptureHdhr;
+                allAvailableReplacements.put(replacementCaptureHdhr.channel.tuner.getFullName(), replacementCaptureHdhr);
             } 
         }
-        return null;
+        if (allAvailableReplacements.size() == 0) return null;
+        Set<String> replacementTunerNames = allAvailableReplacements.keySet();
+        System.out.println("Looking for channel_maps.txt sort for " + capture.channel.frequency + "," + capture.channel.pid);
+        List<String> priorityOrderTunerNames = TunerManager.getPrioritySortedTunersForChannel(capture.channel.frequency, capture.channel.pid);
+        OUT:
+        for (String priorityTunerName : priorityOrderTunerNames) {
+            System.out.println(new Date() + " Tuner priority order: " + priorityTunerName);
+            for (String tunerName : replacementTunerNames) {
+                if (priorityTunerName.equals(tunerName)) {
+                    //System.out.println("DEBUG:    Match " + tunerName + " " + priorityTunerName);
+                    System.out.println(new Date() + " Found matching replacement tuner: " + tunerName);
+                    if (tunerIsInFailedList(tunerName, failedDeviceNames)) {
+                        System.out.println(new Date() + " Tuner is in failed list already: " + tunerName);
+                        continue;
+                    }
+                    System.out.println(new Date() + " Replacement tuner found: " + tunerName);
+                    replacementCaptureHdhr = allAvailableReplacements.get(tunerName);
+                    break OUT;
+                } else {
+                    //System.out.println("DEBUG: No match " + tunerName + " " + priorityTunerName);
+                }
+            }
+        }
+        replacementCaptureHdhr.replaceFailedDeviceList(failedDeviceNames); // Copy over the failed devices from the failed capture
+        return replacementCaptureHdhr;
     }
     
-    private boolean tunerIsInFailedList(String fullName, List<String> failedDeviceNames) {
+    private static boolean tunerIsInFailedList(String fullName, List<String> failedDeviceNames) {
         for (String failedDeviceName : failedDeviceNames) {
             //System.out.println("DEBUG should be FFFFFFFF-n [" +  fullName + "] ?? [" + failedDeviceName + "]");
             if (failedDeviceName.equals(fullName)) {
@@ -1629,6 +1652,38 @@ public class TunerManager {
         System.out.println(returnMessage.toString());
         return returnMessage.toString();
     }
+    
+    public static List<String> getPrioritySortedTunersForChannel(String physical, String program) {
+        // **************************************************************************************************************
+        // Read channel_maps file, ignoring all but the channelThing
+        // **************************************************************************************************************
+        CSVReader reader = null;
+        ArrayList<String> priortySortedTuners = new ArrayList<String>();
+        try {
+            reader = new CSVReader(new BufferedReader(new FileReader(CaptureManager.dataPath + File.separator + "channel_maps.txt"))); 
+            reader.readHeader();
+            Map<String, String> map = null;
+            while ((map = reader.readValues()) != null) {
+                CwEpgChannelRow aRow = new CwEpgChannelRow(map);
+                aRow.setRawLine(CSVReader.lastLine);
+                if (physical.equals(aRow.getPhysicalName()) && program.equals(aRow.getProgramName())) {
+                    String rawTunerNameString = aRow.getTunerName(); //  "HR(FFFFFFFF-n)"
+                    try {
+                        if (rawTunerNameString!=null) {
+                            priortySortedTuners.add(rawTunerNameString.trim());
+                        }
+                    } catch (Throwable t) {
+                        System.out.println(new Date() + " Could not parse " + rawTunerNameString);
+                    }
+                }
+            }
+        } catch (Exception e){
+            System.out.println(new Date() + " WARNING: No priority information available for replacement capture. " + e.getClass().getName() + " " + e.getMessage());
+        } finally {
+            if (reader != null) try {reader.close();} catch (Throwable t) {};
+        }
+        return priortySortedTuners;
+    }
 
     // Method not referenced in the project
     public CaptureHdhr getCaptureForNewChannelNameSlotAndTuner(String channelName, Slot slot, String tunerName, String protocol) throws Exception {
@@ -1664,18 +1719,18 @@ public class TunerManager {
     }
 
     // For Fusion and HDHR (so input is always 1)
-    public List<Capture> getAvailableCapturesForChannelNameAndSlot(String channelName, Slot slot, String protocol) {
+    public static List<Capture> getAvailableCapturesForChannelNameAndSlot(String channelName, Slot slot, String protocol) {
         if (slot.isInThePast()){
             lastReason = new Date() + " slot in the past. " + slot;
             return new ArrayList<Capture>();
         }
         
         TreeMap<Double, Capture> prioritizedCaptures = new TreeMap<Double, Capture>();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
             Channel aChannel = tuner.lineUp.getChannel(channelName, 1, protocol, tuner.getFullName());
             if (aChannel == null){
-                this.lastReason += " channel " + channelName + " " + protocol + " not found on " + tuner.getFullName() + " lineup.<br>"; //channel 29.1 null not found on 10123716-0 lineup.
+                lastReason += " channel " + channelName + " " + protocol + " not found on " + tuner.getFullName() + " lineup.<br>"; //channel 29.1 null not found on 10123716-0 lineup.
                 continue;
             }
             Capture trialCapture = null;
@@ -1696,7 +1751,7 @@ public class TunerManager {
             if (trialCapture != null && tuner.available(trialCapture, true, verbose)){
                 prioritizedCaptures.put(priority, trialCapture);
             } else {
-                this.lastReason += "<br>tuner " + tuner.getFullName() + " not available for " + trialCapture;
+                lastReason += "<br>tuner " + tuner.getFullName() + " not available for " + trialCapture;
             }
         }
         ArrayList<Capture> list = new ArrayList<Capture>();
@@ -2311,7 +2366,40 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
     }
     
     public static void main(String[] args) throws Exception {
-        boolean testIpMap = true;
+        boolean testReplacement = true;
+        if (testReplacement) {
+            CaptureManager.dataPath = "c:\\my\\dev\\eclipsewrk\\CwHelper\\";
+            TunerManager tunerManager = TunerManager.getInstance();
+            tunerManager.countTuners();
+            //Collection channels = tunerManager.getAllChannels(false);
+            //System.out.println("there were " + channels.size() + " tuners.");
+            //for (Object channel : channels) {
+            //    System.out.println("channel:" + channel);
+            //}
+            Calendar startCal = Calendar.getInstance();
+            Calendar endCal = Calendar.getInstance();
+            endCal.add(Calendar.HOUR, 1);
+            Slot aSlot = new Slot(startCal, endCal);
+            CaptureHdhr capture = (CaptureHdhr)tunerManager.getCaptureForChannelNameSlotAndTuner("21.6", aSlot, "1013FADA-1", "8vsb");
+            capture.addCurrentTunerToFailedDeviceList();
+            CaptureHdhr replacementCapture = (CaptureHdhr)TunerManager.getReplacementCapture(capture);
+            replacementCapture.addCurrentTunerToFailedDeviceList();
+            CaptureHdhr replacementCapture2 = (CaptureHdhr)TunerManager.getReplacementCapture(replacementCapture);
+            
+        }
+        
+        
+        boolean testPriority = false;
+        if (testPriority) {
+            CaptureManager.dataPath = "c:\\my\\dev\\eclipsewrk\\CwHelper\\";
+            List<String> priorityTunerList = getPrioritySortedTunersForChannel("21","6");
+            for (String tuner : priorityTunerList) {
+                System.out.println("tuner: " + tuner);
+            }
+        }
+        
+        
+        boolean testIpMap = false;
         if (testIpMap) {
             String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.3.188\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
             fileDiscoverText = "";

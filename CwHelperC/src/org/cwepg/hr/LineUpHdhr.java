@@ -583,6 +583,9 @@ public class LineUpHdhr extends LineUp {
                     TunerManager.getInstance().removeHdhrByUrl(url);
                     break;
                 }
+                if (e.getMessage().contains("Not Found")) {
+                    break;
+                }
             } finally {
                 httpclient.getConnectionManager().shutdown();
             }
