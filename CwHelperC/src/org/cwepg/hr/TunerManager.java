@@ -1292,15 +1292,17 @@ public class TunerManager {
             System.out.println(lastReason + "<<<<<<<<<<< Last Reason");
             return null;
         }
-        CaptureHdhr replacementCaptureHdhr = null;
         Map<String, CaptureHdhr> allAvailableReplacements = new TreeMap<String, CaptureHdhr>();
         for (Capture possibleCapture : availableCapturesList) {
             if (possibleCapture instanceof CaptureHdhr) {
-                replacementCaptureHdhr = (CaptureHdhr)possibleCapture;
-                allAvailableReplacements.put(replacementCaptureHdhr.channel.tuner.getFullName(), replacementCaptureHdhr);
+                CaptureHdhr possibleCaptureHdhr = (CaptureHdhr)possibleCapture;
+                String replacementTunerName = possibleCaptureHdhr.channel.tuner.getFullName();
+                if (tunerIsInFailedList(replacementTunerName, failedDeviceNames)) continue;
+                allAvailableReplacements.put(possibleCaptureHdhr.channel.tuner.getFullName(), possibleCaptureHdhr);
             } 
         }
         if (allAvailableReplacements.size() == 0) return null;
+        CaptureHdhr replacementCaptureHdhr = allAvailableReplacements.get(allAvailableReplacements.keySet().iterator().next()); // Take the first as a default, in case channel_maps.txt thing doesn't work.
         Set<String> replacementTunerNames = allAvailableReplacements.keySet();
         System.out.println("Looking for channel_maps.txt sort for " + capture.channel.frequency + "," + capture.channel.pid);
         List<String> priorityOrderTunerNames = TunerManager.getPrioritySortedTunersForChannel(capture.channel.frequency, capture.channel.pid);
@@ -1331,6 +1333,7 @@ public class TunerManager {
         for (String failedDeviceName : failedDeviceNames) {
             //System.out.println("DEBUG should be FFFFFFFF-n [" +  fullName + "] ?? [" + failedDeviceName + "]");
             if (failedDeviceName.equals(fullName)) {
+                //System.out.println("DEBUG: determined that " + fullName + " was a failed tuner.");
                 return true;
             }
         }
@@ -2383,9 +2386,10 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             CaptureHdhr capture = (CaptureHdhr)tunerManager.getCaptureForChannelNameSlotAndTuner("21.6", aSlot, "1013FADA-1", "8vsb");
             capture.addCurrentTunerToFailedDeviceList();
             CaptureHdhr replacementCapture = (CaptureHdhr)TunerManager.getReplacementCapture(capture);
+            System.out.println("TunerManager.main() replacementCapture : " + replacementCapture);
             replacementCapture.addCurrentTunerToFailedDeviceList();
             CaptureHdhr replacementCapture2 = (CaptureHdhr)TunerManager.getReplacementCapture(replacementCapture);
-            
+            System.out.println("TunerManager.main() replacementCapture2: " + replacementCapture2);
         }
         
         
