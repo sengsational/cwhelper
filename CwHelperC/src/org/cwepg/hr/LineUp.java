@@ -28,6 +28,7 @@ public abstract class LineUp {
         channels = new TreeMap<String,Channel>();    
     }
     
+    /* PRIMARY METHOD TO GET CHANNEL */
     public Channel getChannel(String channelName, int input, String protocol, String tunerName) {
         // use protocol, if specified
         if (protocol != null && !protocol.equals("")){
@@ -53,6 +54,7 @@ public abstract class LineUp {
         return null;
     }
     
+    /* Used in Fusion processing only */
     public Channel getChannelByDescription(String channelDescription){
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
             Object key = iter.next();
@@ -77,6 +79,7 @@ public abstract class LineUp {
     //    return foundChannels.toArray(new Channel[0]);
     //}
 
+    /* Used in Fusion processing only */
     public Channel getChannelByKey(String channelKey) {
         // channelKey is like "27.3:1-8vsb"
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
@@ -88,6 +91,7 @@ public abstract class LineUp {
         return null;
     }
 
+    /* Used in signal strength analysis */
     public ArrayList<String> getSameRfChannelKeys(String channelKey) {
         ArrayList<String> channelKeys = new ArrayList<String>();
         String rfNumberString = channelKey.split("\\.")[0] + ".";
@@ -103,6 +107,7 @@ public abstract class LineUp {
         return channelKeys;
     }
     
+    /* Used in MyHD processing only */
     public Channel getChannelVirtual(String channelVirtualFull, String physicalChannel) {
         Channel returnChannel = null;
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
@@ -122,16 +127,18 @@ public abstract class LineUp {
         return returnChannel;
     }
 
-    public Channel getChannelDigital(String channelVirtual, String input) {
+    /* Method used in Hdhr replacement captures */
+    public Channel getChannelDigitalVirtual(String channelVirtual) {
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
             Object key = iter.next();
             Channel channelDigital = (Channel)channels.get(key);
             //System.out.println("comparing " + channelVirtual + " with " + channel.getFullVirtualChannel() + ":" + channel.input);
-            if (channelVirtual.equals(channelDigital.getFullVirtualChannel(channelDigital.virtualHandlingRequired) + ":" + channelDigital.input)) return channelDigital;
+            if (channelVirtual.equals(channelDigital.getFullVirtualChannel(channelDigital.virtualHandlingRequired))) return channelDigital;
         }
         return null;
     }
 
+     /* Used in Fusion processing only */
     public Channel getChannel(int virtualPrefix, int pid){ //42, 3
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
             Object key = iter.next();
@@ -148,6 +155,7 @@ public abstract class LineUp {
         return null;
     }
     
+    /* Called from Tuner.getChannel() MyHD processing only */
     public Channel getChannelDigital(String channelVirtual, String rfChannel, String input, String protocol) {
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
             Object key = iter.next();
@@ -165,6 +173,7 @@ public abstract class LineUp {
         return null;
     }
 
+    /* Called from Tuner.getChannel() MyHD processing only */
     public Channel getChannelAnalog(String rfChannel, String input, String protocol) {
         String findChannel = rfChannel + ":" + input + "-" + protocol;
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {

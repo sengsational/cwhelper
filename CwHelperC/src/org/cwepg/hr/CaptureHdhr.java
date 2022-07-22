@@ -379,7 +379,7 @@ public class CaptureHdhr extends Capture implements Runnable {
     }
 
     public void replaceFailedDeviceList(List<String> failedDeviceNames) {
-        System.out.println("DEBUG: failed device count " + failedDeviceNames.size());
+        //System.out.println("DEBUG: failed device count " + failedDeviceNames.size());
         this.failedDeviceList = failedDeviceNames;
     }
 

@@ -1281,11 +1281,13 @@ public class TunerManager {
     public static Capture getReplacementCapture(CaptureHdhr capture) {
         if (capture == null) return null;
         String channelName = capture.channel.getCleanedChannelName();
+        TunerHdhr tuner = (TunerHdhr) capture.channel.tuner;
         Slot slot = capture.slot.clone();
         slot.adjustStartTimeToNowPlusLeadTimeSeconds(6);
         String protocol = capture.channel.protocol;
         List<String> failedDeviceNames = capture.getFailedDeviceList(); // String like FFFFFFFF-n
-        List<Capture> availableCapturesList = getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol);
+        
+        List<Capture> availableCapturesList = getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol, tuner.isVchannel);
         if (availableCapturesList == null || availableCapturesList.size() == 0) {
             lastReason += "<br>getAvailableCapturesForChannelNameAndSlot returned no captures for " + channelName + " " + protocol + " " + slot; // <<<<<<<<<<<<<<<<<<20161214
             System.out.println("DEBUG: " + (availableCapturesList==null?"available captures was null (empty)":"captures list was size zero " + availableCapturesList.size()));
@@ -1304,11 +1306,12 @@ public class TunerManager {
         if (allAvailableReplacements.size() == 0) return null;
         CaptureHdhr replacementCaptureHdhr = allAvailableReplacements.get(allAvailableReplacements.keySet().iterator().next()); // Take the first as a default, in case channel_maps.txt thing doesn't work.
         Set<String> replacementTunerNames = allAvailableReplacements.keySet();
-        System.out.println("Looking for channel_maps.txt sort for " + capture.channel.frequency + "," + capture.channel.pid);
-        List<String> priorityOrderTunerNames = TunerManager.getPrioritySortedTunersForChannel(capture.channel.frequency, capture.channel.pid);
+        List<String> priorityOrderTunerNames = new ArrayList<String>();
+        priorityOrderTunerNames = TunerManager.getPrioritySortedTunersForChannel(capture.channel);
+        System.out.println(new Date() + ((priorityOrderTunerNames.size() > 0)?" channel_maps.txt priority used.":" channel_maps.txt priority unavailble."));
         OUT:
         for (String priorityTunerName : priorityOrderTunerNames) {
-            System.out.println(new Date() + " Tuner priority order: " + priorityTunerName);
+            //System.out.println("DEBUG: Tuner priority order: " + priorityTunerName);
             for (String tunerName : replacementTunerNames) {
                 if (priorityTunerName.equals(tunerName)) {
                     //System.out.println("DEBUG:    Match " + tunerName + " " + priorityTunerName);
@@ -1656,7 +1659,7 @@ public class TunerManager {
         return returnMessage.toString();
     }
     
-    public static List<String> getPrioritySortedTunersForChannel(String physical, String program) {
+    public static List<String> getPrioritySortedTunersForChannel(Channel channel) {
         // **************************************************************************************************************
         // Read channel_maps file, ignoring all but the channelThing
         // **************************************************************************************************************
@@ -1669,8 +1672,10 @@ public class TunerManager {
             while ((map = reader.readValues()) != null) {
                 CwEpgChannelRow aRow = new CwEpgChannelRow(map);
                 aRow.setRawLine(CSVReader.lastLine);
-                if (physical.equals(aRow.getPhysicalName()) && program.equals(aRow.getProgramName())) {
-                    String rawTunerNameString = aRow.getTunerName(); //  "HR(FFFFFFFF-n)"
+                boolean foundVirtual = channel.virtualHandlingRequired && channel.frequency.equals(aRow.getVir()) && channel.pid.equals(aRow.getSub());
+                boolean foundTraditional = !channel.virtualHandlingRequired && channel.frequency.equals(aRow.getPhysicalName()) && channel.pid.equals(aRow.getProgramName());
+                if (foundVirtual || foundTraditional) {
+                    String rawTunerNameString = aRow.getTunerName(); //  "FFFFFFFF-n"
                     try {
                         if (rawTunerNameString!=null) {
                             priortySortedTuners.add(rawTunerNameString.trim());
@@ -1720,9 +1725,16 @@ public class TunerManager {
             return null;
         }
     }
+    public static List<Capture> getAvailbleCapturesForVirtualChannelNameAndSlot(String virtualChannelName, Slot slot, String protocol) {
+        return getAvailableCapturesForChannelNameAndSlot(virtualChannelName, slot, protocol, true);
+    }
+    
+    public static List<Capture> getAvailableCapturesForChannelNameAndSlot(String channelName, Slot slot, String protocol) {
+        return getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol, false);
+    }
 
     // For Fusion and HDHR (so input is always 1)
-    public static List<Capture> getAvailableCapturesForChannelNameAndSlot(String channelName, Slot slot, String protocol) {
+    public static List<Capture> getAvailableCapturesForChannelNameAndSlot(String channelName, Slot slot, String protocol, boolean isVirtualChannel) {
         if (slot.isInThePast()){
             lastReason = new Date() + " slot in the past. " + slot;
             return new ArrayList<Capture>();
@@ -1732,8 +1744,13 @@ public class TunerManager {
         for (Iterator<Tuner> iter = iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
             Channel aChannel = tuner.lineUp.getChannel(channelName, 1, protocol, tuner.getFullName());
+            String virtualMessage = "";
+            if (isVirtualChannel) {
+                virtualMessage = "virtual";
+                aChannel = tuner.lineUp.getChannelDigitalVirtual(channelName);
+            }
             if (aChannel == null){
-                lastReason += " channel " + channelName + " " + protocol + " not found on " + tuner.getFullName() + " lineup.<br>"; //channel 29.1 null not found on 10123716-0 lineup.
+                lastReason += " " + virtualMessage + " channel " + channelName + " " + protocol + " not found on " + tuner.getFullName() + " lineup.<br>"; //channel 29.1 null not found on 10123716-0 lineup.
                 continue;
             }
             Capture trialCapture = null;
@@ -2372,18 +2389,33 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
         boolean testReplacement = true;
         if (testReplacement) {
             CaptureManager.dataPath = "c:\\my\\dev\\eclipsewrk\\CwHelper\\";
+            //If this is set to false, then I see just the new tuner, and it will be vchannel.
+            //CaptureManager.useHdhrCommandLine = true; // for traditional testing;
+            CaptureManager.useHdhrCommandLine = false; // for vchannel testing;
             TunerManager tunerManager = TunerManager.getInstance();
             tunerManager.countTuners();
-            //Collection channels = tunerManager.getAllChannels(false);
-            //System.out.println("there were " + channels.size() + " tuners.");
-            //for (Object channel : channels) {
-            //    System.out.println("channel:" + channel);
-            //}
+            Collection channels = tunerManager.getAllChannels(false);
+            System.out.println("there were " + channels.size() + " channels.");
+            for (Object channel : channels) {
+                System.out.println("channel:" + channel);
+            }
             Calendar startCal = Calendar.getInstance();
             Calendar endCal = Calendar.getInstance();
             endCal.add(Calendar.HOUR, 1);
             Slot aSlot = new Slot(startCal, endCal);
-            CaptureHdhr capture = (CaptureHdhr)tunerManager.getCaptureForChannelNameSlotAndTuner("21.6", aSlot, "1013FADA-1", "8vsb");
+            String protocol = "8vsb";
+            String channelName = "23.3"; // RF.pid for traditional is WBTV-DT
+            String tunerName = "1013FADA-1";
+            if (!CaptureManager.useHdhrCommandLine) {
+                channelName = "3.1"; // virtual for WBTV-DT
+                tunerName = "10A369BB-1";
+            }
+            CaptureHdhr capture = (CaptureHdhr)tunerManager.getCaptureForChannelNameSlotAndTuner(channelName, aSlot, tunerName, protocol);
+            System.out.println("TunerManager.main()     originalCapture: " + capture);
+            if (capture == null) {
+                System.out.println("TunerManager.main(): No capture was found matching " + channelName + " " + tunerName + " " + protocol + " " + aSlot);
+                return;
+            }
             capture.addCurrentTunerToFailedDeviceList();
             CaptureHdhr replacementCapture = (CaptureHdhr)TunerManager.getReplacementCapture(capture);
             System.out.println("TunerManager.main() replacementCapture : " + replacementCapture);
@@ -2391,17 +2423,6 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             CaptureHdhr replacementCapture2 = (CaptureHdhr)TunerManager.getReplacementCapture(replacementCapture);
             System.out.println("TunerManager.main() replacementCapture2: " + replacementCapture2);
         }
-        
-        
-        boolean testPriority = false;
-        if (testPriority) {
-            CaptureManager.dataPath = "c:\\my\\dev\\eclipsewrk\\CwHelper\\";
-            List<String> priorityTunerList = getPrioritySortedTunersForChannel("21","6");
-            for (String tuner : priorityTunerList) {
-                System.out.println("tuner: " + tuner);
-            }
-        }
-        
         
         boolean testIpMap = false;
         if (testIpMap) {

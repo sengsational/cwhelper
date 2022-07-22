@@ -177,6 +177,7 @@ public abstract class Tuner { //implements Comparable {
 		return nextCapture;
 	}
 
+	/* Used in MyHD processing only */
     public Channel getChannel(String channelVirtual, String rfChannel, String input, String protocol) {
         if (channelVirtual != null && !(channelVirtual.indexOf(".0:1") > 0 || channelVirtual.indexOf(".0:2") > 0)){
             return this.lineUp.getChannelDigital(channelVirtual, rfChannel, input, protocol);

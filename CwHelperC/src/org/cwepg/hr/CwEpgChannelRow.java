@@ -54,6 +54,20 @@ public class CwEpgChannelRow  {
         return program;
     }
 
+    public String getVir() {
+        if (map == null) return "(no map)";
+        String value = (String)map.get("Vir");
+        if (value == null) return "(no virtual)";
+        return value;
+    }
+
+    public String getSub() {
+        if (map == null) return "(no map)";
+        String value = (String)map.get("Sub");
+        if (value == null) return "(no sub)";
+        return value;
+    }
+
     public String toString(){
         StringBuffer buf = new StringBuffer();
         for (Iterator iter = map.keySet().iterator(); iter.hasNext();) {
