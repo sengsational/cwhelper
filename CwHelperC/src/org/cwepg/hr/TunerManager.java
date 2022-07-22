@@ -1687,8 +1687,12 @@ public class TunerManager {
             }
         } catch (Exception e){
             System.out.println(new Date() + " WARNING: No priority information available for replacement capture. " + e.getClass().getName() + " " + e.getMessage());
+            return priortySortedTuners; //empty
         } finally {
             if (reader != null) try {reader.close();} catch (Throwable t) {};
+        }
+        if (priortySortedTuners.size() == 0) {
+            System.out.println(new Date() + " No matches found comparing " + channel.frequency + " and " + channel.pid + " with all of the " + (channel.virtualHandlingRequired?"'Vir' and 'Sub'":"'Phy' and 'Prog'") + " in the file " + CaptureManager.dataPath + File.separator + "channel_maps.txt");
         }
         return priortySortedTuners;
     }
