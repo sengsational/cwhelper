@@ -1307,7 +1307,7 @@ public class TunerManager {
         CaptureHdhr replacementCaptureHdhr = allAvailableReplacements.get(allAvailableReplacements.keySet().iterator().next()); // Take the first as a default, in case channel_maps.txt thing doesn't work.
         Set<String> replacementTunerNames = allAvailableReplacements.keySet();
         List<String> priorityOrderTunerNames = new ArrayList<String>();
-        priorityOrderTunerNames = TunerManager.getPrioritySortedTunersForChannel(capture.channel);
+        priorityOrderTunerNames = TunerManager.getPrioritySortedTunersForChannel((ChannelDigital)capture.channel);
         System.out.println(new Date() + ((priorityOrderTunerNames.size() > 0)?" channel_maps.txt priority used.":" channel_maps.txt priority unavailble."));
         OUT:
         for (String priorityTunerName : priorityOrderTunerNames) {
@@ -1659,7 +1659,7 @@ public class TunerManager {
         return returnMessage.toString();
     }
     
-    public static List<String> getPrioritySortedTunersForChannel(Channel channel) {
+    public static List<String> getPrioritySortedTunersForChannel(ChannelDigital channel) {
         // **************************************************************************************************************
         // Read channel_maps file, ignoring all but the channelThing
         // **************************************************************************************************************
@@ -1672,7 +1672,7 @@ public class TunerManager {
             while ((map = reader.readValues()) != null) {
                 CwEpgChannelRow aRow = new CwEpgChannelRow(map);
                 aRow.setRawLine(CSVReader.lastLine);
-                boolean foundVirtual = channel.virtualHandlingRequired && channel.frequency.equals(aRow.getVir()) && channel.pid.equals(aRow.getSub());
+                boolean foundVirtual = channel.virtualHandlingRequired && channel.channelVirtual.equals(aRow.getVir() + "." + aRow.getSub());
                 boolean foundTraditional = !channel.virtualHandlingRequired && channel.frequency.equals(aRow.getPhysicalName()) && channel.pid.equals(aRow.getProgramName());
                 if (foundVirtual || foundTraditional) {
                     String rawTunerNameString = aRow.getTunerName(); //  "FFFFFFFF-n"
@@ -2394,8 +2394,8 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
         if (testReplacement) {
             CaptureManager.dataPath = "c:\\my\\dev\\eclipsewrk\\CwHelper\\";
             //If this is set to false, then I see just the new tuner, and it will be vchannel.
-            //CaptureManager.useHdhrCommandLine = true; // for traditional testing;
-            CaptureManager.useHdhrCommandLine = false; // for vchannel testing;
+            CaptureManager.useHdhrCommandLine = true; // for traditional testing;
+            //CaptureManager.useHdhrCommandLine = false; // for vchannel testing;
             TunerManager tunerManager = TunerManager.getInstance();
             tunerManager.countTuners();
             Collection channels = tunerManager.getAllChannels(false);
