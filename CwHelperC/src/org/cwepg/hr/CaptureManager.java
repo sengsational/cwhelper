@@ -261,12 +261,14 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                                 System.out.println(new Date() + " Attempting to define and schedule a replacement for [" + capture + "]");
                                 CaptureHdhr captureHdhr = (CaptureHdhr)capture;
                                 captureHdhr.addCurrentTunerToFailedDeviceList();
-                                Capture replacementCapture = tunerManager.getReplacementCapture(captureHdhr);
+                                captureHdhr.target.fileName = Target.getNonAppendedFileName(captureHdhr.target.fileName);
+                                Capture replacementCapture = TunerManager.getReplacementCapture(captureHdhr);
                                 if (replacementCapture != null) {
                                     try {
                                         System.out.println(new Date() + " Created replacement [" + replacementCapture + "]");
                                         String fileNameAppendRandom = "_" + (Math.random() + "").substring(3, 6);
-                                        Target replacementTarget = new Target(capture.target, captureHdhr, fileNameAppendRandom);
+                                        fileNameAppendRandom = ""; // Terry wanted to try this.  We might or might not get a conflict...I didn't research it.
+                                        Target replacementTarget = new Target(captureHdhr.target, captureHdhr, fileNameAppendRandom);
                                         replacementCapture.setTarget(replacementTarget);
                                         scheduleCapture(replacementCapture, true);
                                         System.out.println(new Date() + " Replacement scheduled ok.");

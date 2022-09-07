@@ -276,7 +276,8 @@ public class TunerHdhr extends Tuner {
     }
 
     public void setIpAddress(String ipAddressTuner) {
-        this.ipAddressTuner = ipAddressTuner;
+    	if (ipAddressTuner == null) return;
+        this.ipAddressTuner = ipAddressTuner.trim();
     }
     
     public String getFullName() {

@@ -313,7 +313,21 @@ public class Target {
         if (isWatch()) return "(watch)";
         else return this.fileName;
     }
-
+    
+    public static String getNonAppendedFileName(String fileName) {
+        String[] parts = fileName.split("\\.");
+        int lastBeforeMarkLoc = parts.length - 2;
+        if (lastBeforeMarkLoc >= 0) {
+            String maybeHasAppend = parts[lastBeforeMarkLoc];
+            String[] segs = maybeHasAppend.split("_");
+            if (segs.length == 1) return fileName;
+            lastBeforeMarkLoc = segs.length - 1;
+            String maybeInteger = segs[lastBeforeMarkLoc];
+            try {Integer.parseInt(maybeInteger);} catch (Throwable t) {return fileName;}
+            return fileName.replace("_" + maybeInteger, "");
+        }
+        return fileName;
+    }
     
     public String getTitle() {
         if (title == null) return "";
@@ -387,22 +401,37 @@ public class Target {
 	 */
 	public static void main(String[] args) throws Exception {
 		
-        String[][] testData = {
-                //{"HDHR non-existing directory full path specified"              ,"c:\\doesnotexist\\someFileName.tp", "title", null,null,null, "" + Tuner.HDHR_TYPE},
-                //{"HDHR existing directory, full path specified"                 ,"c:\\tv\\someFileName.tp"          , "title", null,null,null, "" + Tuner.HDHR_TYPE},
-                //{"MYHD non-existing directory full path specified"              ,"c:\\doesnotexist\\someFileName.tp", "title", "c:\\tv",null,"8vsb", "" + Tuner.MYHD_TYPE},
-                //{"MYHD existing directory full path specified"                  ,"c:\\tv\\someFileNameMyhd.tp"      , "title", "c:\\tv",null,"qam", "" + Tuner.MYHD_TYPE},
-                //{"MYHD no path specified"                                       ,"someFileNameMyhdNP.tp"            , "title", "c:\\tv",null,"qam", "" + Tuner.MYHD_TYPE},
-                //{"FUSN no path, no extension specified"                         ,"someFusionFile"                   , "title", "c:\\tv","AVI","analogCable", "" + Tuner.FUSION_TYPE},
-                //{"FUSN no path, good extension specified"                       ,"someFusionFile.mpg"               , "title", "c:\\tv","AVI","analogCable", "" + Tuner.FUSION_TYPE},
-                //{"FUSN no path, bad extension specified"                        ,"someFusionFile.xyz"               , "title", "c:\\tv","AVI","analogCable", "" + Tuner.FUSION_TYPE},
-                {"Allens Problem Target"                                          ,"c:\\hdhr6\\Test[HD0](07-20-10).tp", "Test",  ""      ,"",   "8vsb",        "" + Tuner.HDHR_TYPE},
-        };
-        for (int i = 0; i < testData.length; i++){
-            System.out.println(">>>>>>>>>" + testData[i][0] + "<<<<<<<<<<<<<");
-            System.out.println( new Target(testData[i][1],testData[i][2],testData[i][3], testData[i][4], testData[i][5], Integer.parseInt(testData[i][6])));
-            System.out.println("-------------------------------------");
-        }
+	    boolean testAppendRemoval = true;
+	    if (testAppendRemoval) {
+	        String testFile = "c:\\some\\path\\someFileName_123.tp";
+	        System.out.println("With    append [" + testFile + "] result: [" +Target.getNonAppendedFileName(testFile) + "]");
+	        testFile = "c:\\some\\path\\someFileName.tp";
+            System.out.println("Without append [" + testFile + "] result: [" +Target.getNonAppendedFileName(testFile) + "]");
+            testFile = "c:\\some\\path.withdot\\someFileName_023.tp";
+            System.out.println("With append [" + testFile + "] result: [" +Target.getNonAppendedFileName(testFile) + "] has dot in path.");
+            testFile = "c:\\some\\path\\some.FileName_023.tp";
+            System.out.println("With append [" + testFile + "] result: [" +Target.getNonAppendedFileName(testFile) + "] has dot in file.");
+	    }
+	    
+	    boolean testTargetCreation = false;
+	    if (testTargetCreation) {
+            String[][] testData = {
+                    //{"HDHR non-existing directory full path specified"              ,"c:\\doesnotexist\\someFileName.tp", "title", null,null,null, "" + Tuner.HDHR_TYPE},
+                    //{"HDHR existing directory, full path specified"                 ,"c:\\tv\\someFileName.tp"          , "title", null,null,null, "" + Tuner.HDHR_TYPE},
+                    //{"MYHD non-existing directory full path specified"              ,"c:\\doesnotexist\\someFileName.tp", "title", "c:\\tv",null,"8vsb", "" + Tuner.MYHD_TYPE},
+                    //{"MYHD existing directory full path specified"                  ,"c:\\tv\\someFileNameMyhd.tp"      , "title", "c:\\tv",null,"qam", "" + Tuner.MYHD_TYPE},
+                    //{"MYHD no path specified"                                       ,"someFileNameMyhdNP.tp"            , "title", "c:\\tv",null,"qam", "" + Tuner.MYHD_TYPE},
+                    //{"FUSN no path, no extension specified"                         ,"someFusionFile"                   , "title", "c:\\tv","AVI","analogCable", "" + Tuner.FUSION_TYPE},
+                    //{"FUSN no path, good extension specified"                       ,"someFusionFile.mpg"               , "title", "c:\\tv","AVI","analogCable", "" + Tuner.FUSION_TYPE},
+                    //{"FUSN no path, bad extension specified"                        ,"someFusionFile.xyz"               , "title", "c:\\tv","AVI","analogCable", "" + Tuner.FUSION_TYPE},
+                    {"Allens Problem Target"                                          ,"c:\\hdhr6\\Test[HD0](07-20-10).tp", "Test",  ""      ,"",   "8vsb",        "" + Tuner.HDHR_TYPE},
+            };
+            for (int i = 0; i < testData.length; i++){
+                System.out.println(">>>>>>>>>" + testData[i][0] + "<<<<<<<<<<<<<");
+                System.out.println( new Target(testData[i][1],testData[i][2],testData[i][3], testData[i][4], testData[i][5], Integer.parseInt(testData[i][6])));
+                System.out.println("-------------------------------------");
+            }
+	    }
 	}
 
 }

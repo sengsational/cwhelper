@@ -527,7 +527,7 @@ public class TunerManager {
         if (ipAddressMap != null) {
             Set<String> devices = ipAddressMap.keySet();
             for (String deviceName : devices) {
-                System.out.println("key [" + deviceName + "] entry [" + ipAddressMap.get(device) + "]");
+                System.out.println("key [" + deviceName + "] entry [" + ipAddressMap.get(deviceName) + "]");
                 if (deviceName.equalsIgnoreCase(device)) {
                     String discoverJson = LineUpHdhr.getPage("http://" + ipAddressMap.get(deviceName) + "/discover.json", 10, false, false);
                     // System.out.println("discoverJson [" + discoverJson + "]"); //{"FriendlyName":"HDHomeRun FLEX 4K","ModelNumber":"HDFX-4K","FirmwareName":"hdhomerun_dvr_atsc3","FirmwareVersion":"20220203","DeviceID":"10A369BB","DeviceAuth":"MNsOdjqp7sSa4rEv76QuwBUI","BaseURL":"http://192.168.3.186:80","LineupURL":"http://192.168.3.186:80/lineup.json","TunerCount":4}
@@ -850,9 +850,16 @@ public class TunerManager {
             System.out.println(new Date() + " No Tuners. Use discover.");
             return "No Tuners. Use discover.";
         }
-        if (CaptureManager.rerunDiscover && !hdhrCountOk()) {  // if rerunDiscover is true then hdhrCountOk runs and causes live discover to be run.
+        String liveDiscoverText = getLiveDiscoverText(CaptureManager.discoverRetries, CaptureManager.discoverDelay);
+        ArrayList<String> liveDevices = findTunerDevicesFromText(liveDiscoverText, true); // devices.txt is always written out here (we read the old one already).
+
+        if (CaptureManager.rerunDiscover && !hdhrCountOk(liveDevices)) {  // if rerunDiscover is true then hdhrCountOk runs and causes live discover to be run.
             System.out.println(new Date() + " Hdhr Count not accurate. Use discover.");
             return "Hdhr Count not accurate. Use discover.";
+        }
+        if (CaptureManager.rerunDiscover && !hdhrSameIps(liveDiscoverText)) {
+            System.out.println(new Date() + " Hdhr IP's not accurate. Use discover.");
+            return "Hdhr IP's not accurate. Use discover.";
         }
         System.out.println(new Date() + " TunerManager.scanRefreshLineUpTm for " + tuners.size() + " tuners. ");
         for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
@@ -966,7 +973,7 @@ public class TunerManager {
     }
     
     // DRS 20190422  - Added Method
-    public boolean hdhrCountOk() {
+    public boolean hdhrCountOk(ArrayList<String> liveDevices) {
         // DRS 20200908 - Changed count to devices, not tuners (which was wrong all along).  Example device id is 269940550, example tuners on the device is 1010FADA-1,1010FADA-0. 
         //int hdhrCount = 0;
         Set<String> deviceSet = new HashSet<String>();
@@ -977,12 +984,28 @@ public class TunerManager {
                 deviceSet.add(((TunerHdhr)aTuner).getDeviceId());
             }
         }
-        String liveDiscoverText = getLiveDiscoverText(CaptureManager.discoverRetries, CaptureManager.discoverDelay);
-        ArrayList<String> liveDevices = findTunerDevicesFromText(liveDiscoverText, true); // devices.txt is always written out here (we read the old one already).
         System.out.println(new Date() + " Got " + liveDevices.size() + " items from active discover command.");
         System.out.println(new Date() + " Had " + deviceSet.size() + " devices from the tuner list.  Returning '" + (liveDevices.size() == deviceSet.size()) + "' to hdhrCountOk()"); 
         //return liveDevices.size() == hdhrCount;
         return liveDevices.size() == deviceSet.size();
+    }
+    // DRS 20220905  - Added Method
+    public boolean hdhrSameIps(String liveDiscoverText) {
+        Set<String> deviceSet = new HashSet<String>();
+        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+            Tuner aTuner = iter.next();
+            if (aTuner instanceof TunerHdhr) {
+                String ipAddress = ((TunerHdhr)aTuner).ipAddressTuner;
+                if (!liveDiscoverText.contains(ipAddress)) {
+                    System.out.println(new Date() + " IP Address " + ipAddress + " not found in live discover text.");
+                    return false;
+                } else {
+                    // System.out.println(new Date() " Found IP Address " + ipAddress + " in live discover text.");
+                }
+            }
+        }
+        System.out.println(new Date() + " All IP Addresses were in live discover text.");
+        return true;
     }
     
     public boolean hasHdhrTuner() {
@@ -1055,10 +1078,11 @@ public class TunerManager {
                     if (t.equals("device") && tok.hasMoreTokens()){
                         String deviceId = tok.nextToken();
                         try {
+                            deviceId = deviceId.trim(); //DRS 20220905 - added trim, just in case it has a space
                             Integer.parseInt(deviceId, 16); // just a validation... we don't actually use the converted value.
                             result.add(deviceId);
                         } catch (Throwable e){
-                            // System.out.println(deviceId + " followed the word device, but wasn't hex string");
+                            System.out.println("[" + deviceId + "] followed the word device, but wasn't hex string");
                         }
                     }
                 }
@@ -1290,7 +1314,7 @@ public class TunerManager {
         List<Capture> availableCapturesList = getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol, tuner.isVchannel);
         if (availableCapturesList == null || availableCapturesList.size() == 0) {
             lastReason += "<br>getAvailableCapturesForChannelNameAndSlot returned no captures for " + channelName + " " + protocol + " " + slot; // <<<<<<<<<<<<<<<<<<20161214
-            System.out.println("DEBUG: " + (availableCapturesList==null?"available captures was null (empty)":"captures list was size zero " + availableCapturesList.size()));
+            //System.out.println("DEBUG: " + (availableCapturesList==null?"available captures was null (empty)":"captures list was size zero " + availableCapturesList.size()));
             System.out.println(lastReason + "<<<<<<<<<<< Last Reason");
             return null;
         }
@@ -1320,7 +1344,7 @@ public class TunerManager {
                         System.out.println(new Date() + " Tuner is in failed list already: " + tunerName);
                         continue;
                     }
-                    System.out.println(new Date() + " Replacement tuner found: " + tunerName);
+                    System.out.println(new Date() + " " +  tunerName + " was available.");
                     replacementCaptureHdhr = allAvailableReplacements.get(tunerName);
                     break OUT;
                 } else {
@@ -1661,7 +1685,7 @@ public class TunerManager {
     
     public static List<String> getPrioritySortedTunersForChannel(ChannelDigital channel) {
         // **************************************************************************************************************
-        // Read channel_maps file, ignoring all but the channelThing
+        // Read channel_maps file, ignoring all but the matching rf.pid (traditional) or virtual channel (vchannel)
         // **************************************************************************************************************
         CSVReader reader = null;
         ArrayList<String> priortySortedTuners = new ArrayList<String>();
@@ -2390,7 +2414,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
     }
     
     public static void main(String[] args) throws Exception {
-        boolean testReplacement = true;
+        boolean testReplacement = false;
         if (testReplacement) {
             CaptureManager.dataPath = "c:\\my\\dev\\eclipsewrk\\CwHelper\\";
             //If this is set to false, then I see just the new tuner, and it will be vchannel.
@@ -2428,11 +2452,13 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             System.out.println("TunerManager.main() replacementCapture2: " + replacementCapture2);
         }
         
-        boolean testIpMap = false;
+        boolean testIpMap = true;
         if (testIpMap) {
-            String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.3.188\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
-            fileDiscoverText = "";
-            String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.217.171\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
+            String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.181.254\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
+            //String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.3.188\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
+            //fileDiscoverText = "";
+            String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.212.64\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
+            //String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.217.171\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
             HashMap<String, String> ipMap = getIpMap(fileDiscoverText, liveDiscoverText);
             Set keys = ipMap.keySet();
             for (Object object : keys) {
