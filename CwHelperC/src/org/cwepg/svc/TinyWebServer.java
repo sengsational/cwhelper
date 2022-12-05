@@ -114,6 +114,8 @@ public class TinyWebServer implements Runnable {
 		if (argv.length < 1) {
 			System.out.println("usage: java TinyWebServer <port>");
 			return;
+		} else {
+		    System.out.println("running TinyWebServer on [" + argv[0] + "]");
 		}
 		TinyWebServer server = new TinyWebServer(argv[0]);
 

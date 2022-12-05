@@ -43,9 +43,7 @@ public class WebHelpDoc {
         buf.append("<tr><td>/set</td><td>simulate</td><td>ie true</td><td>Use if you do not have a HDHR installed</td></tr>\n");
         buf.append("<tr><td>/set</td><td>sleepmanaged</td><td>ie true</td><td>Use to keep the machine awake for recordings.  Default is false.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>trayicon</td><td>ie false</td><td>Set to false if you do not want the application to have a tray icon.  Default is true.</td></tr>\n");
-        //buf.append("<tr><td>/set</td><td>recreateiconuponwakeup</td><td>ie true</td><td>Set to true if you want to delete and re-add the icon when machine resets an innacurate clock upon waking.  Default is true.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>alltraditionalhdhr</td><td>ie true</td><td>Set to true you want to have all tuners treated as if they were tradional (not new model) tuners.  Default is false.</td></tr>\n");
-        //buf.append("<tr><td>/set</td><td>pollintervalseconds</td><td>ie 30</td><td>The number of seconds between each check of the system clock. Default is 15.  Set to less than 1 to disable ClockChecker.</td></tr>\n");
         buf.append("<tr><td>/settunerpath</td><td>tuner</td><td>ie 1010CC54-0</td><td>You use whatever the discover command replies with.</td></tr>\n");
         buf.append("<tr><td>-</td><td>path</td><td>ie c:\\mypath\\</td><td>The default record path for an HDHR tuner (for disk space reporting on /tuners output).  The setting will remain through restarts.  Leaving off the path will remove the setting.</td></tr>\n");
         buf.append("<tr><td>/discover</td><td>-</td><td>-</td><td>Deletes all tuners, then recreates all tuners from the registry.  For HDHR it goes to the network, or uses information from an earlier discover.txt file.</td></tr>\n");
@@ -86,6 +84,8 @@ public class WebHelpDoc {
         buf.append("<tr><td>/sortchannels</td><td>-</td><td>-</td><td>Sorts HDHR channels (only) by signal strength.  After using /capture with channelname=*, and getting sample recordings, executing this function will re-arrange cw_epg's channel_maps.txt by swapping pairs of same channels.  For instance, if 11.3 on HDHR tuner 0 was higher in the channel_maps.txt than 11.3 on HDHR tuner 1,  but the latter had a better signal, the two would be swapped.  And this continues for all mapped channels.</td></tr>\n");
         buf.append("<tr><td>-</td><td>dayshistory</td><td>ie 30</td><td>Maximum number of days old to look for signal strength (optional).  Defaults to 14.</td></tr>\n");
         buf.append("<tr><td>/path</td><td>root</td><td>ie drives or c:\\somePath</td><td>Get a list of folders below the root specified.</td></tr>\n");
+        buf.append("<tr><td>/getdbfile</td><td>-</td><td>-</td><td>Pulls the specified file as an http download.</td></tr>\n");
+        buf.append("<tr><td>-</td><td>filename</td><td>ie cw_json1.db</td><td>The file name without path.  The path will be data directory defined at startup.</td></tr>\n");
         buf.append("<tr><td>/shutdown</td><td>-</td><td>-</td><td>Stop active captures, if any, and stop the service.  The web interface stops too.</td></tr>\n");
         buf.append("<tr><td>/log</td><td>-</td><td>-</td><td>Displays current log file.</td></tr>\n");
         buf.append("<tr><td>/properties</td><td>-</td><td>-</td><td>Displays properties held in the CaptureManager.</td></tr>\n");

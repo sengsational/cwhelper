@@ -1,8 +1,13 @@
 package org.cwepg.svc;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -36,6 +41,7 @@ class TinyConnection implements Runnable {
 	protected Socket client;
 	protected BufferedReader in;
 	protected PrintStream out;
+	protected DataOutputStream dataout;
     protected CaptureManager captureManager;
     protected TunerManager tunerManager;
 	private static final String HEAD = "HTTP/1.0 200 OK\nContent-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
@@ -53,6 +59,7 @@ class TinyConnection implements Runnable {
 		try {
 			in = new BufferedReader(new InputStreamReader(new DataInputStream(client.getInputStream())));
 			out = new PrintStream(client.getOutputStream());
+			dataout = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
 		} catch (IOException e) {
 			System.err.println(e);
             try {in.close();} catch (Exception e2) {/* ignore */}
@@ -699,6 +706,31 @@ class TinyConnection implements Runnable {
             //    } catch (Exception e) {
             //        out.print(HEAD + "No dbcopy done: " + e.getMessage() + FOOT);
             //    }
+            } else if (action.equals("/getdbfile")) {      //******************** GET DATABASE FILE *********************
+                String dbFile = (String)request.get("filename");
+                String filePath = CaptureManager.dataPath + dbFile;
+                if ((new File(filePath)).exists()) {
+                    InputStream in = null;
+                    try {
+                        byte[] bytes = new byte[1024];
+                        in = new FileInputStream(filePath);
+                        int count;
+                        dataout.writeBytes("HTTP/1.0 200 OK\r\n");
+                        dataout.writeBytes("Content-Type: application/octet-stream\r\n");
+                        dataout.writeBytes("\r\n");
+                        while ((count = in.read(bytes)) > 0) {
+                            dataout.write(bytes, 0, count);
+                        }
+                        dataout.flush();                    
+                    } catch (Exception e) {
+                        System.out.println(new Date() + " ERROR: Failure in responding to request for database file. " + e.getClass().getName() + " " + e.getMessage());
+                    } finally {
+                        if (in != null) try {in.close();} catch (Throwable t) {/*ignore*/}
+                    }
+                } else {
+                    System.out.println(new Date() + " /getdbfile unable to send file. File [" + filePath + "] not found.");
+                    out.print(HEAD +  " /getdbfile unable to send file. File [" + filePath + "] not found." + FOOT);
+                }
             } else if (action.equals("/wakeupevent")){ // ************* WAKEUPEVENT ***************
                 String hourToSend = (String)request.get("hourtosend");
                 String minuteToSend = (String)request.get("minutetosend");
@@ -846,13 +878,14 @@ class TinyConnection implements Runnable {
             //DRS 20210323 - Commented 1 - No longer to keep machine awake for X amount of time after the last web command.  TODO: Remove keepAwakeWorhtyAction and remove registerKeepAwakeEvent();
             //if (keepAwakeWorthyAction) CaptureManager.registerKeepAwakeEvent();
 		} catch (Exception e) {
-            System.err.println(new Date() + " Error in TinyConnection.run");
+            System.err.println(new Date() + " Error in TinyConnection.run " + e.getClass().getName() + " " + e.getMessage());
             e.printStackTrace();
             out.print(e.getClass().getName() + " " + e.getMessage());
-            System.out.println(e.getMessage());
+            System.out.println(new Date() + " Error in TinyConnection.run " + e.getClass().getName() + " " + e.getMessage());
 		} finally {
             try {in.close();} catch (Exception e2) {/* ignore */}
             try {out.close();} catch (Exception e2) {/* ignore */}
+            try {dataout.close();} catch (Exception e2) {/* ignore */}
             try {client.close();} catch (IOException e2) {/* ignore */}
 		}
 	}
