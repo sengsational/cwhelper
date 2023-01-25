@@ -37,8 +37,8 @@ public class BuildExeFromClassFiles {
     public static final String PROJECT_DIRECTORY = "C:\\my\\dev\\eclipsewrk\\CwHelper\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
-    public static final String STOREPASS = "";
-    public static final String KEYPASS = "";
+    public static final String STOREPASS = "Hnds#1111";
+    public static final String KEYPASS = "Hnds#1111";
     public static final String JRE_PATH = "C:\\Program Files\\Android\\Android Studio\\jre\\bin\\";
     public static final String BASE_VERSION = "5-0-0-";
     public static final String COMMA_VERSION = "5,0,0,";

@@ -44,6 +44,7 @@ public class WebHelpDoc {
         buf.append("<tr><td>/set</td><td>sleepmanaged</td><td>ie true</td><td>Use to keep the machine awake for recordings.  Default is false.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>trayicon</td><td>ie false</td><td>Set to false if you do not want the application to have a tray icon.  Default is true.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>alltraditionalhdhr</td><td>ie true</td><td>Set to true you want to have all tuners treated as if they were tradional (not new model) tuners.  Default is false.</td></tr>\n");
+        buf.append("<tr><td>/set</td><td>unlockwithforce</td><td>ie false</td><td>Set to true you want to force unlock HDHR tuners that are locked when a recording is starting.  Default is false.</td></tr>\n");
         buf.append("<tr><td>/settunerpath</td><td>tuner</td><td>ie 1010CC54-0</td><td>You use whatever the discover command replies with.</td></tr>\n");
         buf.append("<tr><td>-</td><td>path</td><td>ie c:\\mypath\\</td><td>The default record path for an HDHR tuner (for disk space reporting on /tuners output).  The setting will remain through restarts.  Leaving off the path will remove the setting.</td></tr>\n");
         buf.append("<tr><td>/discover</td><td>-</td><td>-</td><td>Deletes all tuners, then recreates all tuners from the registry.  For HDHR it goes to the network, or uses information from an earlier discover.txt file.</td></tr>\n");

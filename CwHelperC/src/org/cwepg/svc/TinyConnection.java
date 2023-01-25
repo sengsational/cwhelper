@@ -183,6 +183,18 @@ class TinyConnection implements Runnable {
                     }
                 }
                 
+                setItem = (String)request.get("unlockwithforce");
+                if (setItem != null ) {
+                    goodSettingCount++;
+                    if (setItem.equals("true")){
+                        CaptureManager.setUnlockWithForce(true);
+                        out.print(HEAD + "unlockWithForce=true" + FOOT);
+                    } else if (setItem.equals("false")){
+                        CaptureManager.setUnlockWithForce(false);
+                        out.print(HEAD + "unlockWithForce=false" + FOOT);
+                    }
+                }
+                
                 setItem = (String)request.get("rerundiscover");
                 if (setItem != null ) {
                     goodSettingCount++;
@@ -373,9 +385,9 @@ class TinyConnection implements Runnable {
                     Iterator<String> keysIter2 = request.keySet().iterator();
                     String actionText = (String)request.get(keysIter2.next());
                     System.out.println(new Date() + " Setting NOT understood [" + actionText + "]");
-                    out.print(HEAD + message + captureManager.getProperties() + FOOT);
+                    out.print(HEAD + message + captureManager.getProperties(false) + FOOT);
                 } else {
-                    out.print(HEAD + captureManager.getProperties() + FOOT);
+                    out.print(HEAD + captureManager.getProperties(false) + FOOT);
                 }
                 
             } else if (action.equals("/tuners")){ // ************* TUNERS ***************
@@ -657,7 +669,7 @@ class TinyConnection implements Runnable {
             } else if (action.equals("/log")){ // ************* LOG ***************
                 out.print(HEAD + WebHelpDoc.getLog() + FOOT);
             } else if (action.equals("/properties")){ // ************* PROPERTIES ***************
-                out.print(HEAD + captureManager.getProperties() + FOOT);
+                out.print(HEAD + captureManager.getProperties(false) + FOOT);
             } else if (action.equals("/shutdown")){ // ************* SHUTDOWN ***************
                 out.print(HEAD + CaptureManager.shutdown("web") + FOOT);
             } else if (action.equals("/actives")){ // ************* ACTIVITIES ***************

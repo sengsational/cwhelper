@@ -1310,6 +1310,7 @@ public class TunerManager {
         slot.adjustStartTimeToNowPlusLeadTimeSeconds(6);
         String protocol = capture.channel.protocol;
         List<String> failedDeviceNames = capture.getFailedDeviceList(); // String like FFFFFFFF-n
+        System.out.println(new Date() + " Original capture channel: [" + capture.channel + "] derived channelName: [" + channelName + "]");
         
         List<Capture> availableCapturesList = getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol, tuner.isVchannel);
         if (availableCapturesList == null || availableCapturesList.size() == 0) {
@@ -1799,7 +1800,7 @@ public class TunerManager {
             if (trialCapture != null && tuner.available(trialCapture, true, verbose)){
                 prioritizedCaptures.put(priority, trialCapture);
             } else {
-                lastReason += "<br>tuner " + tuner.getFullName() + " not available for " + trialCapture;
+                lastReason += "<br>tuner " + tuner.getFullName() + " not available for > " + trialCapture;
             }
         }
         ArrayList<Capture> list = new ArrayList<Capture>();
@@ -2398,7 +2399,9 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
     }
     
     public String getLastReason(){
-        return lastReason;
+        String returnedLastReason = lastReason;
+        lastReason = ""; //DRS 20230124
+        return returnedLastReason;
     }
     
     public void clearLastReason() {

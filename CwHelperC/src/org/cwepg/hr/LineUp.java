@@ -132,8 +132,17 @@ public abstract class LineUp {
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
             Object key = iter.next();
             Channel channelDigital = (Channel)channels.get(key);
-            //System.out.println("comparing " + channelVirtual + " with " + channel.getFullVirtualChannel() + ":" + channel.input);
-            if (channelVirtual.equals(channelDigital.getFullVirtualChannel(channelDigital.virtualHandlingRequired))) return channelDigital;
+            if (channelVirtual.equals(channelDigital.getFullVirtualChannel(channelDigital.virtualHandlingRequired))) {
+                return channelDigital;
+            }
+        }
+        // Did not find it with channelDigital.virtualHandlingRequired so try it the other way
+        for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
+            Object key = iter.next();
+            Channel channelDigital = (Channel)channels.get(key);
+            if (channelVirtual.equals(channelDigital.getFullVirtualChannel(!channelDigital.virtualHandlingRequired))) {
+                return channelDigital;
+            }
         }
         return null;
     }

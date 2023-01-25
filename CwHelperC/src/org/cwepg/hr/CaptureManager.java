@@ -94,12 +94,14 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static boolean allTraditionalHdhr = false;
     public static boolean rerunDiscover = false;
     public static boolean useHdhrCommandLine = true; // DRS 20200707 - Added instance variable allow hdhr via http
+    public static boolean unlockWithForce = false; // DRS 20221210 - Added ability to configure unlock vs scheduling replacement
     
     static ArrayList<Capture> activeCaptures = new ArrayList<Capture>(); //DRS 20220708 - Changed to ArrayList from HashSet because extended recordings didn't match hash
     
     private CaptureManager(){
         //ServiceStatusManager.setServiceStatusHandler(this); //DRS 20080822 Comment Service Specific Code
         loadSettings();
+        System.out.println(new Date() + "\n" + getProperties(true));
         if (clockOffset != 0) alterPcClock(clockOffset, 5, true);
         loadHtmlPages(htmlFileNames);
         Arrays.fill(interrupterList,"");
@@ -259,6 +261,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                             System.out.println(new Date() + " WARNING: Device for capture was unavailable! " + d.getMessage());
                             if (capture instanceof CaptureHdhr) {
                                 System.out.println(new Date() + " Attempting to define and schedule a replacement for [" + capture + "]");
+                                System.out.println(new Date() + " CaptureManager.hdhrRecordMonitorSeconds = " + CaptureManager.hdhrRecordMonitorSeconds);
                                 CaptureHdhr captureHdhr = (CaptureHdhr)capture;
                                 captureHdhr.addCurrentTunerToFailedDeviceList();
                                 captureHdhr.target.fileName = Target.getNonAppendedFileName(captureHdhr.target.fileName);
@@ -809,6 +812,11 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         saveSettings();
     }
     
+    public static void setUnlockWithForce(boolean unlockWithForce) {
+        CaptureManager.unlockWithForce = unlockWithForce;
+        saveSettings();
+    }
+    
     public static void setRerunDiscover(boolean rerunDiscover) {
         CaptureManager.rerunDiscover = rerunDiscover;
         saveSettings();
@@ -894,6 +902,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         try {nextProperty = "myhdWakeup"; props.put(nextProperty,  "" + CaptureManager.myhdWakeup);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
         //try {nextProperty = "recreateIconUponWakeup"; props.put(nextProperty,  "" + CaptureManager.recreateIconUponWakeup);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");} DRS 20210301 -  Removed - No longer needed (used with now removed ClockChecker)
         try {nextProperty = "allTraditionalHdhr"; props.put(nextProperty,  "" + CaptureManager.allTraditionalHdhr);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
+        try {nextProperty = "unlockWithForce"; props.put(nextProperty,  "" + CaptureManager.unlockWithForce);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
         try {nextProperty = "rerunDiscover"; props.put(nextProperty,  "" + CaptureManager.rerunDiscover);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
         try {nextProperty = "hdhrRecordMonitorSeconds"; props.put(nextProperty, "" + CaptureManager.hdhrRecordMonitorSeconds);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
         try {nextProperty = "hdhrBadRecordingPercent"; props.put(nextProperty, "" + CaptureManager.hdhrBadRecordingPercent);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
@@ -1024,6 +1033,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                     CaptureManager.allTraditionalHdhr = Boolean.parseBoolean(props.getProperty(key));
                 } else if (key != null && key.equals("rerunDiscover")){
                     CaptureManager.rerunDiscover = Boolean.parseBoolean(props.getProperty(key));
+                } else if (key != null && key.equals("unlockWithForce")){
+                    CaptureManager.unlockWithForce = Boolean.parseBoolean(props.getProperty(key));
                 } else if (key != null && key.equals("myhdWakeup")){
                     CaptureManager.myhdWakeup = Boolean.parseBoolean(props.getProperty(key));
                     if (!CaptureManager.myhdWakeup) System.out.println(new Date() + " Machine wake-up for MyHD events will skipped.");
@@ -1124,7 +1135,34 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     }
 
     
-    public String getProperties() {
+    public String getProperties(boolean plain) {
+        if (plain) {
+            StringBuffer buf2 = new StringBuffer();
+            buf2.append("dataPath=\"" + dataPath + "\"\n");
+            buf2.append("hdhrPath=\"" + hdhrPath + "\"\n"); 
+            buf2.append("sleepManaged=\"" + CaptureManager.isSleepManaged + "\"\n"); 
+            buf2.append("leadTime=\"" + CaptureManager.leadTimeSeconds + "\"\n"); 
+            buf2.append("fusionLeadTime=\"" + CaptureManager.fusionLeadTime + "\"\n"); 
+            buf2.append("simulate=\"" + CaptureManager.simulate + "\"\n"); 
+            buf2.append("endFusionWatchEvents=\"" + CaptureManager.endFusionWatchEvents + "\"\n"); 
+            buf2.append("trayIcon=\"" + CaptureManager.trayIcon + "\"\n"); 
+            buf2.append("shortenExternalRecordingsSeconds=\"" + CaptureManager.shortenExternalRecordingsSeconds + "\"\n"); 
+            buf2.append("discoverRetries=\"" + CaptureManager.discoverRetries + "\"\n"); 
+            buf2.append("discoverDelay=\"" + CaptureManager.discoverDelay + "\"\n"); 
+            buf2.append("clockOffset=\"" + CaptureManager.clockOffset + "\"\n"); 
+            buf2.append("myhdWakeup=\"" + CaptureManager.myhdWakeup + "\"\n"); 
+            buf2.append("hdhrRecordMonitorSeconds=\"" + CaptureManager.hdhrRecordMonitorSeconds + "\"\n"); 
+            buf2.append("hdhrBadRecordingPercent=\"" + CaptureManager.hdhrBadRecordingPercent + "\"\n"); 
+            buf2.append("alternateChannels=\"" + CaptureManager.alternateChannels + "\"\n"); 
+            //buf2.append("pollIntervalSeconds=\"" + CaptureManager.pollIntervalSeconds + "\"\n"); 
+            //buf2.append("recreateIconUponWakeup=\"" + CaptureManager.recreateIconUponWakeup + "\"\n"); DRS 20210301 -  Removed - No longer needed (used with now removed ClockChecker)
+            buf2.append("allTraditionalHdhr=\"" + CaptureManager.allTraditionalHdhr + "\"\n"); 
+            buf2.append("rerunDiscover=\"" + CaptureManager.rerunDiscover + "\"\n"); 
+            buf2.append("userHdhrCommandLine=\"" + CaptureManager.useHdhrCommandLine + "\"\n"); 
+            buf2.append("unlockWithForce=\"" + CaptureManager.unlockWithForce + "\"\n");
+            return buf2.toString();
+        }
+
         StringBuffer buf = new StringBuffer("<table border=\"1\">\n");
         StringBuffer xmlBuf = new StringBuffer("\n<xml id=\"properties\">\n");
         buf.append(
@@ -1149,6 +1187,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 "<tr><td>AllTraditionalHdhr:</td><td>" + CaptureManager.allTraditionalHdhr + "</td></tr>" + 
                 "<tr><td>RerunDiscover:</td><td>" + CaptureManager.rerunDiscover + "</td></tr>" + 
                 "<tr><td>UseHdhrCommandLine:</td><td>" + CaptureManager.useHdhrCommandLine + "</td></tr>" + 
+                "<tr><td>UnlockWithForce:</td><td>" + CaptureManager.unlockWithForce + "</td></tr>" + 
                 "\n");
         xmlBuf.append(
                 "  <capture "+ 
@@ -1173,6 +1212,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 "allTraditionalHdhr=\"" + CaptureManager.allTraditionalHdhr + "\" " + 
                 "rerunDiscover=\"" + CaptureManager.rerunDiscover + "\" " + 
                 "userHdhrCommandLine=\"" + CaptureManager.useHdhrCommandLine + "\" " + 
+                "unlockWithForce=\"" + CaptureManager.unlockWithForce + "\" " + 
                 "/>\n");
         buf.append("</table>\n");
         xmlBuf.append("</xml>\n");

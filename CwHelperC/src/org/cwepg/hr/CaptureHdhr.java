@@ -96,9 +96,11 @@ public class CaptureHdhr extends Capture implements Runnable {
                 forceRequired = report(cl) != null && report(cl).indexOf("resource locked") > -1;
                 //DRS 20220710 - Comment 1, Add 1 - Remove force recording...let this recording fail and later schedule a replacement, if possible.
                 //if (forceRequired) clearLockByForce(tuner.id, tuner.number);
-                if (forceRequired) {
+                if (forceRequired && !CaptureManager.unlockWithForce ) {
                     this.lockAcquired = false;
                     throw new DeviceUnavailableException("WARNING: The HDHR device was in use.  This capture will not proceed.");
+                } else if (forceRequired && CaptureManager.unlockWithForce) {
+                    clearLockByForce(tuner.id, tuner.number);
                 } else {
                     this.lockAcquired = true;
                 }

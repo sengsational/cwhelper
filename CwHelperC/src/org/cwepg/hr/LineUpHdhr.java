@@ -180,9 +180,12 @@ public class LineUpHdhr extends LineUp {
         double priority = getStartPriority(tuner.getDeviceId(), tuner.number);
         System.out.println(new Date() + " Clearing channels for tuner: " + tuner.getFullName());
         tuner.lineUp.clearAllChannels(); // DRS 2019 12 15 - Added Line
+        int count = 0;
         for (String programDefinition : programDefinitions) {
             addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
+            count++;
         }
+        System.out.println(new Date() + " " + count + " channels added to tuner: " + tuner.getFullName());
     }
     
     private ArrayList<String> getProgramDefinitions(TunerHdhr tuner, String fileNameString) throws Exception {
