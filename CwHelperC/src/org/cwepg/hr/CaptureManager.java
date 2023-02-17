@@ -430,7 +430,12 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         if (!runFlag) {
             System.out.println(new Date() + " CaptureManager runFlag is already false (" + who + ")");
             return "Thanks, but a shutdown was already in process.";
-        } 
+        }
+        
+        if (activeCaptures.size() != 0) {
+            System.out.println(new Date() + " Active capture(s) prevented shutdown (" + who + ")");
+            return "Active capture(s) prevented shutdown";
+        }
         
         System.out.println(new Date() + " Shutdown request being processed.");
         

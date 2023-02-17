@@ -16,6 +16,7 @@ public abstract class LineUp {
 
     Map<String,Channel> channels = new TreeMap<String,Channel>();
     String signalType;
+    boolean completedDump = true; // false; for debugging matching replacement captures
     
     public void addChannel(Channel channel) {
         Channel nullChannel = channels.get(channel.channelKey);
@@ -132,17 +133,27 @@ public abstract class LineUp {
         for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
             Object key = iter.next();
             Channel channelDigital = (Channel)channels.get(key);
-            if (channelVirtual.equals(channelDigital.getFullVirtualChannel(channelDigital.virtualHandlingRequired))) {
+            // DRS 20230129 - Correct matching for XML Cable Lineup
+            String withoutVirtualProcessing = channelDigital.getFullVirtualChannel(!channelDigital.virtualHandlingRequired);
+            String withVirtualProcessing = channelDigital.getFullVirtualChannel(channelDigital.virtualHandlingRequired);
+            if (withoutVirtualProcessing.equals("0.0") && !withVirtualProcessing.contains(".")) withoutVirtualProcessing = withVirtualProcessing + ".0";
+            if (channelVirtual.equals(withoutVirtualProcessing) || channelVirtual.equals(withVirtualProcessing)) {
                 return channelDigital;
             }
         }
-        // Did not find it with channelDigital.virtualHandlingRequired so try it the other way
-        for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
-            Object key = iter.next();
-            Channel channelDigital = (Channel)channels.get(key);
-            if (channelVirtual.equals(channelDigital.getFullVirtualChannel(!channelDigital.virtualHandlingRequired))) {
-                return channelDigital;
+        if (!completedDump) {
+            completedDump = true;
+            System.out.println("*********************************");
+            System.out.println("DEBUG: no match on channelVirtual [" + channelVirtual + "]");
+            System.out.println("*********************************");
+            for (Iterator iter = channels.keySet().iterator(); iter.hasNext();) {
+                Object key = iter.next();
+                Channel channelDigital = (Channel)channels.get(key);
+                String withoutVirtualProcessing = channelDigital.getFullVirtualChannel(!channelDigital.virtualHandlingRequired);
+                String withVirtualProcessing = channelDigital.getFullVirtualChannel(channelDigital.virtualHandlingRequired);
+                System.out.println("DEBUG: [" + channelVirtual + "] key [" + key + "] with [" + withVirtualProcessing + "] without [" + withoutVirtualProcessing + "]");
             }
+            System.out.println("*********************************");
         }
         return null;
     }

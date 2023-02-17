@@ -276,7 +276,7 @@ public class CaptureDetails implements Comparable, Cloneable {
             System.out.println(new Date() + " updating data using [" + query + "]");
             int updatedCount = statement.executeUpdate(query);
             if (updatedCount != 1){
-                System.out.println(new Date() + "updating data - WARNING - unexpected result from update:  Records updated = " + updatedCount);
+                System.out.println(new Date() + " updating data - WARNING - unexpected result from update:  Records updated = " + updatedCount);
             } else {
                 //System.out.println(new Date() + "updating data - updated " + updatedCount + " record.");
             }
