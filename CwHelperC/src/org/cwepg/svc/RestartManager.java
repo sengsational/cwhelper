@@ -103,6 +103,10 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
     public WinDef.LRESULT callback(WinDef.HWND hwnd, int uMsg, WinDef.WPARAM wParam, WinDef.LPARAM lParam) {
         //System.out.println(new Date() + " RestartManager: The callback() method with uMsg [" + uMsg + "] wParam [" + wParam + "] lParam [" + lParam + "]");
         if (uMsg == WM_QUERYENDSESSION && lParam.intValue() == ENDSESSION_CLOSEAPP) {
+            if (CaptureManager.activeCaptures.size() != 0) {
+                System.out.println(new Date() + " RestartManager: >>>> WM_QUERYSESSION with ENDSESSION_CLOSEAPP <<<<< We reply with 'false' because we have active capture(s).");
+                return new WinDef.LRESULT(WIN_FALSE); // No, we have active captures.
+            }
             System.out.println(new Date() + " RestartManager: >>>> WM_QUERYSESSION with ENDSESSION_CLOSEAPP <<<<< We reply with 'true' to indicate yes, we can/will but not doing it yet.");
             // registerApplicationRestart(); //DRS 20210318 - Moved this out (allow the user of the class to call after startup, if needed).
             return new WinDef.LRESULT(WIN_TRUE); // Yes, we can exit whenever you want.

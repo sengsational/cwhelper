@@ -96,7 +96,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static boolean useHdhrCommandLine = true; // DRS 20200707 - Added instance variable allow hdhr via http
     public static boolean unlockWithForce = false; // DRS 20221210 - Added ability to configure unlock vs scheduling replacement
     
-    static ArrayList<Capture> activeCaptures = new ArrayList<Capture>(); //DRS 20220708 - Changed to ArrayList from HashSet because extended recordings didn't match hash
+    public static ArrayList<Capture> activeCaptures = new ArrayList<Capture>(); //DRS 20220708 - Changed to ArrayList from HashSet because extended recordings didn't match hash
     
     private CaptureManager(){
         //ServiceStatusManager.setServiceStatusHandler(this); //DRS 20080822 Comment Service Specific Code
@@ -432,7 +432,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             return "Thanks, but a shutdown was already in process.";
         }
         
-        if (activeCaptures.size() != 0) {
+        if (activeCaptures.size() != 0  && !who.contains("ENDSESSION")) {
             System.out.println(new Date() + " Active capture(s) prevented shutdown (" + who + ")");
             return "Active capture(s) prevented shutdown";
         }
