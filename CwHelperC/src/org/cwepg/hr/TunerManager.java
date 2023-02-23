@@ -1901,6 +1901,14 @@ public class TunerManager {
             aTuner.removeCapture(capture);
         }
     }
+    
+    public void removeCapture(Capture capture, boolean persist) {
+        Tuner aTuner = getTunerForCapture(capture);
+        if (aTuner == null){
+        } else {
+            ((TunerHdhr)aTuner).removeCapture(capture, persist);
+        }
+    }
 
     private Capture getCaptureForSequence(String sequence){
         Capture foundCapture = null;

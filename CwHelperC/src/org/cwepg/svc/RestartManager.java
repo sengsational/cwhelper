@@ -11,8 +11,10 @@ import static com.sun.jna.Library.OPTION_TYPE_MAPPER;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
+import org.cwepg.hr.Capture;
 import org.cwepg.hr.CaptureManager;
 
 import com.sun.jna.Native;
@@ -104,6 +106,11 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
         //System.out.println(new Date() + " RestartManager: The callback() method with uMsg [" + uMsg + "] wParam [" + wParam + "] lParam [" + lParam + "]");
         if (uMsg == WM_QUERYENDSESSION && lParam.intValue() == ENDSESSION_CLOSEAPP) {
             if (CaptureManager.activeCaptures.size() != 0) {
+                for (Iterator iter = CaptureManager.activeCaptures.iterator(); iter.hasNext();) {
+                    System.out.println(new Date() + " RestartManager: >>>> WM_QUERYSESSION with ENDSESSION_CLOSEAPP <<<<< Early removal of active capture.");
+                    Capture aCapture = (Capture) iter.next();
+                    CaptureManager.getInstance().removeActiveCapture(aCapture, false, false); // stop the capture but don't write the persistence file.
+                }
                 System.out.println(new Date() + " RestartManager: >>>> WM_QUERYSESSION with ENDSESSION_CLOSEAPP <<<<< Issuing a shutdown before responding because we have active capture(s).");
                 CaptureManager.shutdown("WM_ENDSESSION/ENDSESSION_CLOSEAPP");
                 System.out.println(new Date() + " RestartManager: >>>> WM_QUERYSESSION with ENDSESSION_CLOSEAPP <<<<< We came back from CaptureManager.shutdown(), now replying with 'true' because 'false' would be ignored anyway.");

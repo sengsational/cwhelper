@@ -304,7 +304,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                     case Capture.END:
                         try {
                             boolean needsInterrupt = false;
-                            removeActiveCapture(capture, needsInterrupt);
+                            removeActiveCapture(capture, needsInterrupt, true);
                             System.out.println(new Date() + " Handled END event for " + tuner.id + "-" + tuner.number + " " + capture.channel.channelKey + " " + capture.slot);
                         } catch (Exception e) {
                             System.out.println(new Date() + " Could not end capture! " + e.getMessage());
@@ -389,7 +389,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             // Stop any active recordings (if we are not simulating)
             for (Iterator iter = activeCaptures.iterator(); iter.hasNext() && !CaptureManager.simulate;) {
                 Capture aCapture = (Capture) iter.next();
-                this.removeActiveCapture(aCapture, false);
+                this.removeActiveCapture(aCapture, false, false); // stop the captures, but do not re-write the captures persistence file
             }
             
             // Reset all wakeup timers (they will be re-created from persisted captures on restart)
@@ -541,7 +541,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public void removeCapture(String sequence) throws Exception {
         Capture capture = tunerManager.removeCapture(sequence);
         if (CaptureManager.activeCaptures.contains(capture)){
-            removeActiveCapture(capture, true);
+            removeActiveCapture(capture, true, true);
         }
     }
     
@@ -555,14 +555,14 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         boolean needsInterrupt = false; // if you're removing all captures no interrupt needed here.
         for (Iterator iter = removeThese.iterator(); iter.hasNext();) {
             Capture aCapture = (Capture) iter.next();
-            removeActiveCapture(aCapture, needsInterrupt);
+            removeActiveCapture(aCapture, needsInterrupt, true);
         }
         boolean localRemovalOnly = false;
         tunerManager.removeAllCaptures(localRemovalOnly);
     }
     
     //Called by trayIcon, the above 2 methods, and the run method
-    public void removeActiveCapture(Capture capture, boolean needsInterrupt){
+    public void removeActiveCapture(Capture capture, boolean needsInterrupt, boolean persist){
         if (capture != null ){
             capture.removeIcon();
             System.out.println(new Date() + " Saving capture details " + capture);
@@ -593,7 +593,11 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 }
 
                 // stuff for removing ALL captures
-                tunerManager.removeCapture(capture);
+                if (persist) {
+                    tunerManager.removeCapture(capture); // Normal case.  When you remove it, you want it gone forever.
+                } else if (capture instanceof CaptureHdhr) {
+                    tunerManager.removeCapture(capture, persist); // persist is false.  Do not re-write the persistence file.
+                }
                 
                 // DRS 20150718 - In case something old did not get cleared out
                 List<Capture> removeList = new ArrayList<Capture>();

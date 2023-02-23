@@ -377,6 +377,25 @@ public class TunerHdhr extends Tuner {
         }
     }
     
+    public void removeCapture(Capture capture, boolean persist) {
+        if (!persist) {
+            for (int i = 0; i < captures.size(); i++){
+                if (((Capture)captures.get(i)).equals(capture)){
+                    Capture aCapture = (Capture)captures.get(i);
+                    System.out.println(new Date() + " Removing capture from TunerHdhr, but leaving the persistance for restart. " + aCapture.getTitle());
+                    captures.remove(i);
+                    aCapture.removeWakeup();
+                    break;
+                }
+            }
+        } else {
+            // if persist is true, do the normal processing, but this method is really for the special case when persist is false.
+            removeCapture(capture);
+        }
+        return;
+    }
+
+    
     public static void main(String[] args) throws Exception {
         TunerHdhr tuner = new TunerHdhr("1013FADA-1", false);
         //System.out.println("low space: " + tuner.getLowSpaceComment(50));
