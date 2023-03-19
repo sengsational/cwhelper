@@ -22,6 +22,12 @@ public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
         
+        boolean testDoubleTick = true;
+        if (testDoubleTick) {
+            String targetFile = "F:\\tv\\23.3-230317-1550-2023 NCAA Men's Basketball's Tournament-First Round{colon} Vermont {colon} Marquette_002.tp";
+            targetFile = targetFile.replaceAll("\\'", "\\''");
+            System.out.println("double brace: [" + targetFile + "]");
+        }
 
         boolean testApplicationHome = false;
         if (testApplicationHome) {

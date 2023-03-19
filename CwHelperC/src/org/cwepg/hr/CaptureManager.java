@@ -608,7 +608,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
 
                 for (Capture aCapture : removeList) {
                     try {
-                        if (aCapture.slot.isInThePastBy(LEAD_TIME_MS * 12)) { // DRS20171016 - doubled from 6 to 12.  Error when ending 4 at a time.
+                        if (aCapture.slot.isInThePastBy(LEAD_TIME_MS * 18)) { // DRS 20230314 - up to 18...Error when ending 6.  //DRS20171016 - doubled from 6 to 12.  Error when ending 4 at a time.
                             activeCaptures.remove(aCapture);
                             tunerManager.removeCapture(aCapture);
                             System.out.println(new Date() + " WARNING: An old active capture was removed." + aCapture.getTitle());

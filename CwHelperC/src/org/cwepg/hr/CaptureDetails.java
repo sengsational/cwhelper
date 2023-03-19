@@ -267,7 +267,8 @@ public class CaptureDetails implements Comparable, Cloneable {
             String query = null;
             if (dbFunction.equalsIgnoreCase("update")){
                 String nameValuePairs = getNameValuePairsFromFieldsAndValues(updateFields, updateValues);
-                query = dbFunction + " " + CaptureDataManager.tableName + " set " + nameValuePairs + " where tableKey = '" + tableKey + "' AND (endEvent IS NULL)";
+                targetFile = targetFile.replaceAll("\\'", "\\''");
+                query = dbFunction + " " + CaptureDataManager.tableName + " set " + nameValuePairs + " where tableKey = '" + tableKey + "' AND (endEvent IS NULL) AND targetFile = '" + targetFile +"'";
             } else if (dbFunction.equalsIgnoreCase("insert into")){
                 updateValues = updateValues.replaceAll("~",",");
                 updateFields = updateFields.replaceAll("~",",");

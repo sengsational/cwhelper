@@ -2,6 +2,7 @@ package org.cwepg.svc;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -46,7 +47,10 @@ class TinyConnection implements Runnable {
     protected TunerManager tunerManager;
 	private static final String HEAD = "HTTP/1.0 200 OK\nContent-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
     private static final String HEAD_SHORT = "HTTP/1.0 200 OK\nContent-type: text/html\n\n";
+    private static final String HEAD_JS = "HTTP/1.0 200 OK\nContent-type: text/javascript\n\n";
+    private static final String HEAD_JSON = "HTTP/1.0 200 OK\nContent-type: application/json\n\n";
     private static final String FOOT = "</body></html>";
+    private static final String CRLF = "\r\n";
     private static final SimpleDateFormat clock = new SimpleDateFormat("HH:mm:ss");
     private static final Object locker = new Object();
     protected static String mLastRequest = "";
@@ -884,6 +888,30 @@ class TinyConnection implements Runnable {
                 response += "<br><br>" + HttpRequester.getLastError();
                 System.out.println(new Date() + " " + response);
                 out.print(HEAD + response + FOOT);
+            } else if ((action.endsWith(".html") || action.endsWith(".js")|| action.endsWith(".json")) && action.startsWith("/")) {
+                String resourceFileName = action.substring(1);
+                String heading = HEAD_SHORT;
+                if (resourceFileName.endsWith(".js")) heading = HEAD_JS;
+                if (resourceFileName.endsWith(".json")) heading = HEAD_JSON;
+                String[] returnString = getResourceAsString(resourceFileName);
+                if (returnString[0] != null) {
+                    out.print(heading + returnString[0]);
+                } else {
+                    out.print(HEAD + "<br><h2>" + returnString[1] + "</h2><br>" + FOOT);
+                }
+            } else if (action.endsWith(".png") && action.startsWith("/")) {
+                String iconFileName = action.substring(1);
+                byte[] returnBytes = getResourceAsBytes(iconFileName);
+                if (returnBytes != null) {
+                    //https://stackoverflow.com/questions/64224655/how-to-create-a-http-response-for-images-in-java
+                    String response = "HTTP/1.1 200 OK" + CRLF + "Content-Length: " + returnBytes.length + CRLF;
+                    response += "content-type: image/png" + CRLF + CRLF;
+                    out.write(response.getBytes());
+                    out.write(returnBytes);
+                    out.write((CRLF + CRLF).getBytes());
+                } else {
+                    out.print(HEAD + "<br><h2>Failed to get PNG data from resource.</h2><br>" + FOOT);
+                }
             } else {
                 out.print(HEAD + "<br><h2>Command Not Understood</h2><br>" + FOOT);
             }
@@ -896,12 +924,73 @@ class TinyConnection implements Runnable {
             System.out.println(new Date() + " Error in TinyConnection.run " + e.getClass().getName() + " " + e.getMessage());
 		} finally {
             try {in.close();} catch (Exception e2) {/* ignore */}
-            try {out.close();} catch (Exception e2) {/* ignore */}
+            try {out.flush(); out.close();} catch (Exception e2) {/* ignore */}
             try {dataout.close();} catch (Exception e2) {/* ignore */}
             try {client.close();} catch (IOException e2) {/* ignore */}
 		}
 	}
 
+    private String[] getResourceAsString(String resourceFileName) {
+        String[] returnString = new String[2];
+        StringBuilder stringBuilder = new StringBuilder();
+        BufferedReader bufferedReader = null;
+        try {
+            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceFileName);
+            if (inputStream == null) throw new Exception("Resource file not found.");
+            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            String eachStringLine;
+            while ((eachStringLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(eachStringLine).append("\n");
+            }
+        } catch (Exception e) {
+            System.out.println(new Date() + " ERROR: unable to process resource " + resourceFileName + ". " + e.getClass().getName() + " " + e.getMessage());
+            returnString[1] = "Error: unable to process resource " + resourceFileName + ". " + e.getClass().getName() + " " + e.getMessage();
+        } finally {
+            try {bufferedReader.close();} catch (Throwable t) {}    
+        }
+        if (stringBuilder.length() > 0) returnString[0] = stringBuilder.toString();
+        return returnString;
+    }
+    
+    private byte[] getResourceAsBytes(String resourceFileName) {
+        try {
+            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceFileName);
+            byte[] bytes = readAllBytes(inputStream);
+            //System.out.println(new Date() + " " + resourceFileName + " had " + bytes.length + " bytes.");
+            return bytes;
+        } catch (Exception e) {
+            System.out.println(new Date() + " ERROR: unable to process resource " + resourceFileName + ". " + e.getClass().getName() + " " + e.getMessage());
+        }
+        return null;
+    }
+
+    //https://stackoverflow.com/questions/1264709/convert-inputstream-to-byte-array-in-java
+    public static byte[] readAllBytes(InputStream inputStream) throws IOException {
+         final int bufLen = 4 * 0x400; // 4KB
+         byte[] buf = new byte[bufLen];
+         int readLen;
+         IOException exception = null;
+    
+         try {
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             while ((readLen = inputStream.read(buf, 0, bufLen)) != -1) {
+                 outputStream.write(buf, 0, readLen);
+                 //System.out.println("looping on " + bufLen);
+             }
+             return outputStream.toByteArray();
+         } catch (IOException e) {
+             exception = e;
+             throw e;
+         } finally {
+             if (exception == null) inputStream.close();
+             else try {
+                 inputStream.close();
+             } catch (IOException e) {
+                 exception.addSuppressed(e);
+             }
+         }
+    }
+    
     Map getRequestMap(String req){
         StringTokenizer st = new StringTokenizer(req);
         // discard first token ("GET")

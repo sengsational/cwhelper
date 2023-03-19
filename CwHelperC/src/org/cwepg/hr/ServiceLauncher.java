@@ -18,6 +18,8 @@ public class ServiceLauncher {
 
     public static final SimpleDateFormat SDF = new SimpleDateFormat("MMddHHmmssSSS"); //
     public static final String WEB_SERVER_PORT = "8181";
+    public static final int WEB_SERVER_SECURE_PORT = 8443;
+    public static final String[] PROTOCOLS = {"TLSv1", "TLSv1.1", "TLSv1.2", "SSLv3"};
     
     public static void main(String[] args) throws IOException {
         
