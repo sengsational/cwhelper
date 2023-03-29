@@ -96,6 +96,8 @@ class TinyConnection implements Runnable {
             Map request = getRequestMap(req);
             String action = (String)request.get("action");
             if (action == null || !action.startsWith("/")) throw new Exception(new Date() + " The action was null or did not start with /.");
+            boolean isTextFileOperation = (action.endsWith(".html") || action.endsWith(".js")|| action.endsWith(".json")) && action.startsWith("/");
+            boolean isBinaryFileOperation = action.endsWith(".png") && action.startsWith("/");
             
             if (action.equals("/set")){ // ************* SET ***************
                 String setItem = null;
@@ -702,26 +704,6 @@ class TinyConnection implements Runnable {
                 } else {
                     out.print(HEAD + tunerManager.getLastReason() + FOOT);
                 }
-            //} else if (action.equals("/dbcopy")){ // ************* DBCOPY ***************
-                //dbcopy?source=<MasterIP>&share=<share name>&lastresult=true
-            //    String source = (String)request.get("source");
-            //    String share = (String)request.get("share");
-            //    String timeout = (String)request.get("timeout");
-            //    String lastResult = (String)request.get("lastresult");
-            //    DbCopier copier = DbCopier.getInstance();
-            //    try {
-            //        if (lastResult == null && source != null){
-            //            copier.startCopyAndReturn(source, share, timeout);
-            //            out.print(HEAD + copier.getLastResult() + FOOT);
-            //        } else if (source != null) {
-            //            copier.copyAndWait(source, share, timeout);
-            //            out.print(HEAD + copier.getLastResult() + FOOT);
-            //        } else {
-            //            throw new Exception("Need at least 'source' specified.");
-            //        }
-            //    } catch (Exception e) {
-            //        out.print(HEAD + "No dbcopy done: " + e.getMessage() + FOOT);
-            //    }
             } else if (action.equals("/getdbfile")) {      //******************** GET DATABASE FILE *********************
                 String dbFile = (String)request.get("filename");
                 String filePath = CaptureManager.dataPath + dbFile;
@@ -888,8 +870,9 @@ class TinyConnection implements Runnable {
                 response += "<br><br>" + HttpRequester.getLastError();
                 System.out.println(new Date() + " " + response);
                 out.print(HEAD + response + FOOT);
-            } else if ((action.endsWith(".html") || action.endsWith(".js")|| action.endsWith(".json")) && action.startsWith("/")) {
+            } else if (isTextFileOperation || action.equals("/getdbfile")) {
                 String resourceFileName = action.substring(1);
+                if (action.equals("/getdbfile")) resourceFileName = (String)request.get("filename");
                 String heading = HEAD_SHORT;
                 if (resourceFileName.endsWith(".js")) heading = HEAD_JS;
                 if (resourceFileName.endsWith(".json")) heading = HEAD_JSON;
@@ -899,7 +882,7 @@ class TinyConnection implements Runnable {
                 } else {
                     out.print(HEAD + "<br><h2>" + returnString[1] + "</h2><br>" + FOOT);
                 }
-            } else if (action.endsWith(".png") && action.startsWith("/")) {
+            } else if (isBinaryFileOperation) {
                 String iconFileName = action.substring(1);
                 byte[] returnBytes = getResourceAsBytes(iconFileName);
                 if (returnBytes != null) {

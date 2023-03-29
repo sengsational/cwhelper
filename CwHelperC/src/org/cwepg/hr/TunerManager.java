@@ -1065,7 +1065,7 @@ public class TunerManager {
     // returns a list of String like [1076C3A7, 1075D4B1, 1080F19F] 
     private ArrayList<String> findTunerDevicesFromText(String output, boolean writeToFile) {
         // output looks like this [hdhomerun device 1076C3A7 found at 169.254.246.92]
-    	ArrayList<String> result = new ArrayList<String>();
+    	TreeSet<String> result = new TreeSet<String>();
     	try {
 			BufferedReader in = new BufferedReader(new StringReader(output));
 			StringBuffer buf = new StringBuffer();
@@ -1096,7 +1096,7 @@ public class TunerManager {
 				out.close();
 			}
 		} catch (IOException e) {}
-		return result;
+		return new ArrayList(result);
 	}
     
     // discover text looks like this [hdhomerun device 1075D4B1 found at 192.168.1.16]
