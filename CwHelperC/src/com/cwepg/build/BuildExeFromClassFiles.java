@@ -29,7 +29,7 @@ public class BuildExeFromClassFiles {
      *          4) packages the class files as an EXE file using Jar2Exe, creating CwHelper.exe
      *          5) zips the EXE file into CwHelper(version).zip (so it can be managed on a Google drive, that doesn't allow EXE files)
      *          6) renames the (already created) runnable jar file to include the version in the file name
-     *          7) signs the jar file
+     *          7) optionally signs the jar file (use 'doJarSigning' boolean)
      *          
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
@@ -45,6 +45,7 @@ public class BuildExeFromClassFiles {
     public static final String DOT_VERSION = "5.0.0.";
 
     public static void main(String[] args) throws Exception {
+        boolean doJarSigning = false; // DRS 20230513 - Signing prevents Terry from iterating on his own.
         
         String versionFileName = "version.txt";
         
@@ -138,16 +139,19 @@ public class BuildExeFromClassFiles {
                     System.out.println("Version inside the jar file: " + contentsOfVersionFile);
                     if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
                         System.out.println("version.txt is aligned");
-                        String[] signTheJarFile = {JRE_PATH +"jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
-                        if (runOsProcess(signTheJarFile, "jar signed.", null)) {
-                            String[] verifyTheJarFile = {JRE_PATH +"jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
-                            if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
-                                System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
-                            } else {
-                                System.out.println("ERROR: Unable to sign the jar file.");
+                        if (doJarSigning) {
+                            String[] signTheJarFile = {JRE_PATH +"jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
+                            if (runOsProcess(signTheJarFile, "jar signed.", null)) {
+                                String[] verifyTheJarFile = {JRE_PATH +"jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
+                                if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
+                                    System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
+                                } else {
+                                    System.out.println("ERROR: Unable to sign the jar file.");
+                                }
                             }
+                        } else {
+                            System.out.println("NOTICE: doJarSigning was false.  Jar file remains unsigned.");
                         }
-                        
                     } else {
                         System.out.println("ERROR!!!!!!!! The version.txt inside the jar file does not align with the revision [" + COMMA_VERSION +  revision + "] that we just renamed it to. ERROR!!!!!!!!!" );
                     }
@@ -175,7 +179,7 @@ public class BuildExeFromClassFiles {
         File jarFile = new File(jarFileName);
 
         try {
-            JarUpdater.updateZipFile(jarFile, contents);
+            JarUpdater.updateZipFileWithFilesOnDisk(jarFile, contents);
         } catch (IOException e) {
             e.printStackTrace();
         }
