@@ -1,7 +1,9 @@
 package org.cwepg.svc;
 
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -43,12 +45,14 @@ public class TinyWebServerSecure implements Runnable {
     Thread runningThread;
     public static final String TINY_SECURE_END = "TinyWebServerSecureEnd";
     public static final SimpleDateFormat SDF = new SimpleDateFormat("hh:mm:ss:SSS");
-    public static int debug = 0;
+    public static int debug = 9;
     public static TinyWebServerSecure webServerSecure;
     
     public static TinyWebServerSecure getInstance(int port) {
         if (webServerSecure == null) {
             webServerSecure = new TinyWebServerSecure(port);
+        } else if (webServerSecure.port != port) {
+            System.out.println("Ignoring port " + port + ".  Server already running on " + webServerSecure.port);
         }
         return webServerSecure;
     }
@@ -87,7 +91,23 @@ public class TinyWebServerSecure implements Runnable {
             
             char[] keyPassword = "4#r!DED".toCharArray();
             KeyStore keystore = KeyStore.getInstance("PKCS12");
-            keystore.load(this.getClass().getClassLoader().getResourceAsStream("CwHelper.p12"), keyPassword);
+            keystore.load(this.getClass().getClassLoader().getResourceAsStream("CwHelper.p12"), keyPassword); // This one is supposed to pull from the root of the jar
+            if (keystore.size() == 0) {
+                ServiceLauncher.bufferedPrintln("Unable to get CwHelper.p12 loading resource as stream.  Trying a FileInputStream.");
+                InputStream keystoreFileInputStream = new FileInputStream("CwHelper.p12");
+                ServiceLauncher.bufferedPrintln("keystoreFileInputStream available: " + keystoreFileInputStream.available());
+                keystore.load(keystoreFileInputStream, keyPassword);
+                if (keystore.size() == 0) {
+                    ServiceLauncher.bufferedPrintln("Unable to get CwHelper.p12 as a FileInputStream.");
+                } else {
+                    ServiceLauncher.bufferedPrintln("The keystore size was: " + keystore.size() + " (Found CwHelper.p12 file input stream)");
+                }
+            } else {
+                ServiceLauncher.bufferedPrintln("The keystore size was: " + keystore.size() + " (Found CwHelper.p12 resource as a stream)");
+            }
+            
+            if (keystore.size() == 0) throw new Exception("keystore file 'CwHelper.p12' was not found.  Can not start the secure server.");
+            
             
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             keyManagerFactory.init(keystore, keyPassword);      
@@ -97,19 +117,19 @@ public class TinyWebServerSecure implements Runnable {
             String keyAlias = "";
             while (aliases.hasMoreElements()) {
                 keyAlias = (String) aliases.nextElement();
-                System.out.println("KEY FOUND: " + keyAlias);
+                ServiceLauncher.bufferedPrintln("KEY FOUND: " + keyAlias);
             }
             
             SSLContext sslContextTls = SSLContext.getInstance("TLS"); 
             sslContextTls.init(keyManagers, null, null);
             
             SSLServerSocketFactory sslContextFactory = (SSLServerSocketFactory) sslContextTls.getServerSocketFactory();
-            listen_socket = (SSLServerSocket) sslContextFactory.createServerSocket(ServiceLauncher.WEB_SERVER_SECURE_PORT);     
+            listen_socket = (SSLServerSocket) sslContextFactory.createServerSocket(this.port);     
             listen_socket.setEnabledProtocols(ServiceLauncher.PROTOCOLS);
             listen_socket.setEnabledCipherSuites(sslContextFactory.getSupportedCipherSuites());            
         } catch (IOException e) {
             System.err.println(new Date() + " Error in TinyWebServerSecure constructor " + e.getMessage());
-            System.out.println(new Date() + " Error in TinyWebServerSecure constructor " + e.getMessage());
+            ServiceLauncher.bufferedPrintln(new Date() + " Error in TinyWebServerSecure constructor " + e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (KeyManagementException e) {
@@ -120,12 +140,15 @@ public class TinyWebServerSecure implements Runnable {
             e.printStackTrace();
         } catch (UnrecoverableKeyException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         if (listen_socket != null){
             runningThread = new Thread(this, "Thread-TinyWebServerSecure");
-            if (debug > 2) System.out.println(SDF.format(new Date()) + " TinyWebServerSecure Start.");
+            if (debug > 2) ServiceLauncher.bufferedPrintln(SDF.format(new Date()) + " TinyWebServerSecure Start.");
             runningThread.start();
         } else {
+            if (debug > 2) ServiceLauncher.bufferedPrintln(SDF.format(new Date()) + " TinyWebServerSecure did not start.");
             runFlag = false;
         }
 	    return runFlag;
@@ -191,14 +214,9 @@ public class TinyWebServerSecure implements Runnable {
 	}
 
 	public static void main(String[] argv) throws Exception {
-		if (argv.length < 1) {
-			System.out.println("usage: java TinyWebServerSecure <port>");
-			return;
-		} else {
-		    System.out.println("running TinyWebServerSecure on [" + argv[0] + "]");
-		}
-		int argPort = Integer.parseInt(argv[0]);
-		TinyWebServerSecure server = new TinyWebServerSecure(argPort);
+	    new ServiceLauncher(); // for static buffered logging in start()
+		TinyWebServerSecure server = TinyWebServerSecure.getInstance(ServiceLauncher.WEB_SERVER_SECURE_PORT);
+		server.start();
 
 		// Run the server for 120 seconds
 		Thread.sleep(120 * 1000); 
@@ -206,7 +224,7 @@ public class TinyWebServerSecure implements Runnable {
 		// Set run flag to "false" and poke it so it knows to quit
 		System.out.println("runFlag set to false"); 
 		server.setRunning(false);
-		Socket socketThing = new Socket("127.0.0.1", argPort);
+		Socket socketThing = new Socket("127.0.0.1", ServiceLauncher.WEB_SERVER_SECURE_PORT);
 		PrintStream out = new PrintStream(new DataOutputStream(socketThing.getOutputStream()));
 		out.write("GET /noop".getBytes());out.close();
 

@@ -13,6 +13,7 @@ import java.util.Date;
 
 import org.cwepg.reg.Registry;
 import org.cwepg.svc.TinyWebServer;
+import org.cwepg.svc.TinyWebServerSecure;
 
 public class ServiceLauncher {
 
@@ -20,6 +21,7 @@ public class ServiceLauncher {
     public static final String WEB_SERVER_PORT = "8181";
     public static final int WEB_SERVER_SECURE_PORT = 8443;
     public static final String[] PROTOCOLS = {"TLSv1", "TLSv1.1", "TLSv1.2", "SSLv3"};
+    public static final StringBuffer printBuffer = new StringBuffer();
     
     public static void main(String[] args) throws IOException {
         
@@ -107,24 +109,29 @@ public class ServiceLauncher {
             logFileIsValid = false;
         }
         
-        // This output will usually hit the bit bucket since there is usually no console
+        // This output will usually hit the bit bucket since there is usually no console, so grab it in a buffer for later.
         if (logFileIsValid) {
-            System.out.println(new Date() + " Logging to files in " + logPath + " as dictated by " + cwepgExecutablePathSource);
+            bufferedPrintln(new Date() + " Logging to files in " + logPath + " as dictated by " + cwepgExecutablePathSource);
         } else {
-            System.out.println(new Date() + " Logging to console because the program is unable to write to [" + logPath + "]");
+            bufferedPrintln(new Date() + " Logging to console because the program is unable to write to [" + logPath + "]");
         }
         if (new File(hdhrPath + File.separator + "hdhomerun_config.exe").exists()){
-            System.out.println(new Date() + " Using hdhomerun_config.exe in " + hdhrPath + " as dictated by " + hdhrPathSource);
+            bufferedPrintln(new Date() + " Using hdhomerun_config.exe in " + hdhrPath + " as dictated by " + hdhrPathSource);
         } else {
-            System.out.println(new Date() + " WARNING: hdhomerun_config.exe not found in " + hdhrPath + " as dictated by " + hdhrPathSource);
-            System.out.println(new Date() + " WARNING: Captures will only work on tuners with the http interface.");
+            bufferedPrintln(new Date() + " WARNING: hdhomerun_config.exe not found in " + hdhrPath + " as dictated by " + hdhrPathSource);
+            bufferedPrintln(new Date() + " WARNING: Captures will only work on tuners with the http interface.");
         }
         
         //========================================================================START WEB SEVER (QUIT IF ALREADY RUNNING)
         TinyWebServer webServer = TinyWebServer.getInstance(WEB_SERVER_PORT); 
         if (!webServer.start()) {
-            System.out.println("The web server port was taken, so we presume a copy of CwHelper is already running.  We will quit.");
+            bufferedPrintln("The web server port was taken, so we presume a copy of CwHelper is already running.  We will quit.");
             System.exit(0);
+        }
+
+        TinyWebServerSecure webServerSecure = TinyWebServerSecure.getInstance(WEB_SERVER_SECURE_PORT);
+        if (!webServerSecure.start()) {
+            bufferedPrintln("The secure web server did not start. Proceeding with otherwise normal startup.");
         }
 
         PrintStream out = null;
@@ -157,13 +164,7 @@ public class ServiceLauncher {
             System.setErr(err);
 
             // This output will go to the log file
-            System.out.println(new Date() + " Logging to files in " + logPath + " as dictated by " + dataPathSource);
-            if (new File(hdhrPath + File.separator + "hdhomerun_config.exe").exists()){
-                System.out.println(new Date() + " Using hdhomerun_config.exe in " + hdhrPath + " as dictated by " + hdhrPathSource);
-            } else {
-                System.out.println(new Date() + " WARNING: hdhomerun_config.exe not found in " + hdhrPath + " as dictated by " + hdhrPathSource);
-                System.out.println(new Date() + " WARNING: Captures will only work on tuners with the http interface.");
-            }
+            System.out.println(printBuffer);
         }
 
         //========================================================================================COPY XML and MDB FILES, IF THEY DON'T EXIST
@@ -220,5 +221,10 @@ public class ServiceLauncher {
             outNum = (Long.valueOf(SDF.format(aCalendar.getTime())) * 1000L) + Long.parseLong(shortRandom);
         } catch (Throwable t) {} 
         return outNum;
+    }
+    
+    public static void bufferedPrintln(String s) {
+        System.out.println(s);
+        printBuffer.append(s).append("\n");
     }
 }
