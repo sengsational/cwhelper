@@ -41,6 +41,7 @@ import org.cwepg.svc.HtmlVcrDoc;
 import org.cwepg.svc.RestartManager;
 import org.cwepg.svc.SplashScreenCloser;
 import org.cwepg.svc.TinyWebServer;
+import org.cwepg.svc.TinyWebServerSecure;
 
 public class CaptureManager implements Runnable { //, ServiceStatusHandler { //DRS 20080822 Comment Service Specific Code
     public static final String propertiesFileName = "CaptureManagerSettings.txt";
@@ -385,7 +386,13 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             webServer.setRunning(false);
             webServer.pokeForShutdown();
             
-
+            // Shut down the secure web server if it's running.
+            TinyWebServerSecure webServerSecure = TinyWebServerSecure.getInstance(ServiceLauncher.WEB_SERVER_SECURE_PORT);
+            if (webServerSecure.isRunning()) {
+                webServerSecure.setRunning(false);
+                webServerSecure.pokeForShutdown();
+            }
+            
             // Stop any active recordings (if we are not simulating)
             for (Iterator iter = activeCaptures.iterator(); iter.hasNext() && !CaptureManager.simulate;) {
                 Capture aCapture = (Capture) iter.next();

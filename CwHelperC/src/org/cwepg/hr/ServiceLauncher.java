@@ -23,7 +23,7 @@ public class ServiceLauncher {
     public static final String[] PROTOCOLS = {"TLSv1", "TLSv1.1", "TLSv1.2", "SSLv3"};
     public static final StringBuffer printBuffer = new StringBuffer();
     
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Throwable {
         
         //===========================================================================================SET DIRECTORIES==============================
         String cwepgExecutablePathSource    = "the current runtime directory";
@@ -46,9 +46,12 @@ public class ServiceLauncher {
                 cwepgExecutablePathSource   = "the path found in registry HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgfolder";
                 hdhrPathSource              = cwepgExecutablePathSource;
                 dataPathSource              = cwepgExecutablePathSource;
+            } else {
+                throw new Exception(" HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgfolder not found.");
             }
         } catch (Throwable e1) {
-            // stays empty if there is an error accessing the registry
+            // DRS 20231018 - throw exception if there is an error accessing the registry
+            throw(e1);
         }
         
         try {
@@ -57,9 +60,12 @@ public class ServiceLauncher {
             if (cwepgdatafolder != null){
                 dataPath                    = cwepgdatafolder;
                 dataPathSource              = "the path found in registry HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgdatafolder";
+            } else {
+                throw new Exception(" HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgdatafolder not found.");
             }
         } catch (Throwable e1) {
-            // stays empty if there is an error accessing the registry
+            // DRS 20231018 - throw exception if there is an error accessing the registry
+            throw(e1);
         }
         
 
