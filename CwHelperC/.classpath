@@ -1,18 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/mailapi.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/smtp.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/httpclient-4.5.13.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/httpasyncclient-4.1.5.jar" sourcepath="C:/Users/Owner/AppData/Local/Temp/.org.sf.feeling.decompiler1656781317682/source/httpasyncclient-4.1.5-sources.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/httpasyncclient-cache-4.1.5.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/httpcore-nio-4.4.15.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/httpcore-4.4.15.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/commons-codec-1.15.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/jna-5.7.0.jar" sourcepath="C:/Users/Owner/AppData/Local/Temp/.org.sf.feeling.decompiler1614626651407/source/jna-5.7.0-sources-1614646102540.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/jna-platform-5.7.0.jar" sourcepath="C:/Users/Owner/AppData/Local/Temp/.org.sf.feeling.decompiler1619049716959/source/jna-platform-5.7.0-sources-1619538677445.jar"/>
-	<classpathentry kind="lib" path="C:/my/dev/eclipsewrk/CwHelper/CwHelper_lib/cw_icons.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/CwHelper_lib"/>
 	<classpathentry kind="lib" path="CwHelper_lib/commons-lang3-3.8.1.jar"/>
 	<classpathentry kind="lib" path="CwHelper_lib/commons-logging-1.2.jar"/>
 	<classpathentry kind="lib" path="CwHelper_lib/hsqldb-2.5.0.jar"/>

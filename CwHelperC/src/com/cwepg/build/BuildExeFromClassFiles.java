@@ -6,6 +6,7 @@ package com.cwepg.build;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,62 +35,73 @@ public class BuildExeFromClassFiles {
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
      */
-    public static final String PROJECT_DIRECTORY = "C:\\my\\dev\\eclipsewrk\\CwHelper\\";
+    public static final String PROJECT_DIRECTORY = "C:\\Users\\Admin\\git\\cwhelper\\CwHelperC\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
+    public static final String LIBRARY_DIRECTORY = PROJECT_DIRECTORY + "CwHelper_lib\\";
+    public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    public static final String JRE_PATH = "C:\\Program Files\\Android\\Android Studio\\jre\\bin\\";
+    public static final String JRE_PATH = "C:\\Users\\Admin\\.p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_17.0.9.v20231028-0858\\jre\\";
     public static final String BASE_VERSION = "5-0-0-";
     public static final String COMMA_VERSION = "5,0,0,";
     public static final String DOT_VERSION = "5.0.0.";
 
     public static void main(String[] args) throws Exception {
+    	
         boolean doJarSigning = false; // DRS 20230513 - Signing prevents Terry from iterating on his own.
         
-        String versionFileName = "version.txt";
-        
-        String wDir = PROJECT_DIRECTORY;
-        String wDirLib = wDir + "CwHelper_lib\\";
-
         boolean forceRevisionNumber = false; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
             revision = "804";
         } else {
-            revision = getRevisionFromSourceControl();
+        	String fullVersion = ""; 
+        	try {
+        		fullVersion = getVersionFromJarFile("CwHelper.jar");
+                System.out.println("Version inside the jar file: " + fullVersion);
+    			String[] versionArray = fullVersion.split(","); //[5,0,0,999]
+    			int arraySize = versionArray.length; //4
+    			revision = versionArray[arraySize - 1].trim();
+        	} catch (Exception e) {
+        		System.out.println("CwHelper.jar does not exist.  Incrementing the revision from version.txt....");
+        	}
+        	if (fullVersion.equals("")) {
+                int revisionNumber = getRevisionFromFile();
+                revision = "" + ++revisionNumber;
+        	}
         }
         
-        writeVersionToLibDirectory(COMMA_VERSION, revision, wDirLib + versionFileName);
-        writeVersionToJarFile(wDirLib + versionFileName, wDirLib + "cw_icons.jar");
+        writeVersionToLibDirectory(COMMA_VERSION, revision, LIBRARY_DIRECTORY + VERSION_FILE_NAME);
+        writeVersionToJarFile(LIBRARY_DIRECTORY + VERSION_FILE_NAME, LIBRARY_DIRECTORY + "cw_icons.jar");
         
         String[] j2ewizBuildCwHelperParms = {
                         J2E_WIZ,
-                        "/jar ", wDir + "classes",
-                        "/o", wDir + "CwHelper.exe",
+                        "/jar ", PROJECT_DIRECTORY + "classes",
+                        "/o", PROJECT_DIRECTORY + "CwHelper.exe",
                         "/m", "org.cwepg.hr.ServiceLauncher",
                         "/type","windows",
                         "/minjre","1.6",
                         "/platform","windows",
                         "/checksum",
-                        "/embed", wDirLib + "commons-codec-1.15.jar",            //
-                        "/embed", wDirLib + "commons-lang3-3.8.1.jar",              //commons-lang3-3.8.1.jar//commons-lang-2.6.jar
-                        "/embed", wDirLib + "commons-logging-1.2.jar",         //commons-logging-1.2.jar//commons-logging-1.1.3.jar
-                        "/embed", wDirLib + "cw_icons.jar",                      //
-                        "/embed", wDirLib + "hsqldb-2.5.0.jar",                        //hsqldb-2.5.0.jar//hsqldb.jar
-                        "/embed", wDirLib + "httpasyncclient-4.1.5.jar",         //
-                        "/embed", wDirLib + "httpasyncclient-cache-4.1.5.jar",   //
-                        "/embed", wDirLib + "httpclient-4.5.13.jar",             //
-                        "/embed", wDirLib + "httpcore-4.4.15.jar",               //
-                        "/embed", wDirLib + "httpcore-nio-4.4.15.jar",           //
-                        "/embed", wDirLib + "jackcess-3.0.1.jar",               //jackcess-3.0.1.jar//jackcess-2.1.11.jar
-                        "/embed", wDirLib + "jna-5.7.0.jar",                     //
-                        "/embed", wDirLib + "jna-platform-5.7.0.jar",            //
-                        "/embed", wDirLib + "mailapi.jar",                       //
-                        "/embed", wDirLib + "smtp.jar",                          //
-                        "/embed", wDirLib + "ucanaccess-5.0.1.jar",              //ucanaccess-5.0.1.jar//ucanaccess-4.0.4.jar
+                        "/embed", LIBRARY_DIRECTORY + "commons-codec-1.15.jar",            //
+                        "/embed", LIBRARY_DIRECTORY + "commons-lang3-3.8.1.jar",              //commons-lang3-3.8.1.jar//commons-lang-2.6.jar
+                        "/embed", LIBRARY_DIRECTORY + "commons-logging-1.2.jar",         //commons-logging-1.2.jar//commons-logging-1.1.3.jar
+                        "/embed", LIBRARY_DIRECTORY + "cw_icons.jar",                      //
+                        "/embed", LIBRARY_DIRECTORY + "hsqldb-2.5.0.jar",                        //hsqldb-2.5.0.jar//hsqldb.jar
+                        "/embed", LIBRARY_DIRECTORY + "httpasyncclient-4.1.5.jar",         //
+                        "/embed", LIBRARY_DIRECTORY + "httpasyncclient-cache-4.1.5.jar",   //
+                        "/embed", LIBRARY_DIRECTORY + "httpclient-4.5.13.jar",             //
+                        "/embed", LIBRARY_DIRECTORY + "httpcore-4.4.15.jar",               //
+                        "/embed", LIBRARY_DIRECTORY + "httpcore-nio-4.4.15.jar",           //
+                        "/embed", LIBRARY_DIRECTORY + "jackcess-3.0.1.jar",               //jackcess-3.0.1.jar//jackcess-2.1.11.jar
+                        "/embed", LIBRARY_DIRECTORY + "jna-5.7.0.jar",                     //
+                        "/embed", LIBRARY_DIRECTORY + "jna-platform-5.7.0.jar",            //
+                        "/embed", LIBRARY_DIRECTORY + "mailapi.jar",                       //
+                        "/embed", LIBRARY_DIRECTORY + "smtp.jar",                          //
+                        "/embed", LIBRARY_DIRECTORY + "ucanaccess-5.0.1.jar",              //ucanaccess-5.0.1.jar//ucanaccess-4.0.4.jar
                         //"/embed", wDir + "CwHelper.p12",                         // keystore for secure web server
-                        "/icon", "#" + wDir + "cw_logo16.ico, 0#",
+                        "/icon", "#" + PROJECT_DIRECTORY + "cw_logo16.ico, 0#",
                         "/pv", COMMA_VERSION + "0",
                         "/fv",  COMMA_VERSION + revision,
                         "/ve", "ProductVersion=" + DOT_VERSION + "0",
@@ -102,7 +114,7 @@ public class BuildExeFromClassFiles {
                         "/ve", "#Comments=Background Job for CW_EPG#",
                         "/ve", "#CompanyName=CW_EPG Team# /ve #InternalName=" + COMMA_VERSION + "0#",
                         "/ve", "#LegalTrademarks=CW_EPG Team#",
-                        "/splash", wDir + "CW_Logo.jpg",
+                        "/splash", PROJECT_DIRECTORY + "CW_Logo.jpg",
                         "/closeonwindow:false",
                         "/splashtitle", "#Please wait ...#"
                     };
@@ -114,24 +126,24 @@ public class BuildExeFromClassFiles {
         
         if (runOsProcess(j2ewizBuildCwHelperParms, "successfully", null)) {
             String zipDestinationFileNameString = "CwHelper_" + BASE_VERSION + revision + ".zip";
-            File zipDestinationFile = new File(wDir + zipDestinationFileNameString);
+            File zipDestinationFile = new File(PROJECT_DIRECTORY + zipDestinationFileNameString);
             
             // If destination already exists, rename it first
             if (zipDestinationFile.exists()) {
                 int randomInt = (int)(Math.random() * 10000);
-                zipDestinationFile.renameTo(new File(wDir + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".zip"));
+                zipDestinationFile.renameTo(new File(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".zip"));
             }
 
-            String[] zipTheExeParams = {JRE_PATH +"jar.exe", "-cMfv", zipDestinationFileNameString, "CwHelper.exe"};
-            if (runOsProcess(zipTheExeParams, "deflated", wDir)) {
+            String[] zipTheExeParams = {JRE_PATH + "bin\\" + "jar.exe", "-cMfv", zipDestinationFileNameString, "CwHelper.exe"};
+            if (runOsProcess(zipTheExeParams, "deflated", PROJECT_DIRECTORY)) {
                 //Rename what we presume is the previously manually created "Runnable Jar"
-                File runnableJarFile = new File(wDir + "CwHelper.jar");
-                File runnableJarFileNewName = new File(wDir + "CwHelper_" + BASE_VERSION + revision + ".jar");
+                File runnableJarFile = new File(PROJECT_DIRECTORY + "CwHelper.jar");
+                File runnableJarFileNewName = new File(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar");
                 
                 // If destination already exists, rename it first
                 if (runnableJarFileNewName.exists()) {
                     int randomInt = (int)(Math.random() * 10000);
-                    runnableJarFileNewName.renameTo(new File(wDir + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".jar"));
+                    runnableJarFileNewName.renameTo(new File(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".jar"));
                 }
                 
                 if (runnableJarFile.renameTo(runnableJarFileNewName)) {
@@ -141,9 +153,9 @@ public class BuildExeFromClassFiles {
                     if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
                         System.out.println("version.txt is aligned");
                         if (doJarSigning) {
-                            String[] signTheJarFile = {JRE_PATH +"jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
+                            String[] signTheJarFile = {JRE_PATH + "bin\\" + "jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
                             if (runOsProcess(signTheJarFile, "jar signed.", null)) {
-                                String[] verifyTheJarFile = {JRE_PATH +"jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
+                                String[] verifyTheJarFile = {JRE_PATH +"bin\\" + "jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
                                 if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
                                     System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
                                 } else {
@@ -188,7 +200,7 @@ public class BuildExeFromClassFiles {
 
     private static void writeVersionToLibDirectory(String version, String revision, String versionFileName) {
         try {
-            System.out.println(new Date() + " Saving to " + versionFileName);
+            System.out.println(new Date() + " Saving to " + versionFileName + " with revision " + revision);
             Writer writer = new FileWriter(versionFileName);
             writer.write(version + revision);
             writer.close();
@@ -231,7 +243,45 @@ public class BuildExeFromClassFiles {
         return processResult;
     }
 
-    private static String getRevisionFromSourceControl() throws Exception {
+    private static int getRevisionFromFile() throws Exception {
+    	String filePath = LIBRARY_DIRECTORY +  VERSION_FILE_NAME;
+    	int revisionNumber = 9999;
+    	StringBuffer progressBuf = new StringBuffer();
+    	if (!new File(filePath).exists()) {
+    		progressBuf.append("filePath " + filePath + " did not exist.").append("\n");
+    		revisionNumber = 1000;
+    		String revision = "" +  revisionNumber;
+    		BuildExeFromClassFiles.writeVersionToLibDirectory(COMMA_VERSION, revision, filePath);
+    	} else {
+    		try {
+    			BufferedReader in = new BufferedReader(new FileReader(filePath));
+    			StringBuffer buf = new StringBuffer();
+    			String l = "";
+    			while ((l = in.readLine()) != null) {
+    	    		progressBuf.append("read line from " + filePath + ".").append("\n");
+    				buf.append(l); buf.append("\n");
+    				break;
+    			}
+    			in.close();
+    			// 5,0,0,9999
+    			String fullVersion = buf.toString();
+    			progressBuf.append("found [" + fullVersion + "]").append("\n");
+    			String[] versionArray = fullVersion.split(","); //[5,0,0,999]
+    			int arraySize = versionArray.length; //4
+    			String revision = versionArray[arraySize - 1].trim();
+    			progressBuf.append("revision [" + revision + "]").append("\n");
+    			revisionNumber = Integer.parseInt(revision);
+    		} catch (Exception e) {
+    			System.out.println("Progress Buffer: " + progressBuf);
+    			System.out.println("Something bad happened trying to get the version out of the version.txt file. "  + e.getMessage());
+    		}
+    		
+    	}
+    	return revisionNumber;
+    }
+    	
+    	
+  	private static String getRevisionFromSourceControl() throws Exception {
         //https://stackoverflow.com/a/14915348/897007
         ProcessBuilder builder = new ProcessBuilder("C:\\Program Files\\TortoiseSVN\\bin\\svn", "info", "svn://192.168.3.65/CwHelperB/src");
         builder.redirectErrorStream(true);
