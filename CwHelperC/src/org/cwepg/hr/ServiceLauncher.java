@@ -117,7 +117,7 @@ public class ServiceLauncher {
         
         // This output will usually hit the bit bucket since there is usually no console, so grab it in a buffer for later.
         if (logFileIsValid) {
-            bufferedPrintln(new Date() + " Logging to files in " + logPath + " as dictated by " + cwepgExecutablePathSource);
+            bufferedPrintln(new Date() + " Logging to files in " + logPath + " as dictated by " + dataPathSource);
         } else {
             bufferedPrintln(new Date() + " Logging to console because the program is unable to write to [" + logPath + "]");
         }
