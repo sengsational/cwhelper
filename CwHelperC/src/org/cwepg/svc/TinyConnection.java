@@ -45,6 +45,11 @@ class TinyConnection implements Runnable {
 	protected DataOutputStream dataout;
     protected CaptureManager captureManager;
     protected TunerManager tunerManager;
+    /* TMP20231206 I think that the following 2 lines are what's needed for the new GitHub-hosted CW_EPG_Remote scheme
+    private static final String ACORS_HEAD = "Access-Control-Allow-Origin: https://<GitHub host for CW_EPG_Remote>\n"); 
+	private static final String HEAD = "HTTP/1.0 200 OK\n" + ACORS_HEAD + "Content-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
+    But I need to set up the hosted site to know what goes in the <GitHub host for CW_EPG_Remote> placeholder
+    And then remove the following line */
 	private static final String HEAD = "HTTP/1.0 200 OK\nContent-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
     private static final String HEAD_SHORT = "HTTP/1.0 200 OK\nContent-type: text/html\n\n";
     private static final String HEAD_JS = "HTTP/1.0 200 OK\nContent-type: text/javascript\n\n";
@@ -714,6 +719,9 @@ class TinyConnection implements Runnable {
                         in = new FileInputStream(filePath);
                         int count;
                         dataout.writeBytes("HTTP/1.0 200 OK\r\n");
+                        /* TMP20231206 I think that the following line is what's needed for the new GitHub-hosted CW_EPG_Remote scheme
+                        dataout.writeBytes("Access-Control-Allow-Origin: https://<GitHub host for CW_EPG_Remote>\r\n"); 
+                        But I need to set up the hosted site to know what goes in the <GitHub host for CW_EPG_Remote> placeholder> */
                         dataout.writeBytes("Content-Type: application/octet-stream\r\n");
                         dataout.writeBytes("\r\n");
                         while ((count = in.read(bytes)) > 0) {
