@@ -23,10 +23,10 @@ import java.util.zip.ZipOutputStream;
 public class JarUpdater {
     public static void main(String[] args) {
 
-        File[] contents = {new File("F:\\ResourceTest.txt"),
-                           new File("F:\\ResourceTest2.bmp")};
+        File[] contents = {new File("C:\\F\\ResourceTest.txt"),
+                           new File("C:\\F\\ResourceTest2.bmp")};
 
-        File jarFile = new File("F:\\RepackMe.jar");
+        File jarFile = new File("C:\\F\\RepackMe.jar");
 
         try {
             updateZipFileWithFilesOnDisk(jarFile, contents);
