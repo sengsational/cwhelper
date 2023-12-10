@@ -46,7 +46,7 @@ class TinyConnection implements Runnable {
     protected CaptureManager captureManager;
     protected TunerManager tunerManager;
     // TMP20231206 I think that the following 2 lines are what's needed for the new GitHub-hosted CW_EPG_Remote scheme
-    private static final String ACORS_HEAD = "Access-Control-Allow-Origin: http://localhost:8000\n"; 
+    private static final String ACORS_HEAD = "Access-Control-Allow-Origin: https://tpeterson94070.github.io\n"; 
 	private static final String HEAD = "HTTP/1.0 200 OK\n" + ACORS_HEAD + "Content-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
     // After initial testing I need to set up the hosted site to know what is the GitHub host domain
     // Removing the following line for the above replacement
