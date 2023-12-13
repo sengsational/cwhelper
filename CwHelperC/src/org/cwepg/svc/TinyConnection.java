@@ -45,7 +45,12 @@ class TinyConnection implements Runnable {
 	protected DataOutputStream dataout;
     protected CaptureManager captureManager;
     protected TunerManager tunerManager;
-	private static final String HEAD = "HTTP/1.0 200 OK\nContent-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
+    // TMP20231206 I think that the following 2 lines are what's needed for the new GitHub-hosted CW_EPG_Remote scheme
+    private static final String ACORS_HEAD = "Access-Control-Allow-Origin: https://tpeterson94070.github.io\n"; 
+	private static final String HEAD = "HTTP/1.0 200 OK\n" + ACORS_HEAD + "Content-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
+    // After initial testing I need to set up the hosted site to know what is the GitHub host domain
+    // Removing the following line for the above replacement
+	// private static final String HEAD = "HTTP/1.0 200 OK\nContent-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
     private static final String HEAD_SHORT = "HTTP/1.0 200 OK\nContent-type: text/html\n\n";
     private static final String HEAD_JS = "HTTP/1.0 200 OK\nContent-type: text/javascript\n\n";
     private static final String HEAD_JSON = "HTTP/1.0 200 OK\nContent-type: application/json\n\n";
@@ -714,6 +719,9 @@ class TinyConnection implements Runnable {
                         in = new FileInputStream(filePath);
                         int count;
                         dataout.writeBytes("HTTP/1.0 200 OK\r\n");
+                        // TMP20231206 I think that the following line is what's needed for the new GitHub-hosted CW_EPG_Remote scheme 
+                        dataout.writeBytes(ACORS_HEAD + "\r\n"); 
+                        // This is the domain for the TMS WEB Core server and I need to set up the hosted site to know exactly what is the GitHub host origin name 
                         dataout.writeBytes("Content-Type: application/octet-stream\r\n");
                         dataout.writeBytes("\r\n");
                         while ((count = in.read(bytes)) > 0) {
