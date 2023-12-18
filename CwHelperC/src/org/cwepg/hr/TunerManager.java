@@ -52,6 +52,7 @@ public class TunerManager {
     private static boolean mCountingTuners = false;
     public static final int VIRTUAL_MATCHING = 0;
     public static final int NAME_MATCHING = 1;
+    private static final int OUTLOOK_DAYS = 15;
     public static boolean skipFusionInit = false;
     public static boolean skipRegistryForTesting = false;
     
@@ -1417,6 +1418,61 @@ public class TunerManager {
         }
         return captureList;
     }
+
+    // DRS 20231218 - Added method - recurring recordings
+    public ArrayList<Capture> getCapturesForRecurring(String channelName, Slot originalSlot, String tunerString,
+			String protocol, String recurring) {
+        ArrayList<Capture> captureList = new ArrayList<Capture>();
+        
+        // Build recurringDays int list (aligned with Calendar.[dayname])
+        StringBuffer recurringDaysBuf = new StringBuffer();
+        try {
+        	if (recurring == null || recurring.length() == 0) throw new Exception("bad recurring string");
+            for (int i = 0; i < recurring.length(); i++ ) {
+            	recurringDaysBuf.append(Integer.parseInt(recurring.substring(i, i+1)));
+            }
+            recurring = recurringDaysBuf.toString(); //Validated string
+        } catch (Throwable t) {
+        	System.out.println(new Date() + " ERROR: failed to extract weekdays from [" + recurring + "]");
+        	System.out.println(new Date() + " Returning single capture.");
+        	captureList.add(tunerManager.getCaptureForChannelNameSlotAndTuner(channelName, originalSlot, tunerString, protocol));
+            return captureList;
+        }
+
+        System.out.println(new Date() + " TunerManager.getCapturesForRecurring()");
+        ArrayList<Slot> slotList = new ArrayList<>();
+        Slot slot = originalSlot.clone();
+        int dayOfWeek = slot.start.get(Calendar.DAY_OF_WEEK);
+        Calendar futureCalendar = Calendar.getInstance();
+        futureCalendar.add(Calendar.HOUR, 24 * OUTLOOK_DAYS);
+
+        // Loop forward, one day at a time until OUTLOOK_DAYS
+        while(slot.start.before(futureCalendar)){
+            if (slot.isInThePast()) {
+                slot = slot.advanceDays(1);
+                continue;
+            }
+            // if this slot matches one of the days of the week in "recurring", then add it to our list.
+            if (recurring.contains(dayOfWeek + "")) {
+            	slotList.add(slot);
+            	slot = slot.clone();
+            }
+            
+            // Index forward
+            slot = slot.advanceDays(1);
+            dayOfWeek = slot.start.get(Calendar.DAY_OF_WEEK);
+        }
+
+        for (Slot listedSlot : slotList) {
+            Capture aCapture = getCaptureForChannelNameSlotAndTuner(channelName, listedSlot, tunerString, protocol);
+            if (aCapture != null){
+                captureList.add(aCapture);
+            } else {
+                System.out.println(new Date() + " one capture of a multi-capture was null!");
+            }
+		}
+        return captureList;
+	}
     
     //  DRS 20110215 - Added method
     public String sortChannelMap(long daysOldLimit) {
@@ -2543,5 +2599,6 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             System.out.println("tunerPathAsOptions\n" + tunerManager.getTunerPathAsOptions());
         }
     }
+
 
 }

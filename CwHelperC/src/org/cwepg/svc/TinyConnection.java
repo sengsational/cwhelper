@@ -17,6 +17,7 @@ import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
@@ -459,6 +460,7 @@ class TinyConnection implements Runnable {
                     String protocol = (String)request.get("protocol");
                     String title = (String)request.get("title");
                     String rfChannel = (String)request.get("rfchannel");
+                    String recurring = (String)request.get("recurring");
                     System.out.println("channelname [" + channelName + "]");
                     System.out.println("channelvirtual [" + channelVirtual + "]");
                     System.out.println("datetime [" + dateTime + "]");
@@ -469,6 +471,7 @@ class TinyConnection implements Runnable {
                     System.out.println("title [" + title + "]");
                     System.out.println("protocol [" + protocol + "]");
                     System.out.println("rfchannel [" + rfChannel + "]");
+                    System.out.println("recurring [" + recurring + "]"); //Sun 1, Mon 2 ... (Calendar.SUNDAY, Calendar.MONDAY ...)
                     Slot slot = null;
                     if (durationMinutes != null){
                         slot = new Slot(dateTime, durationMinutes);
@@ -537,6 +540,9 @@ class TinyConnection implements Runnable {
                             // DRS 20110214 - Added 'if' (existing in else)
                             if ("*".equals(channelName)){ // Multiple captures for signal testing
                                 captureList = tunerManager.getCapturesForAllChannels(channelName, slot, tunerString, protocol);
+                                targetList = new ArrayList<Target>();
+                            } else if (recurring != null) { // DRS 20231218 - Added 'else if' - recurring recordings
+                            	captureList = tunerManager.getCapturesForRecurring(channelName, slot, tunerString, protocol, recurring);
                                 targetList = new ArrayList<Target>();
                             } else {
                                 capture = tunerManager.getCaptureForChannelNameSlotAndTuner(channelName, slot, tunerString, protocol);// <<<<<<<<<<<<20161214
