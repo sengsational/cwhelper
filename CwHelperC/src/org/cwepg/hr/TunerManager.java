@@ -1440,7 +1440,7 @@ public class TunerManager {
         }
 
         System.out.println(new Date() + " TunerManager.getCapturesForRecurring()");
-        ArrayList<Slot> slotList = new ArrayList<>();
+        ArrayList<Slot> slotList = new ArrayList<Slot>();
         Slot slot = originalSlot.clone();
         int dayOfWeek = slot.start.get(Calendar.DAY_OF_WEEK);
         Calendar futureCalendar = Calendar.getInstance();
