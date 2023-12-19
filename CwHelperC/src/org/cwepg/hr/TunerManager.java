@@ -1467,6 +1467,7 @@ public class TunerManager {
             Capture aCapture = getCaptureForChannelNameSlotAndTuner(channelName, listedSlot, tunerString, protocol);
             if (aCapture != null){
                 captureList.add(aCapture);
+                aCapture.isRecurring = true;
             } else {
                 System.out.println(new Date() + " one capture of a multi-capture was null!");
             }
