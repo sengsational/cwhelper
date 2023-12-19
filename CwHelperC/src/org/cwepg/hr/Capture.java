@@ -22,6 +22,7 @@ public abstract class Capture implements Runnable, Comparable {
     boolean startHandled;
     boolean endHandled;
     boolean isRecurring = false;
+    String recurrenceDays = "";
 
     static final int START = 0;
     static final int END = 1;
@@ -153,7 +154,8 @@ public abstract class Capture implements Runnable, Comparable {
                     + channel.getHtml() + "<td>" 
                     + target.getFileNameOrWatch() + "</td><td>" 
                     + target.title + "</td><td>" 
-                    + (this.isRecurring()?"recurring":"") + "</td>"
+                    + (this.isRecurring()?"recurring":"") + "</td><td>"
+                    + this.recurrenceDays + "</td>"
                     + "</tr>\n");
             } else {
             buf.append("<tr><td>Sequence:" + sequence + "</td><td>" 
@@ -177,7 +179,8 @@ public abstract class Capture implements Runnable, Comparable {
                     + channel.getXml() + " fileName=\"" // DRS 20181125 - removed extra quote
                     + target.getFileNameOrWatch() + "\" title=\"" 
                     + target.title + "\" recurring=\"" 
-                    + this.isRecurring() + "\" " 
+                    + this.isRecurring() + "\" recurrenceDays=\"" 
+                    + this.recurrenceDays + "\" " 
                     + "/>\n");
         } catch (Throwable e) {
             xmlBuf.append("  <capture sequence=\"" + sequence + "\"/>\n");
@@ -270,7 +273,14 @@ public abstract class Capture implements Runnable, Comparable {
     public void setRecurring(boolean isRecurring) {
         this.isRecurring = isRecurring;
     }
-
+    
+    public String getRecurrenceDays() {
+    	return recurrenceDays;
+    }
+    
+    public void setRecurrenceDays(String recurrenceDays) {
+    	this.recurrenceDays = recurrenceDays;
+    }
     
     public int compareTo(Object object){
         if (!(object instanceof Capture)) return -1;
