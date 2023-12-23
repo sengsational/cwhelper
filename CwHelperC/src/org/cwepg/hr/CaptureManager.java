@@ -1,38 +1,23 @@
 package org.cwepg.hr;
 
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
-
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.UIManager;
 
 import org.cwepg.hr.CaptureHdhr.DeviceUnavailableException;
 import org.cwepg.svc.HtmlSettingsDoc;
@@ -224,7 +209,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             }
             
             
-	    	for (Iterator iter = tunerManager.iterator(); iter.hasNext() && runFlag;) {
+	    	for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext() && runFlag;) {
 				Tuner tuner = (Tuner) iter.next();
                 tuner.refreshCapturesFromOwningStore(false);
                 Capture capture = tuner.getCaptureWithNextEventInLeadTime(LEAD_TIME_MS);
@@ -345,7 +330,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 //System.out.println(new Date() + " allowSleep() has been issued.");                        
                 if (isSleepManaged) WakeupManager.allowSleep();
             } else { //everything in the 'else' is logging only.
-                for (Iterator iter = activeCaptures.iterator(); iter.hasNext();) {
+                for (Iterator<Capture> iter = activeCaptures.iterator(); iter.hasNext();) {
                     Capture aCapture = (Capture) iter.next();
                     System.out.println(new Date() + " active capture: " + aCapture);
                 }
@@ -394,15 +379,15 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             }
             
             // Stop any active recordings (if we are not simulating)
-            for (Iterator iter = activeCaptures.iterator(); iter.hasNext() && !CaptureManager.simulate;) {
+            for (Iterator<Capture> iter = activeCaptures.iterator(); iter.hasNext() && !CaptureManager.simulate;) {
                 Capture aCapture = (Capture) iter.next();
                 this.removeActiveCapture(aCapture, false, false); // stop the captures, but do not re-write the captures persistence file
             }
             
             // Reset all wakeup timers (they will be re-created from persisted captures on restart)
-            for (Iterator iter = tunerManager.iterator(); iter.hasNext();) {
+            for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
                 Tuner tuner = (Tuner) iter.next();
-                for (Iterator iterator = tuner.captures.iterator(); iterator.hasNext();) {
+                for (Iterator<Capture> iterator = tuner.captures.iterator(); iterator.hasNext();) {
                     Capture aCapture = (Capture) iterator.next();
                     // DRS 20190719 - Added 1 - Removed wakeups for Fusion per Terry's email today
                     if (!(aCapture instanceof CaptureFusion)) 
@@ -475,7 +460,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         // at this point, we have nextCaptureCalendar set for either the emailer or wakeupEvent, but it could be way off in the future
         
     	// this loop gets the next event for each tuner
-        for (Iterator iter = tunerManager.iterator(); iter.hasNext();) {
+        for (Iterator<?> iter = TunerManager.iterator(); iter.hasNext();) {
 			Tuner tuner = (Tuner) iter.next();
 			Calendar nextCaptureCalendarForTuner = tuner.getNextCaptureCalendar();
 			String startEnd = tuner.getStartEndFromLastCalendarInquiry(); // DRS 20220707 - For improved event logging
@@ -509,7 +494,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 found = true;
             }
         } else {
-            for (Iterator iter = tunerManager.iterator(); iter.hasNext();) {
+            for (Iterator<?> iter = TunerManager.iterator(); iter.hasNext();) {
                 tuner = (Tuner) iter.next();
                 if (tuner.available(newCapture, channelMustBeInTheLineup, true)){
                     tuner.addCaptureAndPersist(newCapture, writeIt);
@@ -555,12 +540,12 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     //Called by Web UI
     public void removeAllCaptures() {
         ArrayList<Capture> removeThese = new ArrayList<Capture>();
-        for (Iterator iter = CaptureManager.activeCaptures.iterator(); iter.hasNext();) {
+        for (Iterator<Capture> iter = CaptureManager.activeCaptures.iterator(); iter.hasNext();) {
             Capture aCapture = (Capture) iter.next();
             removeThese.add(aCapture);
         }
         boolean needsInterrupt = false; // if you're removing all captures no interrupt needed here.
-        for (Iterator iter = removeThese.iterator(); iter.hasNext();) {
+        for (Iterator<Capture> iter = removeThese.iterator(); iter.hasNext();) {
             Capture aCapture = (Capture) iter.next();
             removeActiveCapture(aCapture, needsInterrupt, true);
         }
@@ -590,7 +575,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                     activeCaptures.remove(capture);
                 } else {
                     StringBuffer allCapturesDebug = new StringBuffer();
-                    for (Iterator iter = activeCaptures.iterator(); iter.hasNext();) {
+                    for (Iterator<Capture> iter = activeCaptures.iterator(); iter.hasNext();) {
                         Capture aCapture = (Capture) iter.next();
                         allCapturesDebug.append(aCapture.slot + aCapture.getFileName() + " *****, ");
                     }
@@ -608,7 +593,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 
                 // DRS 20150718 - In case something old did not get cleared out
                 List<Capture> removeList = new ArrayList<Capture>();
-                for (Iterator iter = activeCaptures.iterator(); iter.hasNext();) {
+                for (Iterator<Capture> iter = activeCaptures.iterator(); iter.hasNext();) {
                     Capture aCapture = (Capture) iter.next();
                     if (aCapture.slot.isInThePast()) removeList.add(aCapture);
                 }
@@ -687,7 +672,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public String getActiveWebCapturesList() {
         StringBuffer buf = new StringBuffer("<table border=\"1\">\n");
         StringBuffer xmlBuf = new StringBuffer("\n<xml id=\"captures\">\n");
-        for (Iterator iter = activeCaptures.iterator(); iter.hasNext() && !CaptureManager.simulate;) {
+        for (Iterator<Capture> iter = activeCaptures.iterator(); iter.hasNext() && !CaptureManager.simulate;) {
             Capture capture = (Capture) iter.next();
             if (capture != null){
                 buf.append(capture.getHtml(-1));
@@ -740,7 +725,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             captures = captureDataManager.getRecentCaptures("", filename, channel, title);
         }
         
-        for (Iterator iter = captures.descendingMap().values().iterator(); iter.hasNext();) {
+        for (Iterator<CaptureDetails> iter = captures.descendingMap().values().iterator(); iter.hasNext();) {
             CaptureDetails details = (CaptureDetails) iter.next();
             if (hours > 0){
                 long startMs = details.startEvent.getTime();
@@ -1002,7 +987,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         try {
             Reader reader = new FileReader(propertiesFileNamePath);
             props.load(reader);
-            for (Iterator iter = props.keySet().iterator(); iter.hasNext();) {
+            for (Iterator<?> iter = props.keySet().iterator(); iter.hasNext();) {
                 String key = (String) iter.next();
                 if (key !=null && key.equals("useHdhrCommandLine")) {
                     CaptureManager.useHdhrCommandLine = Boolean.parseBoolean(props.getProperty(key));
