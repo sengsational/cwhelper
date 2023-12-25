@@ -9,7 +9,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.nio.channels.Channels;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,7 +37,6 @@ import org.cwepg.reg.FusionRegistryEntry;
 import org.cwepg.reg.Registry;
 import org.cwepg.reg.RegistryHelperFusion;
 import org.cwepg.svc.HdhrCommandLine;
-import org.cwepg.svc.HtmlVcrDoc;
 
 public class TunerManager {
 	
@@ -138,7 +136,7 @@ public class TunerManager {
         //remove any deleted tuners
         for (Tuner tuner : deletedTuners) {
             System.out.println(new Date() + " Removing deleted tuner: " + tuner.getFullName());
-            this.tuners.remove(tuner.getFullName());
+            TunerManager.tuners.remove(tuner.getFullName());
             tuner.removeAllCaptures(true); //before deleting a tuner, delete it's captures
         }
         
@@ -146,7 +144,7 @@ public class TunerManager {
         // DRS 20210415 - Added 'for' loop + 1 - Concurrent Modification Exception
         for (Tuner tuner : nonResponsiveTuners) {
             System.out.println(new Date() + " Removing non-responsive tuner: " + tuner.getFullName());
-            this.tuners.remove(tuner.getFullName());
+            TunerManager.tuners.remove(tuner.getFullName());
             tuner.removeAllCaptures(true); //before deleting a tuner, delete it's captures
         }
         nonResponsiveTuners.clear();
@@ -155,13 +153,13 @@ public class TunerManager {
         for (Tuner tuner : refreshedTuners) {
             System.out.println(new Date() + " Adding new or changed: " + tuner.getFullName());
             // refreshed tuners are not added to the tuner manager and did not pick-up captures from file, so do both
-            this.tuners.put(tuner.getFullName(), tuner);
+            TunerManager.tuners.put(tuner.getFullName(), tuner);
             tuner.addCapturesFromStore();
             try {refreshLineup(tuner);} catch (Throwable t) {System.out.println(new Date() + " Problem refreshing lineup on new or changed tuner " + t.getMessage());};
         }
         mCountingTuners = false;
-        System.out.println(new Date() + " TunerManager.countTuners returned " + this.tuners.size() + " tuners.\n" + new Date() + " ============================================");
-        return this.tuners.size();
+        System.out.println(new Date() + " TunerManager.countTuners returned " + TunerManager.tuners.size() + " tuners.\n" + new Date() + " ============================================");
+        return TunerManager.tuners.size();
 	}
 	
 	// DRS 20220606 - Added method
@@ -177,7 +175,7 @@ public class TunerManager {
 	// DRS 20210415 - Changed non-responsive tuners to instance variable (delete later) - Concurrent Modification Exception
     public void removeHdhrByUrl(String url) {
         nonResponsiveTuners = new ArrayList<Tuner>();
-        for (Entry<String, Tuner> entry : this.tuners.entrySet()) {
+        for (Entry<String, Tuner> entry : TunerManager.tuners.entrySet()) {
             Tuner aTuner = entry.getValue();
             if (aTuner instanceof TunerHdhr) {
                 TunerHdhr hdhrTuner = (TunerHdhr)aTuner;
@@ -757,6 +755,8 @@ public class TunerManager {
     }
     
     // DRS 20191206 - Added Method
+    // TMP 20231223 - Commented unused code
+    /*
     private String getXmlOutputFromDevice(String ipAddress, boolean quiet) {
         try {
             if (ipAddress == null || ipAddress.length() < 8) {
@@ -779,7 +779,7 @@ public class TunerManager {
             return "(unavailable)";
         }
     }
-    
+    */
 
     //DRS 20130126 - Added method
     private boolean deviceHasValidCapture(String device, HashMap<String, String> ipMap) {
@@ -793,7 +793,7 @@ public class TunerManager {
 
     private boolean hasValidCapture(ArrayList<CaptureHdhr> capturesFromFile) {
         boolean hasCurrentOrFutureCapture = false;
-        for (Iterator iter = capturesFromFile.iterator(); iter.hasNext();) {
+        for (Iterator<CaptureHdhr> iter = capturesFromFile.iterator(); iter.hasNext();) {
             CaptureHdhr aCapture = (CaptureHdhr) iter.next();
             if (aCapture.getSlot().isInThePast()) continue;
             hasCurrentOrFutureCapture = true;
@@ -863,7 +863,7 @@ public class TunerManager {
             return "Hdhr IP's not accurate. Use discover.";
         }
         System.out.println(new Date() + " TunerManager.scanRefreshLineUpTm for " + tuners.size() + " tuners. ");
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
             if (tunerName == null || tuner.getFullName().equalsIgnoreCase(tunerName)){
                 if (tuner instanceof TunerHdhr) {
@@ -905,7 +905,7 @@ public class TunerManager {
         // DRS 20210415 - Added 'for' loop + 1 - Concurrent Modification Exception
         for (Tuner tuner : nonResponsiveTuners) {
             System.out.println(new Date() + " Removing non-responsive tuner: " + tuner.getFullName());
-            this.tuners.remove(tuner.getFullName());
+            TunerManager.tuners.remove(tuner.getFullName());
             tuner.removeAllCaptures(true); //before deleting a tuner, delete it's captures
         }
         nonResponsiveTuners.clear();
@@ -917,7 +917,7 @@ public class TunerManager {
         String returnValue = "TunerManager.interruptScan(): ";
         if (noTuners()) return "No Tuners. Use discover.";
         System.out.println(new Date() + " TunerManager.interruptScan() for all Hdhr tuners. ");
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
             if (!(tuner instanceof TunerHdhr)) continue;
             if (!tuner.liveDevice){
@@ -978,7 +978,7 @@ public class TunerManager {
         // DRS 20200908 - Changed count to devices, not tuners (which was wrong all along).  Example device id is 269940550, example tuners on the device is 1010FADA-1,1010FADA-0. 
         //int hdhrCount = 0;
         Set<String> deviceSet = new HashSet<String>();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner aTuner = iter.next();
             if (aTuner instanceof TunerHdhr) {
                 //hdhrCount++;
@@ -992,8 +992,8 @@ public class TunerManager {
     }
     // DRS 20220905  - Added Method
     public boolean hdhrSameIps(String liveDiscoverText) {
-        Set<String> deviceSet = new HashSet<String>();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+//        Set<String> deviceSet = new HashSet<String>();  // 20231223 TMP - Commented unused value
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner aTuner = iter.next();
             if (aTuner instanceof TunerHdhr) {
                 String ipAddress = ((TunerHdhr)aTuner).ipAddressTuner;
@@ -1011,7 +1011,7 @@ public class TunerManager {
     
     public boolean hasHdhrTuner() {
         Tuner aTuner = null;
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             aTuner = iter.next();
             if (aTuner instanceof TunerHdhr) {
                 return true;
@@ -1035,7 +1035,7 @@ public class TunerManager {
         if (tunerFullName != null && tunerFullName.indexOf("FFFFFFFF") > -1){
             return getRealHdhrTuner(tunerFullName);
         } else {
-            for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+            for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
                 aTuner = iter.next();
                 //System.out.println("comparing " + aTuner.getFullName() + " with " + tunerName);
                 if (aTuner.getFullName().equalsIgnoreCase(tunerFullName)) {
@@ -1053,7 +1053,7 @@ public class TunerManager {
         String lastTwoChars = fakeTuner.substring(fakeTuner.length() - 2);
         Tuner aTuner = null;
         Tuner selectedTuner = null;
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             aTuner = iter.next();
             if (aTuner.getType() == Tuner.HDHR_TYPE){
                 selectedTuner = aTuner;
@@ -1097,7 +1097,7 @@ public class TunerManager {
 				out.close();
 			}
 		} catch (IOException e) {}
-		return new ArrayList(result);
+		return new ArrayList<String>(result);
 	}
     
     // discover text looks like this [hdhomerun device 1075D4B1 found at 192.168.1.16]
@@ -1440,7 +1440,7 @@ public class TunerManager {
         }
 
         System.out.println(new Date() + " TunerManager.getCapturesForRecurring()");
-        ArrayList<Slot> slotList = new ArrayList<>();
+        ArrayList<Slot> slotList = new ArrayList<Slot>();
         Slot slot = originalSlot.clone();
         int dayOfWeek = slot.start.get(Calendar.DAY_OF_WEEK);
         Calendar futureCalendar = Calendar.getInstance();
@@ -1467,6 +1467,8 @@ public class TunerManager {
             Capture aCapture = getCaptureForChannelNameSlotAndTuner(channelName, listedSlot, tunerString, protocol);
             if (aCapture != null){
                 captureList.add(aCapture);
+                aCapture.setRecurring(true);
+                aCapture.setRecurrenceDays(recurring);
             } else {
                 System.out.println(new Date() + " one capture of a multi-capture was null!");
             }
@@ -1782,7 +1784,7 @@ public class TunerManager {
     public CaptureHdhr getCaptureForNewChannelNameSlotAndTuner(String channelName, Slot slot, String tunerName, String protocol) throws Exception {
         // find or add tuner
         Tuner tuner = null;
-        for (Iterator<String> iter = this.tuners.keySet().iterator(); iter.hasNext();) {
+        for (Iterator<String> iter = TunerManager.tuners.keySet().iterator(); iter.hasNext();) {
             Object key = iter.next();
             if(tuners.get(key).getFullName().equalsIgnoreCase(tunerName)){
                 tuner = tuners.get(key);
@@ -1892,7 +1894,7 @@ public class TunerManager {
             if (trialCapture != null && aChannel.tuner.available(trialCapture, true, false)){
                 prioritizedCaptures.put(priority, trialCapture);
             } else {
-                this.lastReason += "<br>tuner " + aChannel.tuner.getFullName() + " not available for " + trialCapture;
+                TunerManager.lastReason += "<br>tuner " + aChannel.tuner.getFullName() + " not available for " + trialCapture;
             }
         }
         
@@ -1909,7 +1911,7 @@ public class TunerManager {
             System.out.println("TunerManager.getCaptures() counting tuners.");
             this.countTuners();
         }
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
             captures.addAll(tuner.getCaptures());
         }
@@ -1918,7 +1920,7 @@ public class TunerManager {
     
     /* This method called from web UI with localRemoveOnly = false */
     public void removeAllCaptures(boolean localRemovalOnly) {
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
             tuner.removeAllCaptures(localRemovalOnly);
         }
@@ -1996,7 +1998,7 @@ public class TunerManager {
 
     public Tuner getTunerForCapture(Capture foundCapture){
         Tuner foundTuner = null;
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
             if (tuner.captures.contains(foundCapture)){
                 foundTuner = tuner;
@@ -2029,7 +2031,7 @@ public class TunerManager {
 		TreeMap<Number, Channel> allChannels = new TreeMap<Number, Channel>();
         int counter = 0;
         boolean fusionDone = false;
-		for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+		for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
 			Tuner tuner = iter.next();
             if (compressFusion && (tuner.getType() == Tuner.FUSION_TYPE)){
                 if (fusionDone) continue;
@@ -2052,7 +2054,7 @@ public class TunerManager {
 	
 	public ArrayList<String> getSameRfChannels(String tunerNameString, String channelKey) {
 	    ArrayList<String> channelKeys = new ArrayList<String>();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
             if (tuner instanceof TunerHdhr) {
                 if (tuner.getFullName().equals(tunerNameString)) {
@@ -2081,7 +2083,7 @@ public class TunerManager {
 		} catch (Exception e){
 			System.out.println("ChannelDigital priorities not considered.");
 		}
-		for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+		for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
 			Tuner tuner = iter.next();
 			Map<?, ?> channels = tuner.lineUp.channels;
 			for (Iterator<?> iterator = channels.keySet().iterator(); iterator.hasNext();) {
@@ -2181,23 +2183,23 @@ public class TunerManager {
 	}
 
 	public void printLineUps(){
-		for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();) {
+		for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
 			Tuner tuner = iter.next();
 			System.out.println(tuner + "\n" + tuner.lineUp);
 		}
 	}
     
     public void setTunerPath(String tunerName, String path) {
-        this.lastReason = "";
-        Tuner aTuner = this.tuners.get(tunerName);
-        if (aTuner == null) this.lastReason += "  Specified tuner not found.";
+        TunerManager.lastReason = "";
+        Tuner aTuner = TunerManager.tuners.get(tunerName);
+        if (aTuner == null) TunerManager.lastReason += "  Specified tuner not found.";
         else aTuner.setRecordPath(path);
         return;
     }
 
     public String getSimpleTunerList(){
         StringBuffer buf = new StringBuffer();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             Tuner tuner = iter.next();
             buf.append(tuner.getFullName() + "<br>");
         }
@@ -2206,7 +2208,7 @@ public class TunerManager {
     
     public ArrayList<Tuner> getTuners(int tunerType) {
         ArrayList<Tuner> tuners = new ArrayList<Tuner>();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             Tuner tuner = iter.next();
             if (tuner.tunerType == Tuner.HDHR_TYPE) {
                 tuners.add(tuner);
@@ -2217,7 +2219,7 @@ public class TunerManager {
     
     public String getTunerListAsOptions() {
         StringBuffer buf = new StringBuffer();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             Tuner tuner = iter.next();
             buf.append("<option value=\"");
             buf.append(tuner.getFullName());
@@ -2232,7 +2234,7 @@ public class TunerManager {
     
     public String getTunerPathAsOptions() {
         StringBuffer buf = new StringBuffer();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             Tuner tuner = iter.next();
             buf.append("tunerPath[\"");
             buf.append(tuner.getFullName());
@@ -2260,7 +2262,7 @@ public class TunerManager {
         
         StringBuffer buf = new StringBuffer("<table border=\"1\">\n");
         StringBuffer xmlBuf = new StringBuffer("\n<xml id=\"tuners\">\n");
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             Tuner tuner = iter.next();
             // TODO: ******************* REMOVE AFTER TIM FIXES HIS SIDE ******************
             // TODO: ******************* REMOVE AFTER TIM FIXES HIS SIDE ******************
@@ -2335,7 +2337,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
      */
     public String getChannelListByTunerAsOptions() {
         StringBuffer buf = new StringBuffer();
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             Tuner tuner = iter.next();
             //channelList["1075D4B1-0"] = '<select id="channel"> '
             buf.append("channelList[\"");
@@ -2368,7 +2370,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
     public String getChannelTunerListAsOptions() {
         StringBuffer buf = new StringBuffer();
         //<option value="103AEA6C-0,C:\Users\Public\VAP\Monitored\">103AEA6C-0</option>
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             Tuner tuner = iter.next();
             Map<String, Channel> channelMap = tuner.lineUp.channels;
             Set<String> channelNames = channelMap.keySet();
@@ -2455,7 +2457,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             System.out.println(new Date() + " ERROR: Low disk space GB is non-numeric.");
         }
         boolean foundAlertCondition = false;
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             Tuner tuner = iter.next();
             if (tuner.getLowSpaceComment(lowDiskGbValue).length() > 0) foundAlertCondition = true;
         }
@@ -2474,7 +2476,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
    
     public String toString(){
         StringBuffer buf = new StringBuffer("Tuners:\n");
-        for (Iterator<Tuner> iter = this.iterator(); iter.hasNext();){
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();){
             buf.append(iter.next().toString() + "\n");
         }
         return new String(buf);
@@ -2489,7 +2491,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             //CaptureManager.useHdhrCommandLine = false; // for vchannel testing;
             TunerManager tunerManager = TunerManager.getInstance();
             tunerManager.countTuners();
-            Collection channels = tunerManager.getAllChannels(false);
+            Collection<?> channels = tunerManager.getAllChannels(false);
             System.out.println("there were " + channels.size() + " channels.");
             for (Object channel : channels) {
                 System.out.println("channel:" + channel);
@@ -2527,7 +2529,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.212.64\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
             //String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.217.171\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
             HashMap<String, String> ipMap = getIpMap(fileDiscoverText, liveDiscoverText);
-            Set keys = ipMap.keySet();
+            Set<String> keys = ipMap.keySet();
             for (Object object : keys) {
                 System.out.println(object + " " + ipMap.get(object));
             }
@@ -2585,7 +2587,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             ArrayList<String> liveMap = new ArrayList<String>();
             liveMap.add("1010CC54");
             liveMap.add("1013FADA");
-            HashMap<String, String> ipAddressMap = new HashMap<String, String>();
+//            HashMap<String, String> ipAddressMap = new HashMap<String, String>(); // TMP 20231223 - Commented unused var
             HashMap<String, Integer> liveModelMap = tm.getLiveModelMap(liveMap, 1, 5);
             for (String key : liveModelMap.keySet()){
                 System.out.println("key: " + key + " value: " + liveModelMap.get(key));
