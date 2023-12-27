@@ -299,11 +299,11 @@ public class Slot {
             if (end != null)
                 return false;
         } else {
-            if (end != null && other.end == null){
+            if (end != null && other.end != null){
                 long endMs = end.getTimeInMillis();
                 long otherEndMs = other.end.getTimeInMillis();
                 long differenceMs = Math.abs(endMs - otherEndMs);
-                if (differenceMs < 60000){
+                if (differenceMs > 60000){
                     if (dc) System.out.println("\t\tNot same end");
                     return false;
                 }
@@ -316,11 +316,11 @@ public class Slot {
             if (start != null)
                 return false;
         } else {
-            if (start != null && other.start == null){
+            if (start != null && other.start != null){
                 long startMs = start.getTimeInMillis();
                 long otherStartMs = other.start.getTimeInMillis();
                 long differenceMs = Math.abs(startMs - otherStartMs);
-                if (differenceMs < 60000){
+                if (differenceMs > 60000){
                     if (dc) System.out.println("\t\tNot same start");
                     return false;
                 }
