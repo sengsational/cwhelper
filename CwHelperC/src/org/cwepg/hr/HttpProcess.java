@@ -5,33 +5,18 @@
 package org.cwepg.hr;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLConnection;
-import java.nio.CharBuffer;
 import java.util.Date;
-import java.util.Scanner;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
-import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
-import org.apache.http.nio.IOControl;
-import org.apache.http.nio.client.methods.AsyncCharConsumer;
 import org.apache.http.nio.client.methods.HttpAsyncMethods;
 import org.apache.http.nio.client.methods.ZeroCopyConsumer;
-import org.apache.http.nio.client.methods.ZeroCopyPost;
-import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
-import org.apache.http.protocol.HttpContext;
 
 public class HttpProcess implements Runnable {
 
