@@ -24,7 +24,7 @@ import org.cwepg.svc.HdhrCommandLine;
 public class LineUpHdhr extends LineUp {
     
     HdhrCommandLine mCommandLine = null;
-    private String liveXml;
+//    private String liveXml;  // 2024-2-2 -- TMP to eliminate "unused" warning
 	
     public void scan(Tuner tuner, boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
         String extraInfo = "";
@@ -494,6 +494,10 @@ public class LineUpHdhr extends LineUp {
     
     // DRS 20181106 - Added method
     private String scanAndGetXmlOutputFromDevice(Tuner tuner, int maxSeconds) {
+        // 2024-2-2 -- TMP spiked this scan routine (will monitor effect for issues)
+    	System.out.println(new Date() + " Skipping 'superfluous' device scan....");
+        if (true) return "";
+        
         TunerHdhr aTuner = (TunerHdhr)tuner;
         
         boolean scanPossible = false;
