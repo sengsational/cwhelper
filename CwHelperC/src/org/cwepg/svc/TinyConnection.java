@@ -574,7 +574,11 @@ class TinyConnection implements Runnable {
                             // DRS 20110214 - Added 'else if'    
                             } else if (captureList != null && captureList.size() > 0){
                                 for (Capture aCapture : captureList) {
-                                    target = new Target(fileName, title, defaultRecordPath, analogFileExtension, aCapture.getChannelProtocol(), tunerType, aCapture.getChannelDescription());
+                                    if ("*".equals(channelName)) {
+                                        target = new Target(fileName, title, defaultRecordPath, analogFileExtension, aCapture.getChannelProtocol(), tunerType, aCapture.getChannelDescription());
+                                    } else {
+                                        target = new Target(fileName, title, defaultRecordPath, analogFileExtension, aCapture.getChannelProtocol(), tunerType);
+                                    }
                                     targetList.add(target);
                                 }
                             } else {

@@ -14,7 +14,7 @@ import java.io.InputStreamReader;
 import java.io.Writer;
 import java.util.Date;
 
-import org.cwepg.hr.CaptureManager;
+// import org.cwepg.hr.CaptureManager;
 
 public class BuildExeFromClassFiles {
     /**
@@ -35,14 +35,15 @@ public class BuildExeFromClassFiles {
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
      */
-    public static final String PROJECT_DIRECTORY = "C:\\Users\\tmpet\\git\\cwhelper\\CwHelperC\\";
+    public static final String USER = "C:\\Users\\tmpet\\";
+    public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
     public static final String LIBRARY_DIRECTORY = PROJECT_DIRECTORY + "CwHelper_lib\\";
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    public static final String JRE_PATH = "C:\\Users\\tmpet\\.p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_17.0.9.v20231028-0858\\jre\\";
+    public static final String JRE_PATH = USER + ".p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_17.0.9.v20231028-0858\\jre\\";
     public static final String BASE_VERSION = "5-0-0-";
     public static final String COMMA_VERSION = "5,0,0,";
     public static final String DOT_VERSION = "5.0.0.";
@@ -280,7 +281,7 @@ public class BuildExeFromClassFiles {
     	return revisionNumber;
     }
     	
-    	
+/*    	
   	private static String getRevisionFromSourceControl() throws Exception {
         //https://stackoverflow.com/a/14915348/897007
         ProcessBuilder builder = new ProcessBuilder("C:\\Program Files\\TortoiseSVN\\bin\\svn", "info", "svn://192.168.3.65/CwHelperB/src");
@@ -300,5 +301,5 @@ public class BuildExeFromClassFiles {
         }
         return revision[1].trim();
     }
-
+*/
 }

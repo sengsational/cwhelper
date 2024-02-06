@@ -1,33 +1,12 @@
 package org.cwepg.hr;
 
-import java.awt.Component;
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Image;
-import java.awt.MenuItem;
-import java.awt.PopupMenu;
-import java.awt.SystemTray;
-import java.awt.TrayIcon;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.UIManager;
-
-import org.cwepg.reg.Registry;
 import org.cwepg.svc.CommandLine;
 import org.cwepg.svc.HdhrCommandLine;
 import org.cwepg.svc.VlcCommandLine;
@@ -596,7 +575,7 @@ public class CaptureHdhr extends Capture implements Runnable {
         Slot slot = new Slot("3/18/2009 12:12", "2");
         String channelName = "36.1 WCNC-HD";
         String protocol = "8vsb";
-        List captures = tunMan.getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol);
+        List<Capture> captures = TunerManager.getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol);
         
         if (captures != null && captures.size() > 0){
             Capture capture = (Capture)captures.get(0); 
