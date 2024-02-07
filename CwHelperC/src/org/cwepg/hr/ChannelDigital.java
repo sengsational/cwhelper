@@ -233,6 +233,7 @@ public class ChannelDigital extends Channel implements Comparable {
         }
         this.tuner = tuner;
         this.priority = priority;
+        this.protocol = getFromXml(hdhrXml, "Modulation");
         this.channelVirtual = getFromXml(hdhrXml, "GuideNumber");
 
         this.alphaDescription = getFromXml(hdhrXml, "Name");
@@ -248,50 +249,59 @@ public class ChannelDigital extends Channel implements Comparable {
         if (this.channelVirtual == null && this.airCat.equals("Air")) this.channelVirtual = "0.0"; //Digital Antenna has #.#
         if (this.channelVirtual == null && this.airCat.equals("Cat")) this.channelVirtual = "0";   //Digital Cable just has #
         this.channelDescription = this.channelVirtual + " " + this.alphaDescription;
-
-        if (virtualHandlingRequired) {
-            if (isVirtualCable) {
-                String appendString = ".0:1-qam256"; 
-                if (this.channelVirtual.contains(".")) appendString = ":1-qam256";
-                this.channelKey = this.channelVirtual + appendString;
-                this.protocol = "qam256";
-            } else {
-                String appendString = ".0:1-8vsb"; // DRS 20181128 - ...-vchn
-                if (this.channelVirtual.contains(".")) appendString = ":1-8vsb"; // DRS 20181128 - ...-vchn
-                this.channelKey = this.channelVirtual + appendString;
-                //this.frequency = this.channelVirtual;
-                //if (!channelVirtual.contains(".")) this.channelVirtual = this.channelVirtual + ".0";
-                //this.pid = "0";
-                this.protocol = "8vsb";
-            }
-            try {
-                this.frequency = "" + splitDottedChannel(getCleanedChannelName())[0]; //DRS 20220511
-            } catch (Exception e) {
-                System.out.println(new Date() + " ERROR: unable to get RF frequency for " + this.alphaDescription);
-                e.printStackTrace();
-            } 
-        } else {
-            // DRS 20181025 traditional existing code here
-            this.protocol = getFromXml(hdhrXml, "Modulation");
-            if (this.protocol == null) {
-                //System.out.println(new Date() + " Modulation tag missing.  Assuming 8vsb."); // Terry 11/25/2018
-                this.protocol = "8vsb";
-            }
-            this.frequency = getRfFromMegahertz(this.megahertz, this.protocol);
-            this.channelKey = this.frequency + "." + this.pid + ":1-" + this.protocol;
-        }
-        this.physical = new String[1][2];
-        this.physical[0][TUNER_STANDARD] = this.protocol;
-        this.physical[0][TUNER_VALUE] = "" + this.frequency;
-
         int dotLoc = this.channelVirtual.indexOf(".");
         if (dotLoc > 0 && dotLoc < this.channelVirtual.length()) {
             this.virtualChannel = Integer.parseInt(this.channelVirtual.substring(0, dotLoc));
             try { this.virtualSubchannel = Integer.parseInt(this.channelVirtual.substring(dotLoc + 1)); } catch (Throwable t) {this.virtualSubchannel = 0;}
         }
+
+        if (virtualHandlingRequired) {
+//            if (isVirtualCable) {
+//                String appendString = ".0:1-qam256";  // I suspect that this should use the stated protocol (which is "auto") but let's leave it alone
+//                if (this.channelVirtual.contains(".")) appendString = ":1-qam256";  // N.B.:  IIRC, none of the cable GuideNumbers contain "."
+//                this.channelKey = this.channelVirtual + appendString;
+//                this.protocol = "qam256";
+//            } else {
+//                String appendString = ".0:1-8vsb"; // DRS 20181128 - ...-vchn  // Again, why does this not use the stated protocol?
+//                if (this.channelVirtual.contains(".")) appendString = ":1-8vsb"; // DRS 20181128 - ...-vchn
+//                this.channelKey = this.channelVirtual + appendString;
+                //this.frequency = this.channelVirtual;
+                //if (!channelVirtual.contains(".")) this.channelVirtual = this.channelVirtual + ".0";
+                //this.pid = "0";
+//                this.protocol = "8vsb";
+//            }
+            try {
+              this.frequency = String.valueOf(this.virtualChannel);
+              this.pid = String.valueOf(this.virtualSubchannel);
+                
+            } catch (Exception e) {
+                System.out.println(new Date() + " ERROR: unable to get 'RF frequency' for " + this.channelVirtual + " -- " + this.alphaDescription);
+                e.printStackTrace();
+            } 
+        } else {
+            // DRS 20181025 traditional existing code here
+//            this.protocol = getFromXml(hdhrXml, "Modulation");  // TMP 20240206 moved up
+            if (this.protocol == null) {
+                //System.out.println(new Date() + " Modulation tag missing.  Assuming 8vsb."); // Terry 11/25/2018
+                this.protocol = "auto"; // "8vsb";  // TMP 20240206 "auto" should work for any tuner and input (but it should be in the XML file!)
+            }
+            this.frequency = getRfFromMegahertz(this.megahertz, this.protocol);
+//            this.channelKey = this.frequency + "." + this.pid + ":1-" + this.protocol;  // TMP 20240206 I think that this could be used for all the above definitions!
+        }
+        this.channelKey = this.frequency + "." + this.pid + ":1-" + this.protocol;  // TMP 20240206 I think that this can be used for all the above definitions!
+        this.physical = new String[1][2];
+        this.physical[0][TUNER_STANDARD] = this.protocol;
+        this.physical[0][TUNER_VALUE] = "" + this.frequency;
+
+//        int dotLoc = this.channelVirtual.indexOf(".");  // TMP 20240206 moved up
+//        if (dotLoc > 0 && dotLoc < this.channelVirtual.length()) {
+//            this.virtualChannel = Integer.parseInt(this.channelVirtual.substring(0, dotLoc));
+//            try { this.virtualSubchannel = Integer.parseInt(this.channelVirtual.substring(dotLoc + 1)); } catch (Throwable t) {this.virtualSubchannel = 0;}
+//        }
     }
 
-    private String getRfFromMegahertz(String megahertz, String protocol) {
+
+	private String getRfFromMegahertz(String megahertz, String protocol) {
         if (megahertz == null || protocol == null) {
             System.out.println(new Date() + " Unable to get RF from megahertz/protocol [" + megahertz + "/" + protocol + "]");
             return null;

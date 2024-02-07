@@ -495,77 +495,77 @@ public class LineUpHdhr extends LineUp {
     // DRS 20181106 - Added method
     private String scanAndGetXmlOutputFromDevice(Tuner tuner, int maxSeconds) {
         // 2024-2-2 -- TMP spiked this scan routine (will monitor effect for issues)
-    	System.out.println(new Date() + " Skipping 'superfluous' device scan....");
-    	return getXmlOutputFromDevice(tuner, maxSeconds);
+//    	System.out.println(new Date() + " Skipping 'superfluous' device scan....");
+//    	return getXmlOutputFromDevice(tuner, maxSeconds);
         
-//        TunerHdhr aTuner = (TunerHdhr)tuner;
-//        
-//        boolean scanPossible = false;
-//        
-//        int maxTries = 3;
-//        int tries = 0;
-//        while (!scanPossible && tries < maxTries) {
-//            tries++;
-//            String scanPossiblePage = getPage("http://" + aTuner.ipAddressTuner + "/lineup_status.json", maxSeconds, false, false);
-//            if (scanPossiblePage.contains("\"ScanPossible\":1")) {
-//                scanPossible = true;
-//                break;
-//            } else if (scanPossiblePage.length() == 0) {
-//                System.out.println(new Date() + " ERROR: Not able to reach HDHR device.");
-//                break;
-//            } else {
-//                // got some output, but not good output
-//                boolean retryItAgain = (tries < maxTries);
-//                if (retryItAgain) {
-//                    System.out.println(new Date() + " Scan not possible now. Retrying.");
-//                } else {
-//                    System.out.println(new Date() + " ERROR: Scan not possible now.");
-//                    break;
-//                }
-//            }
-//        }
-//        
-//        if (!scanPossible) return "";
-//       
-//        String scanStartPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.post?scan=start", maxSeconds, false, true); // Does not block, returns ""
-//        System.out.println(new Date() + " Requested scan http://" + aTuner.ipAddressTuner + "/lineup.post?scan=start [" + scanStartPage + "]  Can take several minutes...");
-//        
-//        boolean scanFound = false;
-//        int tryDurationMs = 1000 * 15; // 15 seconds
-//        maxTries = 4 * 20; // 20 minutes
-//        tries = 0;
-//        boolean debug = false;
-//        boolean triesExceeded = false;
-//        do {
-//            tries++;
-//            try {Thread.sleep(tryDurationMs);} catch (InterruptedException ee){}
-//            String scanPossiblePage = getPage("http://" + aTuner.ipAddressTuner + "/lineup_status.json", maxSeconds, true, false);
-//            if (debug) {
-//                String airCatSource = ((LineUpHdhr)aTuner.lineUp).getRegistryAirCatSource(aTuner);
-//                System.out.println(new Date() + " DEBUG: airCatSource for " + aTuner.getFullName() + ": " + airCatSource);
-//                if (scanPossiblePage != null) {
-//                    int pageLength = scanPossiblePage.length();
-//                    if (pageLength < 80) System.out.println(new Date() + " DEBUG: scanPossiblePage: " + scanPossiblePage );
-//                    else System.out.println(new Date() + " DEBUG: scanPossiblePage: "  + scanPossiblePage.substring(0, 75) + " ... ...");
-//                }
-//            }
-//            if (scanPossiblePage.contains("\"ScanPossible\":1")) {
-//                scanFound = true;
-//                break;
-//            }
-//            triesExceeded = tries >= maxTries;
-//        } while (!scanFound && !triesExceeded);
-//        
-//        if (!scanFound) {
-//            System.out.println(new Date() + " ERROR: Indication of scan completion never received.");
-//            return "";
-//        } else {
-//            String lineupPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.xml?tuning", maxSeconds, false, false);
-//            if (lineupPage.length() == 0) {
-//                System.out.println(new Date() + " ERROR: unable to get lineup xml.");
-//            }
-//            return lineupPage;
-//        }
+        TunerHdhr aTuner = (TunerHdhr)tuner;
+        
+        boolean scanPossible = false;
+        
+        int maxTries = 3;
+        int tries = 0;
+        while (!scanPossible && tries < maxTries) {
+            tries++;
+            String scanPossiblePage = getPage("http://" + aTuner.ipAddressTuner + "/lineup_status.json", maxSeconds, false, false);
+            if (scanPossiblePage.contains("\"ScanPossible\":1")) {
+                scanPossible = true;
+                break;
+            } else if (scanPossiblePage.length() == 0) {
+                System.out.println(new Date() + " ERROR: Not able to reach HDHR device.");
+                break;
+            } else {
+                // got some output, but not good output
+                boolean retryItAgain = (tries < maxTries);
+                if (retryItAgain) {
+                    System.out.println(new Date() + " Scan not possible now. Retrying.");
+                } else {
+                    System.out.println(new Date() + " ERROR: Scan not possible now.");
+                    break;
+                }
+            }
+        }
+        
+        if (!scanPossible) return "";
+       
+        String scanStartPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.post?scan=start", maxSeconds, false, true); // Does not block, returns ""
+        System.out.println(new Date() + " Requested scan http://" + aTuner.ipAddressTuner + "/lineup.post?scan=start [" + scanStartPage + "]  Can take several minutes...");
+        
+        boolean scanFound = false;
+        int tryDurationMs = 1000 * 15; // 15 seconds
+        maxTries = 4 * 20; // 20 minutes
+        tries = 0;
+        boolean debug = false;
+        boolean triesExceeded = false;
+        do {
+            tries++;
+            try {Thread.sleep(tryDurationMs);} catch (InterruptedException ee){}
+            String scanPossiblePage = getPage("http://" + aTuner.ipAddressTuner + "/lineup_status.json", maxSeconds, true, false);
+            if (debug) {
+                String airCatSource = ((LineUpHdhr)aTuner.lineUp).getRegistryAirCatSource(aTuner);
+                System.out.println(new Date() + " DEBUG: airCatSource for " + aTuner.getFullName() + ": " + airCatSource);
+                if (scanPossiblePage != null) {
+                    int pageLength = scanPossiblePage.length();
+                    if (pageLength < 80) System.out.println(new Date() + " DEBUG: scanPossiblePage: " + scanPossiblePage );
+                    else System.out.println(new Date() + " DEBUG: scanPossiblePage: "  + scanPossiblePage.substring(0, 75) + " ... ...");
+                }
+            }
+            if (scanPossiblePage.contains("\"ScanPossible\":1")) {
+                scanFound = true;
+                break;
+            }
+            triesExceeded = tries >= maxTries;
+        } while (!scanFound && !triesExceeded);
+        
+        if (!scanFound) {
+            System.out.println(new Date() + " ERROR: Indication of scan completion never received.");
+            return "";
+        } else {
+            String lineupPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.xml?tuning", maxSeconds, false, false);
+            if (lineupPage.length() == 0) {
+                System.out.println(new Date() + " ERROR: unable to get lineup xml.");
+            }
+            return lineupPage;
+        }
     }
     
     static String getPage(String url, int maxSeconds, boolean quiet, boolean isPost) {
