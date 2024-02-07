@@ -285,7 +285,7 @@ public class ChannelDigital extends Channel implements Comparable {
                 //System.out.println(new Date() + " Modulation tag missing.  Assuming 8vsb."); // Terry 11/25/2018
                 this.protocol = "auto"; // "8vsb";  // TMP 20240206 "auto" should work for any tuner and input (but it should be in the XML file!)
             }
-            this.frequency = getRfFromMegahertz(this.megahertz, this.protocol);
+            this.frequency = getRfFromMegahertz(this.megahertz, this.airCat);  // TMP 20240207  (N.B.: Routine assumes N.American channels)
 //            this.channelKey = this.frequency + "." + this.pid + ":1-" + this.protocol;  // TMP 20240206 I think that this could be used for all the above definitions!
         }
         this.channelKey = this.frequency + "." + this.pid + ":1-" + this.protocol;  // TMP 20240206 I think that this can be used for all the above definitions!
@@ -301,14 +301,14 @@ public class ChannelDigital extends Channel implements Comparable {
     }
 
 
-	private String getRfFromMegahertz(String megahertz, String protocol) {
-        if (megahertz == null || protocol == null) {
-            System.out.println(new Date() + " Unable to get RF from megahertz/protocol [" + megahertz + "/" + protocol + "]");
+	private String getRfFromMegahertz(String megahertz, String airCat) {
+        if (megahertz == null || airCat == null) {
+            System.out.println(new Date() + " Unable to get RF from megahertz OTA/Cable [" + megahertz + "/" + airCat + "]");
             return null;
         }
         double freq = Double.parseDouble(megahertz) / 1000000D;
         double rfChannel = -1;
-        if ("8vsb".equalsIgnoreCase(protocol)) {
+        if ("Air".equalsIgnoreCase(airCat)) {
             if (freq >= 473)
                 rfChannel = 14D + ((freq - 473D) / 6D);
             else if (freq >= 177)
@@ -317,7 +317,7 @@ public class ChannelDigital extends Channel implements Comparable {
                 rfChannel = 5D + ((freq - 79D) / 6D);
             else if (freq >= 57)
                 rfChannel = 2D + ((freq - 57D) / 6D);
-        } else if ("qam256".equalsIgnoreCase(protocol) || "qam64".equalsIgnoreCase(protocol)) {
+        } else if ("Cat".equalsIgnoreCase(airCat)) {
             if (freq >= 651)
                 rfChannel = 100D + ((freq - 651D) / 6D);
             else if (freq >= 219)
@@ -333,7 +333,7 @@ public class ChannelDigital extends Channel implements Comparable {
             else if (freq >= 57)
                 rfChannel = 2D + ((freq - 57D) / 6D);
         } else {
-            System.out.println(new Date() + " ERROR: Unrecognized protocol: " + protocol);
+            System.out.println(new Date() + " ERROR: Unrecognized OTA/Cable ID: " + airCat);
         }
         return "" + (int) rfChannel;
     }
