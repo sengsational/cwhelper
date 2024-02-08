@@ -209,6 +209,7 @@ public class LineUpHdhr extends LineUp {
         String l = null;
         boolean build = false;
         int ignoredShortChannelCount = 0;
+        int skippedAtsc3ChannelCount = 0;
         while ((l = in.readLine()) != null){
             if (l.trim().equals("<Program>")){
                 build = true;
@@ -219,8 +220,8 @@ public class LineUpHdhr extends LineUp {
                 if (l.contains("<Program>") && l.contains("</Program>")) {
                     int programLoc = l.indexOf("<Program>"); // Probably 0
                     l = l.substring(programLoc + 9); // remove "<Program>" from the start of the string
-                    int endProgramLoc = Math.min(l.indexOf("</Program>") + 10, l.length());
-                    aProgramDefinition.append(l.substring(0, endProgramLoc)); // remove </Program> at the end of the string
+                    int endProgramLoc = Math.min(l.indexOf("</Program>") + 10, l.length()); // keep "</Program>" in string (for count)
+                    aProgramDefinition.append(l.substring(0, endProgramLoc)); 
                 }
                 boolean tunerNeedsFullDefinition = !tuner.isVchannel;
                 int definitionEntryCount = 99;
@@ -230,7 +231,8 @@ public class LineUpHdhr extends LineUp {
                     //logName = logName.substring(0, Math.min(logName.length() - 1, 20)) + "...";
                     //System.out.println(new Date() + " Ignoring short channel [" + logName + "]");
                     ignoredShortChannelCount++;
-                    
+                } else if (skipAtsc3Channel(tuner, aProgramDefinition.toString())) {   
+                	skippedAtsc3ChannelCount++;
                 } else {
                     programDefinitions.add(aProgramDefinition.toString());
                 }
@@ -243,9 +245,44 @@ public class LineUpHdhr extends LineUp {
         }
         in.close();
         if (ignoredShortChannelCount > 0) System.out.println(new Date() + " Ignored " + ignoredShortChannelCount + " channels for tuner " + tuner.getFullName());
+        if (skippedAtsc3ChannelCount > 0) System.out.println(new Date() + " Ignored " + skippedAtsc3ChannelCount + " ATSC 3.0 channels for tuner " + tuner.getFullName());
         return programDefinitions;
     }
-    
+
+    private boolean skipAtsc3Channel(Tuner tuner, String aChannelDef) {
+//    	System.out.print(new Date() + " skip Atsc3Channel called - protocol:" + getFromXml(aChannelDef, "Modulation") + " vc:" + getFromXml(aChannelDef, "GuideNumber") + " tuner:" + tuner.getFullName());
+    	if (getFromXml(aChannelDef, "Modulation") != "8vsb") {  // no need to test more if known 8vsb
+        	String virtualChannelNo = getFromXml(aChannelDef, "GuideNumber");
+        	if (virtualChannelNo.contains(".")) {  // Not cable or non ATSC guide number
+    			int vc = Integer.parseInt(virtualChannelNo.substring(0, virtualChannelNo.indexOf(".")));
+    			if ((vc > 99) && (vc < 200)) {  // We have a virtual channel number of the form "1xx.yy"
+    				int devID = Integer.parseInt(tuner.getDeviceId());
+    				if ((devID < 0x10800000) || (devID > 0x13100000)) {  // HDHR is not 4k type
+//    					System.out.println( " returning true");
+    					return true;
+    				} else if (tuner.number > 1) {  // HDHR is 4k type
+    				  // Need to skip ATSC 3.0 channel for tuners 2 & 3
+//    					System.out.println( " returning true");
+    					return true;
+    				}
+    			}
+    		}
+    	}
+//		System.out.println( " returning false");
+    	return false;
+    }
+
+    private String getFromXml(String xml, String key) {
+        if (xml == null || xml.trim().equals("") || key == null || key.trim().equals(""))
+            return null;
+        int startLoc = xml.indexOf("<" + key + ">") + key.length() + 2;
+        int endLoc = xml.indexOf("</" + key + ">");
+        if (startLoc > -1 && endLoc > -1 && endLoc > startLoc) {
+            return xml.substring(startLoc, endLoc);
+        } else {
+            return null;
+        }
+    }
 
 
     private void updateChannelsFromXml(String xmlFileName, String airCatSource, Tuner tuner) throws Exception {
