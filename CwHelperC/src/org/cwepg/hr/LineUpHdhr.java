@@ -7,9 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 
 import org.apache.http.client.HttpClient;
@@ -24,7 +22,7 @@ import org.cwepg.svc.HdhrCommandLine;
 public class LineUpHdhr extends LineUp {
     
     HdhrCommandLine mCommandLine = null;
-    private String liveXml;
+//    private String liveXml;
 	
     public void scan(Tuner tuner, boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
         String extraInfo = "";
@@ -251,17 +249,16 @@ public class LineUpHdhr extends LineUp {
 
     private boolean skipAtsc3Channel(Tuner tuner, String aChannelDef) {
 //    	System.out.print(new Date() + " skip Atsc3Channel called - protocol:" + getFromXml(aChannelDef, "Modulation") + " vc:" + getFromXml(aChannelDef, "GuideNumber") + " tuner:" + tuner.getFullName());
-    	if (getFromXml(aChannelDef, "Modulation") != "8vsb") {  // no need to test more if known 8vsb
-        	String virtualChannelNo = getFromXml(aChannelDef, "GuideNumber");
+    	if (ChannelDigital.getFromXml(aChannelDef, "Modulation") != "8vsb") {  // no need to test more if known 8vsb
+        	String virtualChannelNo = ChannelDigital.getFromXml(aChannelDef, "GuideNumber");
         	if (virtualChannelNo.contains(".")) {  // Not cable or non ATSC guide number
     			int vc = Integer.parseInt(virtualChannelNo.substring(0, virtualChannelNo.indexOf(".")));
     			if ((vc > 99) && (vc < 200)) {  // We have a virtual channel number of the form "1xx.yy"
     				int devID = Integer.parseInt(tuner.getDeviceId());
-    				if ((devID < 0x10800000) || (devID > 0x13100000)) {  // HDHR is not 4k type
+    				if ((devID < 0x10800000) || (devID > 0x13100000)) {  // HDHR is old or Prime, not 4k type
 //    					System.out.println( " returning true");
     					return true;
-    				} else if (tuner.number > 1) {  // HDHR is 4k type
-    				  // Need to skip ATSC 3.0 channel for tuners 2 & 3
+    				} else if (tuner.number > 1) {  // HDHR is 4k type but tuners 2 & 3 are ATSC 1.0 only
 //    					System.out.println( " returning true");
     					return true;
     				}
@@ -270,18 +267,6 @@ public class LineUpHdhr extends LineUp {
     	}
 //		System.out.println( " returning false");
     	return false;
-    }
-
-    private String getFromXml(String xml, String key) {
-        if (xml == null || xml.trim().equals("") || key == null || key.trim().equals(""))
-            return null;
-        int startLoc = xml.indexOf("<" + key + ">") + key.length() + 2;
-        int endLoc = xml.indexOf("</" + key + ">");
-        if (startLoc > -1 && endLoc > -1 && endLoc > startLoc) {
-            return xml.substring(startLoc, endLoc);
-        } else {
-            return null;
-        }
     }
 
 

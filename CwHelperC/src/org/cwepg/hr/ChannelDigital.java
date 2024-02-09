@@ -338,7 +338,7 @@ public class ChannelDigital extends Channel implements Comparable {
         return "" + (int) rfChannel;
     }
 
-    private String getFromXml(String xml, String key) {
+    static String getFromXml(String xml, String key) {
         if (xml == null || xml.trim().equals("") || key == null || key.trim().equals(""))
             return null;
         int startLoc = xml.indexOf("<" + key + ">") + key.length() + 2;
