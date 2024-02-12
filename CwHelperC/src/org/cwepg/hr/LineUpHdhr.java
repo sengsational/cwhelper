@@ -44,7 +44,7 @@ public class LineUpHdhr extends LineUp {
             String airCatSource = getRegistryAirCatSource(tuner); // Will be null for tuners not saved in the registry.
             
             if (vChannelTuner) {// <<<<<<<<<<<<< NOTE: This will make all vchannel logic in the last 'else' irrelevant!!!
-                debugBuf.append("vChannelTuner: true ");
+                debugBuf.append("vChannelTuner:true ");
                 String xmlOutput = "";
                 if (useExistingFile) {
                     xmlOutput = LineUpHdhr.getXmlOutputFromDevice(tuner, maxSeconds);
@@ -57,7 +57,7 @@ public class LineUpHdhr extends LineUp {
                 scanOutput = getScanOutputFromDevice(tuner, maxSeconds);
                 loadChannelsFromScanOutput(scanOutput, tuner);
             } else {
-                debugBuf.append("default processing: true ");
+                debugBuf.append("default processing:true ");
                 // 20240211 TMP - don't use Saved xml with new tuners
                 boolean validHdhrXmlExists = !((TunerHdhr)tuner).isHttpCapable();  
 //                System.out.println(new Date() + "isHttpCapable:" + ((TunerHdhr)tuner).isHttpCapable());
