@@ -34,12 +34,12 @@ public class LineUpHdhr extends LineUp {
             System.out.println(new Date() + " Call Stack: " + extraInfo);
         } catch (Throwable t) {}
 
-        StringBuffer debugBuf = new StringBuffer(tuner.getFullName() + " - useExistingFile:" + useExistingFile + "  ");
+        StringBuffer debugBuf = new StringBuffer(tuner.getFullName() + " - useExistingFile:" + useExistingFile + " ");
         
         try {
             String scanOutput = null;
             this.signalType = signalType;
-            boolean vChannelTuner = ((TunerHdhr)tuner).isVchannel; 
+            boolean vChannelTuner = ((TunerHdhr)tuner).isVchannel;
             String xmlFileName = getRegistryXmlFileName(tuner);
             String airCatSource = getRegistryAirCatSource(tuner); // Will be null for tuners not saved in the registry.
             
@@ -53,53 +53,50 @@ public class LineUpHdhr extends LineUp {
                 }
                 loadChannelsFromXmlString(xmlOutput, xmlFileName, airCatSource, tuner);
             } else if (!useExistingFile){
-                debugBuf.append("useExistingFile: false ");
+//                debugBuf.append("useExistingFile: false ");
                 scanOutput = getScanOutputFromDevice(tuner, maxSeconds);
                 loadChannelsFromScanOutput(scanOutput, tuner);
             } else {
                 debugBuf.append("default processing: true ");
-                long minimumSize = 100L; // completely arbitrary.  The 'empty' XML file had the XML header and one empty element.
-                boolean validHdhrXmlExists = checkForHdhrXmlFile(xmlFileName, minimumSize);
+                // 20240211 TMP - don't use Saved xml with new tuners
+                boolean validHdhrXmlExists = !((TunerHdhr)tuner).isHttpCapable();  
+//                System.out.println(new Date() + "isHttpCapable:" + ((TunerHdhr)tuner).isHttpCapable());
+            	String cableCardIgnoredMessage = "";
+                if (validHdhrXmlExists) {
+                	long minimumSize = 100L; // completely arbitrary.  The 'empty' XML file had the XML header and one empty element.
+                	validHdhrXmlExists = checkForHdhrXmlFile(xmlFileName, minimumSize);
                 
-                //DRS 20130310 - Always ignore CableCARD.xml
-                String cableCardIgnoredMessage = "";
-                if (xmlFileName != null && xmlFileName.toUpperCase().startsWith("CABLECARD")) {
-                    validHdhrXmlExists = false;
-                    cableCardIgnoredMessage = "(CableCARD.xml was ignored)";
+                	//DRS 20130310 - Always ignore CableCARD.xml
+                	if (xmlFileName != null && xmlFileName.toUpperCase().startsWith("CABLECARD")) {
+                		validHdhrXmlExists = false;
+                		cableCardIgnoredMessage = "(CableCARD.xml was ignored) ";
+                	}
                 }
-                
                 //DRS 20130310 - Ignore xml file if older than scan
                 String oldXmlFileIgnoredMessage = "";
                 if (validHdhrXmlExists && getHdhrXmlFileDate(xmlFileName).before(getScanFileDate(tuner))){
                     validHdhrXmlExists = false; //DRS 20200831 - Uncommented, per Terry //DRS 20200316 - Per Terry (commented)
-                    oldXmlFileIgnoredMessage = xmlFileName + ".xml was older than the scan file, so is ignored."; //DRS 20200831 - Uncommented, per Terry //DRS 20200316 - Per Terry (commented)
+                    oldXmlFileIgnoredMessage = xmlFileName + ".xml was older than the scan file, so is ignored. "; //DRS 20200831 - Uncommented, per Terry //DRS 20200316 - Per Terry (commented)
                     //oldXmlFileIgnoredMessage = xmlFileName + ".xml was older than the scan file, but it is still being used."; //DRS 20200831 - Commented, per Terry //DRS 20200316 - Per Terry (new line)
                 }
                 
                 boolean previousScanExists = checkForPreviousScan(tuner);
-                debugBuf.append("validHdhrXmlExists:" + validHdhrXmlExists + " " + cableCardIgnoredMessage + " " + oldXmlFileIgnoredMessage + " ");
-                debugBuf.append("previousScanExists:" + previousScanExists + "  ");
+                debugBuf.append("validHdhrXmlExists:" + validHdhrXmlExists + " " + cableCardIgnoredMessage + oldXmlFileIgnoredMessage);
+                debugBuf.append("previousScanExists:" + previousScanExists + " ");
                 
-                // DRS 20220707 - Added 7 - Get scan from http if traditional processing not providing.
-                boolean liveXmlAvailable = false;
-                String liveXmlFileName = null;
-                if (!previousScanExists && !validHdhrXmlExists) {
-                    liveXmlFileName = loadXmlFromDevice(tuner, maxSeconds);
-                    if (liveXmlFileName != null) liveXmlAvailable = true;
-                }
+                boolean liveXmlAvailable = !previousScanExists && !validHdhrXmlExists;
                 debugBuf.append("liveXmlAvailable:" + liveXmlAvailable + " ");
                 
-                System.out.println(new Date() + " " + debugBuf.toString());
                 boolean useUpdatedLogic = true;
                 if (useUpdatedLogic) {
                     if (validHdhrXmlExists) {
                         loadChannelsFromXml(xmlFileName, airCatSource, tuner);
-                        debugBuf.append("validHdhrXmlExists:" + validHdhrXmlExists);
                     } else if (previousScanExists){
                         scanOutput = getScanOutputFromFile(tuner);
                         loadChannelsFromScanOutput(scanOutput, tuner);
                     } else if (liveXmlAvailable) {
-                        loadChannelsFromXml(liveXmlFileName, airCatSource, tuner);
+                        scanOutput = LineUpHdhr.getXmlOutputFromDevice(tuner, maxSeconds);
+                        loadChannelsFromXmlString(scanOutput, xmlFileName, airCatSource, tuner);
                     } else {
                         System.out.println(new Date() + " ERROR: no valid hdhr xml file and no previous scan file.");
                     }
@@ -115,7 +112,8 @@ public class LineUpHdhr extends LineUp {
                     }
                 }
             }
-        } catch (Exception t) {
+            System.out.println(new Date() + " " + debugBuf.toString());  // 20240211 TMP - moved to print for all paths
+      } catch (Exception t) {
             System.out.println(new Date() + " ERROR: Exception in LineUpHdhr.scan(): " + t.getClass().getName() + " " + t.getMessage());
             System.out.println(new Date() + " ERROR: " + debugBuf.toString());
             throw t;
@@ -145,26 +143,26 @@ public class LineUpHdhr extends LineUp {
         }
     }
     
-    // DRS 20220707 - Added method for when traditional scan unavailable
-    private String loadXmlFromDevice(Tuner tuner, int maxSeconds) {
-        String liveXmlFileName = null;
-        String xmlOutput = scanAndGetXmlOutputFromDevice(tuner, 60);
-        if (xmlOutput == null || xmlOutput.length() == 0) {
-            return null;
-        }
-        // Save to xml to file
-        liveXmlFileName = CaptureManager.dataPath + "\\" + tuner.getFullName() + ".xml";
-        BufferedWriter out = null;
-        try {
-            out = new BufferedWriter(new FileWriter(liveXmlFileName));
-            out.write(xmlOutput + "\n");
-        } catch (Throwable t) {
-            System.out.println(new Date() + " ERROR: Could not write to " + liveXmlFileName + ": " + t.getMessage());
-        } finally {
-            try {out.close();} catch (Throwable t){}
-        }
-        return liveXmlFileName;
-    }
+    // DRS 20220707 - Added method for when traditional scan unavailable // TMP 2024 - This should NOT be used
+//    private String loadXmlFromDevice(Tuner tuner, int maxSeconds) {
+//        String liveXmlFileName = null;
+//        String xmlOutput = scanAndGetXmlOutputFromDevice(tuner, 60);
+//        if (xmlOutput == null || xmlOutput.length() == 0) {
+//            return null;
+//        }
+//        // Save to xml to file
+//        liveXmlFileName = CaptureManager.dataPath + "\\" + tuner.getFullName() + ".xml";
+//        BufferedWriter out = null;
+//        try {
+//            out = new BufferedWriter(new FileWriter(liveXmlFileName));
+//            out.write(xmlOutput + "\n");
+//        } catch (Throwable t) {
+//            System.out.println(new Date() + " ERROR: Could not write to " + liveXmlFileName + ": " + t.getMessage());
+//        } finally {
+//            try {out.close();} catch (Throwable t){}
+//        }
+//        return liveXmlFileName;
+//    }
     
     // Try to return the last three digits of the deviceId times 10000 or a random number
     private double getStartPriority(String deviceId, int number) {

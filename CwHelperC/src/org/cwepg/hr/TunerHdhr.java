@@ -26,9 +26,10 @@ public class TunerHdhr extends Tuner {
     public static final int ORIGINAL = 0;
     public static final int VCHANNEL = 1;
     boolean isVchannel = false;
+//    boolean isHttpCapable = false;
     String ipAddressTuner;
     String ipAddressMachine;
-    private int httpCapability = -1;
+    int httpCapability = -1;
     
     //////////// CONSTRUCTORS & RELATED ////////////////
     public TunerHdhr(String id, int number, boolean addDevice){
@@ -311,7 +312,7 @@ public class TunerHdhr extends Tuner {
         if (httpCapability < 0) {
             httpCapability = TunerManager.getInstance().respondsWithWebPage(this)?1:0;
         }
-        return httpCapability  == 1;
+        return httpCapability == 1;
     }
 
     /*
