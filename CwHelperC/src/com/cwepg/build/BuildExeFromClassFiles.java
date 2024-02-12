@@ -44,9 +44,9 @@ public class BuildExeFromClassFiles {
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
     public static final String JRE_PATH = USER + ".p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_17.0.9.v20231028-0858\\jre\\";
-    public static final String BASE_VERSION = "5-0-0-";
-    public static final String COMMA_VERSION = "5,0,0,";
-    public static final String DOT_VERSION = "5.0.0.";
+    public static final String BASE_VERSION = "5-4-0-";
+    public static final String COMMA_VERSION = "5,4,0,";
+    public static final String DOT_VERSION = "5.4.0.";
 
     public static void main(String[] args) throws Exception {
     	
