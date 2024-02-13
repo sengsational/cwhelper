@@ -44,7 +44,7 @@ public class LineUpHdhr extends LineUp {
             String airCatSource = getRegistryAirCatSource(tuner); // Will be null for tuners not saved in the registry.
             
             if (vChannelTuner) {// <<<<<<<<<<<<< NOTE: This will make all vchannel logic in the last 'else' irrelevant!!!
-                debugBuf.append("vChannelTuner:true ");
+                debugBuf.append("(#1) vChannelTuner:true ");
                 String xmlOutput = "";
                 if (useExistingFile) {
                     xmlOutput = LineUpHdhr.getXmlOutputFromDevice(tuner, maxSeconds);
@@ -53,16 +53,17 @@ public class LineUpHdhr extends LineUp {
                 }
                 loadChannelsFromXmlString(xmlOutput, xmlFileName, airCatSource, tuner);
             } else if (!useExistingFile){
-//                debugBuf.append("useExistingFile: false ");
+                debugBuf.append("(#2) useExistingFile:false ");
                 scanOutput = getScanOutputFromDevice(tuner, maxSeconds);
                 loadChannelsFromScanOutput(scanOutput, tuner);
             } else {
-                debugBuf.append("default processing:true ");
+                debugBuf.append("(#3) default processing:true ");
                 // 20240211 TMP - don't use Saved xml with new tuners
-                boolean validHdhrXmlExists = !((TunerHdhr)tuner).isHttpCapable();  
-//                System.out.println(new Date() + "isHttpCapable:" + ((TunerHdhr)tuner).isHttpCapable());
+                boolean tunerNotHttpCapable = !((TunerHdhr)tuner).isHttpCapable();
+                boolean validHdhrXmlExists = false; // DRS 20240213 - Added 1 - We source the Xml from various places, and this is is the variable what we are endeavoring to set accurately
+
             	String cableCardIgnoredMessage = "";
-                if (validHdhrXmlExists) {
+                if (tunerNotHttpCapable) { // if the tuner isn't http capable, we need to look for XML files instead
                 	long minimumSize = 100L; // completely arbitrary.  The 'empty' XML file had the XML header and one empty element.
                 	validHdhrXmlExists = checkForHdhrXmlFile(xmlFileName, minimumSize);
                 
@@ -84,32 +85,19 @@ public class LineUpHdhr extends LineUp {
                 debugBuf.append("validHdhrXmlExists:" + validHdhrXmlExists + " " + cableCardIgnoredMessage + oldXmlFileIgnoredMessage);
                 debugBuf.append("previousScanExists:" + previousScanExists + " ");
                 
-                boolean liveXmlAvailable = !previousScanExists && !validHdhrXmlExists;
-                debugBuf.append("liveXmlAvailable:" + liveXmlAvailable + " ");
+                boolean noXmlFileOrScanFileAvailable = !previousScanExists && !validHdhrXmlExists;
+                debugBuf.append("noXmlFileOrScanFileAvailable:" + noXmlFileOrScanFileAvailable + " ");
                 
-                boolean useUpdatedLogic = true;
-                if (useUpdatedLogic) {
-                    if (validHdhrXmlExists) {
-                        loadChannelsFromXml(xmlFileName, airCatSource, tuner);
-                    } else if (previousScanExists){
-                        scanOutput = getScanOutputFromFile(tuner);
-                        loadChannelsFromScanOutput(scanOutput, tuner);
-                    } else if (liveXmlAvailable) {
-                        scanOutput = LineUpHdhr.getXmlOutputFromDevice(tuner, maxSeconds);
-                        loadChannelsFromXmlString(scanOutput, xmlFileName, airCatSource, tuner);
-                    } else {
-                        System.out.println(new Date() + " ERROR: no valid hdhr xml file and no previous scan file.");
-                    }
+                if (validHdhrXmlExists) {
+                    loadChannelsFromXml(xmlFileName, airCatSource, tuner);
+                } else if (previousScanExists){
+                    scanOutput = getScanOutputFromFile(tuner);
+                    loadChannelsFromScanOutput(scanOutput, tuner);
+                } else if (noXmlFileOrScanFileAvailable) {
+                    scanOutput = LineUpHdhr.getXmlOutputFromDevice(tuner, maxSeconds);
+                    loadChannelsFromXmlString(scanOutput, xmlFileName, airCatSource, tuner);
                 } else {
-                    if (previousScanExists){
-                        scanOutput = getScanOutputFromFile(tuner);
-                        loadChannelsFromScanOutput(scanOutput, tuner);
-                        if (validHdhrXmlExists){
-                            updateChannelsFromXml(xmlFileName, airCatSource, tuner);
-                        }
-                    } else if (validHdhrXmlExists) {
-                        loadChannelsFromXml(xmlFileName, airCatSource, tuner);
-                    }
+                    System.out.println(new Date() + " ERROR: no valid hdhr xml file and no previous scan file.");
                 }
             }
             System.out.println(new Date() + " " + debugBuf.toString());  // 20240211 TMP - moved to print for all paths
