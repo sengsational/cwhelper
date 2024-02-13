@@ -35,6 +35,9 @@ import javax.net.ssl.X509TrustManager;
 import org.cwepg.hr.CaptureManager;
 import org.cwepg.hr.ServiceLauncher;
 
+// Class no longer in use.
+// See: https://github.com/sengsational/cwhelper/issues/15
+
 public class TinyWebServerSecure implements Runnable {
     
     //https://stackoverflow.com/questions/47068155/is-it-possible-to-use-java-serversocket-to-accept-https-requests

@@ -13,7 +13,6 @@ import java.util.Date;
 
 import org.cwepg.reg.Registry;
 import org.cwepg.svc.TinyWebServer;
-import org.cwepg.svc.TinyWebServerSecure;
 
 public class ServiceLauncher {
 
@@ -133,11 +132,6 @@ public class ServiceLauncher {
         if (!webServer.start()) {
             bufferedPrintln("The web server port was taken, so we presume a copy of CwHelper is already running.  We will quit.");
             System.exit(0);
-        }
-
-        TinyWebServerSecure webServerSecure = TinyWebServerSecure.getInstance(WEB_SERVER_SECURE_PORT);
-        if (!webServerSecure.start()) {
-            bufferedPrintln("The secure web server did not start. Proceeding with otherwise normal startup.");
         }
 
         PrintStream out = null;
