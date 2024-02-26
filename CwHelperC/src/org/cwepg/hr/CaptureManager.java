@@ -20,9 +20,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.cwepg.hr.CaptureHdhr.DeviceUnavailableException;
-import org.cwepg.svc.HtmlSettingsDoc;
-import org.cwepg.svc.HtmlShutdownDoc;
-import org.cwepg.svc.HtmlVcrDoc;
 import org.cwepg.svc.RestartManager;
 import org.cwepg.svc.SplashScreenCloser;
 import org.cwepg.svc.TinyWebServer;
@@ -89,7 +86,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         loadSettings();
         System.out.println(new Date() + "\n" + getProperties(true));
         if (clockOffset != 0) alterPcClock(clockOffset, 5, true);
-        loadHtmlPages(htmlFileNames);
+        // loadHtmlPages(htmlFileNames); // DRS 20240224 - No longer needed - https://github.com/sengsational/cwhelper/issues/16
         Arrays.fill(interrupterList,"");
 
         eventLoopThread = new Thread(new RestartManager(), "Win32 Event Loop");
@@ -925,46 +922,6 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             System.err.println(new Date() + " ERROR: Could not save CaptureManager properties. " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    public static void loadHtmlPages(String[] htmlFileNames) {
-            
-        String path = "";
-        if (!CaptureManager.dataPath.equals("")) {
-            path = CaptureManager.dataPath + File.separator;
-        }
-        
-        for (String fileName : htmlFileNames) {
-            String htmlFileNamePath = path + fileName;
-            if (!new File(htmlFileNamePath).exists()) {
-                System.out.println(new Date() + " Could not find optional html file [" + htmlFileNamePath + "].");
-                continue;
-            }
-            try {
-                BufferedReader in = new BufferedReader(new FileReader(htmlFileNamePath));
-                StringBuffer buf = new StringBuffer();
-                String l = "";
-                while ((l = in.readLine()) != null) {
-                    buf.append(l); buf.append("\n");
-                }
-                in.close();
-                //    public static final String[] htmlFileNames = {"CWHelpervcr.html", "CWHelpersettings.html", "CWHelpershutdown.html"};
-
-                if (fileName.equals("CWHelpervcr.html")) {
-                    HtmlVcrDoc.replacePage(buf.toString());
-                } else if (fileName.equals("CWHelpersettings.html")) {
-                    HtmlSettingsDoc.replacePage(buf.toString());
-                } else if (fileName.equals("CWHelpershutdown.html")) {
-                    HtmlShutdownDoc.replacePage(buf.toString());
-                }
-            } catch (Exception e) {
-                System.out.println(new Date() + " ERROR: Could not load optional CaptureManager vcr file. "
-                        + e.getMessage());
-                System.err.println(new Date() + " ERROR: Could not load optional CaptureManager vcr file. ");
-                e.printStackTrace();
-            }
-        }
-        
     }
 
     public static void loadSettings() {
