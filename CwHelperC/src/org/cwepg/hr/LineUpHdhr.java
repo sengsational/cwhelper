@@ -7,9 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 
 import org.apache.http.client.HttpClient;
@@ -24,7 +22,7 @@ import org.cwepg.svc.HdhrCommandLine;
 public class LineUpHdhr extends LineUp {
     
     HdhrCommandLine mCommandLine = null;
-    private String liveXml;
+//    private String liveXml;
 	
     public void scan(Tuner tuner, boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
         String extraInfo = "";
@@ -36,17 +34,17 @@ public class LineUpHdhr extends LineUp {
             System.out.println(new Date() + " Call Stack: " + extraInfo);
         } catch (Throwable t) {}
 
-        StringBuffer debugBuf = new StringBuffer(tuner.getFullName() + " - useExistingFile:" + useExistingFile + "  ");
+        StringBuffer debugBuf = new StringBuffer(tuner.getFullName() + " - useExistingFile:" + useExistingFile + " ");
         
         try {
             String scanOutput = null;
             this.signalType = signalType;
-            boolean vChannelTuner = ((TunerHdhr)tuner).isVchannel; 
+            boolean vChannelTuner = ((TunerHdhr)tuner).isVchannel;
             String xmlFileName = getRegistryXmlFileName(tuner);
             String airCatSource = getRegistryAirCatSource(tuner); // Will be null for tuners not saved in the registry.
             
             if (vChannelTuner) {// <<<<<<<<<<<<< NOTE: This will make all vchannel logic in the last 'else' irrelevant!!!
-                debugBuf.append("vChannelTuner: true ");
+                debugBuf.append("(#1) vChannelTuner:true ");
                 String xmlOutput = "";
                 if (useExistingFile) {
                     xmlOutput = LineUpHdhr.getXmlOutputFromDevice(tuner, maxSeconds);
@@ -55,69 +53,55 @@ public class LineUpHdhr extends LineUp {
                 }
                 loadChannelsFromXmlString(xmlOutput, xmlFileName, airCatSource, tuner);
             } else if (!useExistingFile){
-                debugBuf.append("useExistingFile: false ");
+                debugBuf.append("(#2) useExistingFile: false ");
                 scanOutput = getScanOutputFromDevice(tuner, maxSeconds);
                 loadChannelsFromScanOutput(scanOutput, tuner);
             } else {
-                debugBuf.append("default processing: true ");
-                long minimumSize = 100L; // completely arbitrary.  The 'empty' XML file had the XML header and one empty element.
-                boolean validHdhrXmlExists = checkForHdhrXmlFile(xmlFileName, minimumSize);
+                debugBuf.append("(#3) default processing:true ");
+                // 20240211 TMP - don't use Saved xml with new tuners
+                boolean tunerNotHttpCapable = !((TunerHdhr)tuner).isHttpCapable();
+                boolean validHdhrXmlExists = false; // DRS 20240213 - Added 1 - We source the Xml from various places, and this is is the variable what we are endeavoring to set accurately
+
+            	String cableCardIgnoredMessage = "";
+                if (tunerNotHttpCapable) { // if the tuner isn't http capable, we need to look for XML files instead
+                	long minimumSize = 100L; // completely arbitrary.  The 'empty' XML file had the XML header and one empty element.
+                	validHdhrXmlExists = checkForHdhrXmlFile(xmlFileName, minimumSize);
                 
-                //DRS 20130310 - Always ignore CableCARD.xml
-                String cableCardIgnoredMessage = "";
-                if (xmlFileName != null && xmlFileName.toUpperCase().startsWith("CABLECARD")) {
-                    validHdhrXmlExists = false;
-                    cableCardIgnoredMessage = "(CableCARD.xml was ignored)";
+                	//DRS 20130310 - Always ignore CableCARD.xml
+                	if (xmlFileName != null && xmlFileName.toUpperCase().startsWith("CABLECARD")) {
+                		validHdhrXmlExists = false;
+                		cableCardIgnoredMessage = "(CableCARD.xml was ignored) ";
+                	}
                 }
-                
                 //DRS 20130310 - Ignore xml file if older than scan
                 String oldXmlFileIgnoredMessage = "";
                 if (validHdhrXmlExists && getHdhrXmlFileDate(xmlFileName).before(getScanFileDate(tuner))){
                     validHdhrXmlExists = false; //DRS 20200831 - Uncommented, per Terry //DRS 20200316 - Per Terry (commented)
-                    oldXmlFileIgnoredMessage = xmlFileName + ".xml was older than the scan file, so is ignored."; //DRS 20200831 - Uncommented, per Terry //DRS 20200316 - Per Terry (commented)
+                    oldXmlFileIgnoredMessage = xmlFileName + ".xml was older than the scan file, so is ignored. "; //DRS 20200831 - Uncommented, per Terry //DRS 20200316 - Per Terry (commented)
                     //oldXmlFileIgnoredMessage = xmlFileName + ".xml was older than the scan file, but it is still being used."; //DRS 20200831 - Commented, per Terry //DRS 20200316 - Per Terry (new line)
                 }
                 
                 boolean previousScanExists = checkForPreviousScan(tuner);
-                debugBuf.append("validHdhrXmlExists:" + validHdhrXmlExists + " " + cableCardIgnoredMessage + " " + oldXmlFileIgnoredMessage + " ");
-                debugBuf.append("previousScanExists:" + previousScanExists + "  ");
+                debugBuf.append("validHdhrXmlExists:" + validHdhrXmlExists + " " + cableCardIgnoredMessage + oldXmlFileIgnoredMessage);
+                debugBuf.append("previousScanExists:" + previousScanExists + " ");
                 
-                // DRS 20220707 - Added 7 - Get scan from http if traditional processing not providing.
-                boolean liveXmlAvailable = false;
-                String liveXmlFileName = null;
-                if (!previousScanExists && !validHdhrXmlExists) {
-                    liveXmlFileName = loadXmlFromDevice(tuner, maxSeconds);
-                    if (liveXmlFileName != null) liveXmlAvailable = true;
-                }
-                debugBuf.append("liveXmlAvailable:" + liveXmlAvailable + " ");
+                boolean noXmlFileOrScanFileAvailable = !previousScanExists && !validHdhrXmlExists;
+                debugBuf.append("liveXmlAvailable:" + noXmlFileOrScanFileAvailable + " ");
                 
-                System.out.println(new Date() + " " + debugBuf.toString());
-                boolean useUpdatedLogic = true;
-                if (useUpdatedLogic) {
-                    if (validHdhrXmlExists) {
-                        loadChannelsFromXml(xmlFileName, airCatSource, tuner);
-                        debugBuf.append("validHdhrXmlExists:" + validHdhrXmlExists);
-                    } else if (previousScanExists){
-                        scanOutput = getScanOutputFromFile(tuner);
-                        loadChannelsFromScanOutput(scanOutput, tuner);
-                    } else if (liveXmlAvailable) {
-                        loadChannelsFromXml(liveXmlFileName, airCatSource, tuner);
-                    } else {
-                        System.out.println(new Date() + " ERROR: no valid hdhr xml file and no previous scan file.");
-                    }
+                if (validHdhrXmlExists) {
+                    loadChannelsFromXml(xmlFileName, airCatSource, tuner);
+                } else if (previousScanExists){
+                    scanOutput = getScanOutputFromFile(tuner);
+                    loadChannelsFromScanOutput(scanOutput, tuner);
+                } else if (noXmlFileOrScanFileAvailable) {
+                    scanOutput = LineUpHdhr.getXmlOutputFromDevice(tuner, maxSeconds);
+                    loadChannelsFromXmlString(scanOutput, xmlFileName, airCatSource, tuner);
                 } else {
-                    if (previousScanExists){
-                        scanOutput = getScanOutputFromFile(tuner);
-                        loadChannelsFromScanOutput(scanOutput, tuner);
-                        if (validHdhrXmlExists){
-                            updateChannelsFromXml(xmlFileName, airCatSource, tuner);
-                        }
-                    } else if (validHdhrXmlExists) {
-                        loadChannelsFromXml(xmlFileName, airCatSource, tuner);
-                    }
+                    System.out.println(new Date() + " ERROR: no valid hdhr xml file and no previous scan file.");
                 }
             }
-        } catch (Exception t) {
+            System.out.println(new Date() + " " + debugBuf.toString());  // 20240211 TMP - moved to print for all paths
+      } catch (Exception t) {
             System.out.println(new Date() + " ERROR: Exception in LineUpHdhr.scan(): " + t.getClass().getName() + " " + t.getMessage());
             System.out.println(new Date() + " ERROR: " + debugBuf.toString());
             throw t;
@@ -147,26 +131,26 @@ public class LineUpHdhr extends LineUp {
         }
     }
     
-    // DRS 20220707 - Added method for when traditional scan unavailable
-    private String loadXmlFromDevice(Tuner tuner, int maxSeconds) {
-        String liveXmlFileName = null;
-        String xmlOutput = scanAndGetXmlOutputFromDevice(tuner, 60);
-        if (xmlOutput == null || xmlOutput.length() == 0) {
-            return null;
-        }
-        // Save to xml to file
-        liveXmlFileName = CaptureManager.dataPath + "\\" + tuner.getFullName() + ".xml";
-        BufferedWriter out = null;
-        try {
-            out = new BufferedWriter(new FileWriter(liveXmlFileName));
-            out.write(xmlOutput + "\n");
-        } catch (Throwable t) {
-            System.out.println(new Date() + " ERROR: Could not write to " + liveXmlFileName + ": " + t.getMessage());
-        } finally {
-            try {out.close();} catch (Throwable t){}
-        }
-        return liveXmlFileName;
-    }
+    // DRS 20220707 - Added method for when traditional scan unavailable // TMP 2024 - This should NOT be used
+//    private String loadXmlFromDevice(Tuner tuner, int maxSeconds) {
+//        String liveXmlFileName = null;
+//        String xmlOutput = scanAndGetXmlOutputFromDevice(tuner, 60);
+//        if (xmlOutput == null || xmlOutput.length() == 0) {
+//            return null;
+//        }
+//        // Save to xml to file
+//        liveXmlFileName = CaptureManager.dataPath + "\\" + tuner.getFullName() + ".xml";
+//        BufferedWriter out = null;
+//        try {
+//            out = new BufferedWriter(new FileWriter(liveXmlFileName));
+//            out.write(xmlOutput + "\n");
+//        } catch (Throwable t) {
+//            System.out.println(new Date() + " ERROR: Could not write to " + liveXmlFileName + ": " + t.getMessage());
+//        } finally {
+//            try {out.close();} catch (Throwable t){}
+//        }
+//        return liveXmlFileName;
+//    }
     
     // Try to return the last three digits of the deviceId times 10000 or a random number
     private double getStartPriority(String deviceId, int number) {
@@ -209,6 +193,7 @@ public class LineUpHdhr extends LineUp {
         String l = null;
         boolean build = false;
         int ignoredShortChannelCount = 0;
+        int skippedAtsc3ChannelCount = 0;
         while ((l = in.readLine()) != null){
             if (l.trim().equals("<Program>")){
                 build = true;
@@ -219,8 +204,8 @@ public class LineUpHdhr extends LineUp {
                 if (l.contains("<Program>") && l.contains("</Program>")) {
                     int programLoc = l.indexOf("<Program>"); // Probably 0
                     l = l.substring(programLoc + 9); // remove "<Program>" from the start of the string
-                    int endProgramLoc = Math.min(l.indexOf("</Program>") + 10, l.length());
-                    aProgramDefinition.append(l.substring(0, endProgramLoc)); // remove </Program> at the end of the string
+                    int endProgramLoc = Math.min(l.indexOf("</Program>") + 10, l.length()); // keep "</Program>" in string (for count)
+                    aProgramDefinition.append(l.substring(0, endProgramLoc)); 
                 }
                 boolean tunerNeedsFullDefinition = !tuner.isVchannel;
                 int definitionEntryCount = 99;
@@ -230,7 +215,8 @@ public class LineUpHdhr extends LineUp {
                     //logName = logName.substring(0, Math.min(logName.length() - 1, 20)) + "...";
                     //System.out.println(new Date() + " Ignoring short channel [" + logName + "]");
                     ignoredShortChannelCount++;
-                    
+                } else if (skipAtsc3Channel(tuner, aProgramDefinition.toString())) {   
+                	skippedAtsc3ChannelCount++;
                 } else {
                     programDefinitions.add(aProgramDefinition.toString());
                 }
@@ -243,9 +229,31 @@ public class LineUpHdhr extends LineUp {
         }
         in.close();
         if (ignoredShortChannelCount > 0) System.out.println(new Date() + " Ignored " + ignoredShortChannelCount + " channels for tuner " + tuner.getFullName());
+        if (skippedAtsc3ChannelCount > 0) System.out.println(new Date() + " Ignored " + skippedAtsc3ChannelCount + " ATSC 3.0 channels for tuner " + tuner.getFullName());
         return programDefinitions;
     }
-    
+
+    private boolean skipAtsc3Channel(Tuner tuner, String aChannelDef) {
+//    	System.out.print(new Date() + " skip Atsc3Channel called - protocol:" + getFromXml(aChannelDef, "Modulation") + " vc:" + getFromXml(aChannelDef, "GuideNumber") + " tuner:" + tuner.getFullName());
+    	if (ChannelDigital.getFromXml(aChannelDef, "Modulation") != "8vsb") {  // no need to test more if known 8vsb
+        	String virtualChannelNo = ChannelDigital.getFromXml(aChannelDef, "GuideNumber");
+        	if (virtualChannelNo.contains(".")) {  // Not cable or non ATSC guide number
+    			int vc = Integer.parseInt(virtualChannelNo.substring(0, virtualChannelNo.indexOf(".")));
+    			if ((vc > 99) && (vc < 200)) {  // We have a virtual channel number of the form "1xx.yy"
+    				int devID = Integer.parseInt(tuner.getDeviceId());
+    				if ((devID < 0x10800000) || (devID > 0x13100000)) {  // HDHR is old or Prime, not 4k type
+//    					System.out.println( " returning true");
+    					return true;
+    				} else if (tuner.number > 1) {  // HDHR is 4k type but tuners 2 & 3 are ATSC 1.0 only
+//    					System.out.println( " returning true");
+    					return true;
+    				}
+    			}
+    		}
+    	}
+//		System.out.println( " returning false");
+    	return false;
+    }
 
 
     private void updateChannelsFromXml(String xmlFileName, String airCatSource, Tuner tuner) throws Exception {

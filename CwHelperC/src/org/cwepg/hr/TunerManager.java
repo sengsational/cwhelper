@@ -851,16 +851,21 @@ public class TunerManager {
             System.out.println(new Date() + " No Tuners. Use discover.");
             return "No Tuners. Use discover.";
         }
-        String liveDiscoverText = getLiveDiscoverText(CaptureManager.discoverRetries, CaptureManager.discoverDelay);
-        ArrayList<String> liveDevices = findTunerDevicesFromText(liveDiscoverText, true); // devices.txt is always written out here (we read the old one already).
+        // DRS 20240206 - Added if/else - prevent trying to use command line when not available [ https://github.com/sengsational/cwhelper/issues/12 ]
+        if (CaptureManager.useHdhrCommandLine) {
+            String liveDiscoverText = getLiveDiscoverText(CaptureManager.discoverRetries, CaptureManager.discoverDelay);
+            ArrayList<String> liveDevices = findTunerDevicesFromText(liveDiscoverText, true); // devices.txt is always written out here (we read the old one already).
 
-        if (CaptureManager.rerunDiscover && !hdhrCountOk(liveDevices)) {  // if rerunDiscover is true then hdhrCountOk runs and causes live discover to be run.
-            System.out.println(new Date() + " Hdhr Count not accurate. Use discover.");
-            return "Hdhr Count not accurate. Use discover.";
-        }
-        if (CaptureManager.rerunDiscover && !hdhrSameIps(liveDiscoverText)) {
-            System.out.println(new Date() + " Hdhr IP's not accurate. Use discover.");
-            return "Hdhr IP's not accurate. Use discover.";
+            if (CaptureManager.rerunDiscover && !hdhrCountOk(liveDevices)) {  // if rerunDiscover is true then hdhrCountOk runs and causes live discover to be run.
+                System.out.println(new Date() + " Hdhr Count not accurate. Use discover.");
+                return "Hdhr Count not accurate. Use discover.";
+            }
+            if (CaptureManager.rerunDiscover && !hdhrSameIps(liveDiscoverText)) {
+                System.out.println(new Date() + " Hdhr IP's not accurate. Use discover.");
+                return "Hdhr IP's not accurate. Use discover.";
+            }
+        } else {
+        	System.out.println(new Date() + " Not able to use command line 'discover'");
         }
         System.out.println(new Date() + " TunerManager.scanRefreshLineUpTm for " + tuners.size() + " tuners. ");
         for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
