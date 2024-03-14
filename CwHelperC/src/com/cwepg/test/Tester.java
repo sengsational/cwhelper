@@ -6,6 +6,7 @@ package com.cwepg.test;
 
 import java.awt.MenuItem;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -21,8 +22,32 @@ import com.sun.jna.platform.win32.Kernel32;
 public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
+    	
+    	boolean testFileWrite = true;
+    	if (testFileWrite) {
+    		if (args.length == 0) {
+    			System.out.println("put the file name on the command line.");
+    			System.exit(0);
+    		}
+    		StringBuffer fileNameBuf = new StringBuffer();
+    		for (String arg : args) {
+				fileNameBuf.append(arg).append(" ");
+			}
+    		String progress = "none";
+    		try(RandomAccessFile file = new RandomAccessFile(fileNameBuf.toString().trim(), "rw")) {
+    			progress = "1";
+        		file.seek(10); progress = "2";
+        		int aByte = file.read(); progress = "3";
+        		System.out.println("found a byte [" + aByte + "]"); progress = "4";
+        		byte[] bytes = "Hello World".getBytes("UTF-8"); progress = "5";
+        		file.write(bytes); progress = "6";
+        		file.close();
+    		} catch (Throwable t) {
+    			System.out.println("Failure at progress " + progress + " with " + t.getMessage());
+    		}
+    	}
         
-        boolean testDoubleTick = true;
+        boolean testDoubleTick = false;
         if (testDoubleTick) {
             String targetFile = "F:\\tv\\23.3-230317-1550-2023 NCAA Men's Basketball's Tournament-First Round{colon} Vermont {colon} Marquette_002.tp";
             targetFile = targetFile.replaceAll("\\'", "\\''");

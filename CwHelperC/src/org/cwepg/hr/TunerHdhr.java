@@ -70,6 +70,14 @@ public class TunerHdhr extends Tuner {
         this.isVchannel = (hdhrModel == TunerHdhr.VCHANNEL);
     }
     
+    //DRS 20240314 - Added constructor - for testing only
+    public TunerHdhr (String id, int number, String recordPath){
+        this.id = id;
+        this.number = number;
+        this.lineUp = new LineUpHdhr();
+    	this.recordPath = recordPath;
+    }
+    
     //DRS 20181025
     public TunerHdhr(String id, int number, boolean addDevice, int hdhrModel, String ipAddress) {
         this(id, number, addDevice);
