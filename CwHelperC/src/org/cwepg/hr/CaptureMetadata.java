@@ -5,12 +5,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,25 +22,34 @@ public class CaptureMetadata implements Runnable {
 	
 	CaptureHdhr capture;
     Map<String, Object> metadata = new HashMap<>();
+	private String lastJson;
     
-    
+    static final int JSONID = 0, DBID = 1, TYPE = 2, DEFAULT = 3; 
+    static final int BLOCK_SIZE = 12032;
     static final String[][] REMAPPING = {
-	    {"Category", "SHOWTYPE"},
-	    {"ChannelName","CHANNEL"},
-	    {"ChannelNumber_1","VIR"},
-	    {"ChannelNumber_2","SUB"},
-	    {"EndTime", "ORIG_END"},
-	    {"EpisodeTitle", "SUBTITLE"},
-	    {"OriginalAirdate","AIRDATE"},
-	    {"ProgramID","EPISODE"},
-	    {"RecordEndTime", "ENDTIME"},
-	    {"RecordStartTime", "STARTTIME"},
-	    {"RecordSuccess","CONFIRMED"},
-	    {"StartTime", "ORIG_START"},
-	    {"Synopsis","DESCRIPTION"},
-	    {"Title","TITLE"}
+        {"Category", "SHOWTYPE","String",""},
+        {"ChannelAffiliate","","String",""},
+        {"ChannelImageURL","","String",""},
+        {"ChannelName","CHANNEL","String",""},
+        {"ChannelNumber_1","VIR","String",""},
+        {"ChannelNumber_2","SUB","String",""},
+        {"EndTime", "ORIG_END","Long",""},
+        {"EpisodeNumber","","String",""},
+        {"EpisodeTitle", "SUBTITLE","String",""},
+        {"FirstAring","","Boolean","0000000000000"},
+        {"ImageURL","","String",""},
+        {"OriginalAirdate","AIRDATE","String",""},
+        {"ProgramID","EPISODE","String",""},
+        {"RecordEndTime", "ENDTIME","Long",""},
+        {"RecordStartTime", "STARTTIME","Long",""},
+        {"RecordSuccess","CONFIRMED","Boolean","0000000000001"},
+        {"Resume","","Boolean","0000000000000"},
+        {"SeriesID","","String",""},
+        {"StartTime", "ORIG_START","Long",""},
+        {"Synopsis","DESCRIPTION","String",""},
+        {"Title","TITLE","String",""},
     };
-
+    
 	public CaptureMetadata(CaptureHdhr capture) {
 		this.capture = capture;
 	}
@@ -92,13 +103,34 @@ public class CaptureMetadata implements Runnable {
         
         for (String[] namePair : REMAPPING) {
 			try {
-				if (namePair[0].contains("Time")) {
-					metadata.put(namePair[0], rs.getTimestamp(namePair[1]).getTime());
-				} else {
-		            metadata.put(namePair[0], rs.getString(namePair[1]));
+				
+				switch (namePair[TYPE]) {
+				case "Long":
+					if (!namePair[DBID].isEmpty()) {
+						metadata.put(namePair[JSONID], rs.getTimestamp(namePair[DBID]).getTime());
+					} else {
+						metadata.put(namePair[JSONID], namePair[DEFAULT]);
+					}
+					break;
+				case "Boolean":
+					if (!namePair[DBID].isEmpty()) {
+						metadata.put(namePair[JSONID], rs.getBoolean(namePair[DBID])?"1":"0");
+					} else {
+						metadata.put(namePair[JSONID], namePair[DEFAULT]);
+					}
+					break;
+				case "String":
+					if (!namePair[DBID].isEmpty()) {
+						metadata.put(namePair[JSONID], rs.getString(namePair[DBID]));
+					} else {
+						metadata.put(namePair[JSONID], namePair[DEFAULT]);
+					}
+					break;
+				default:
+					break;
 				}
 			} catch (Throwable t) {
-            	System.out.println("Database issue: Unable to get " + namePair[0] + " from " + namePair[1]  + " " + t.getMessage()) ;
+            	System.out.println("Database issue: Unable to get " + namePair[JSONID] + " from " + namePair[DBID]  + " " + t.getMessage()) ;
             }
 		}
         
@@ -116,12 +148,13 @@ public class CaptureMetadata implements Runnable {
             
 	}
 
-    private static Map<String, Object> transportStreamToMetadata(byte[] ts) {
-        if (ts.length != 12032) {
+    private static String transportStreamToJson(byte[] ts) {
+        StringBuffer jsonBuffer = new StringBuffer();
+        
+    	if (ts.length != BLOCK_SIZE) {
             throw new IllegalArgumentException("transport stream too short for metadata");
         }
-
-        Map<String, Object> metadata = new HashMap<>();
+        
         for (int pkt = 0; pkt < 64; pkt++) {
             if (ts[pkt * 188 + 0] != 0x47) {
                 throw new IllegalArgumentException("transport stream does not contain proper sync bytes");
@@ -145,19 +178,22 @@ public class CaptureMetadata implements Runnable {
                 if (ts[pkt * 188 + c] == (byte) 0xff) {
                     break;
                 }
-                metadata.put(Integer.toString(pkt * 188 + c), ts[pkt * 188 + c]);
+                jsonBuffer.append((char)ts[pkt * 188 + c]);
             }
         }
-        if (metadata.isEmpty()) {
+        if (jsonBuffer.length() == 0) {
             throw new IllegalArgumentException("transport stream does not contain any metadata");
         }
-        return metadata;
+        return jsonBuffer.toString();
     }
 
 	
 	// From https://github.com/garybuhrmaster/HDHRUtil/blob/main/HDHRUtil-DVR-fileMetadata originally: metadataToTransportStream()
-    private static byte[] metadataToTransportStream(Map<String, Object> metadata) {
-        byte[] TS = new byte[12032];
+    private byte[] metadataToTransportStream(Map<String, Object> metadata) {
+        byte[] TS = new byte[BLOCK_SIZE];
+        for(int i = 0; i < 12032; i++) {
+        	TS[i] = (byte) 0xFF;
+        }
         for (int pkt = 0; pkt < 64; pkt++) {
             TS[pkt * 188 + 0] = 0x47;
             if (pkt == 0) {
@@ -174,16 +210,23 @@ public class CaptureMetadata implements Runnable {
         Set<String> keySet = metadata.keySet();
         for (String key : keySet) {
         	builder.append("\"").append(key).append("\":");
-        	if (!key.contains("Time")) {
-        		builder.append(CaptureMetadata.quote((String)metadata.get(key)));
-        	} else {
+			switch (CaptureMetadata.getDataTypeForKey(key)) {
+			case "Long":
+			case "Boolean":
                 builder.append(metadata.get(key));
-        	}
+				break;
+			case "String":
+        		builder.append(CaptureMetadata.quote((String)metadata.get(key)));
+				break;
+			default:
+				break;
+			}
         	builder.append(",");
 		}
         builder.delete(builder.length() - 1, builder.length());
         builder.append("}");
-        System.out.println("builder [" + builder.toString() + "]") ;
+        this.lastJson = builder.toString();
+        System.out.println("builder [" + this.lastJson + "]") ;
         byte[] metaBytes = builder.toString().getBytes(StandardCharsets.UTF_8);
         if (metaBytes.length > 11776) {
             throw new IllegalArgumentException("metadata json string exceeds allowable length");
@@ -205,7 +248,17 @@ public class CaptureMetadata implements Runnable {
         return TS;
     }
     
-    // from https://stackoverflow.com/a/16652683
+    private static String getDataTypeForKey(String key) {
+    	for (int i = 0; i < REMAPPING.length; i++) {
+    		if (REMAPPING[i][JSONID].equals(key)) {
+    			return REMAPPING[i][TYPE];
+    		}
+    	}
+    	System.out.println("WARNING: No data type for "  + key + " using 'String'");
+		return "String";
+	}
+
+	// from https://stackoverflow.com/a/16652683
     public static String quote(String string) {
         if (string == null || string.length() == 0) {
             return "\"\"";
@@ -268,6 +321,13 @@ public class CaptureMetadata implements Runnable {
 		return this.metadata.size() > 5; // Arbitrary.  Just make sure there's something there.
 	}
 
+	private String getJson() {
+		return this.lastJson;
+	}
+
+	private boolean doesMatch(String jsonMetadataFromFile) {
+		return jsonMetadataFromFile.equals(this.lastJson);
+	}
 
 	
 	
@@ -310,7 +370,8 @@ public class CaptureMetadata implements Runnable {
 				System.out.println("invalid metadata");
 				System.exit(1);
 			}
-			byte[] transportStreamBytes = CaptureMetadata.metadataToTransportStream(captureMetadata.getMetadata());
+    		Map<String, Object> originalMetadata = captureMetadata.getMetadata();
+			byte[] transportStreamBytes = captureMetadata.metadataToTransportStream(originalMetadata);
 			
 			String testFileNameLocation = dataPath + capture.target.fileName.substring(capture.target.fileName.lastIndexOf("\\"));
 			System.out.println("test file name [" + testFileNameLocation + "]");
@@ -329,11 +390,39 @@ public class CaptureMetadata implements Runnable {
     			System.out.println("Failure at progress " + progress + " with " + t.getMessage());
     		} finally {
     			if (file != null) try {file.close();} catch (Throwable t) {System.out.println("Could not close file. " + t.getMessage());}
-    		} 
+    		}
+    		System.out.println("Metadata written to transport stream file successfully.");
+    		
+			try {
+				progress = "11";
+				file = new RandomAccessFile(testFileNameLocation, "r");
+				progress = "12";
+				
+		        byte[] transportStreamContentBytes = new byte[BLOCK_SIZE];
+				int amountRead = file.read(transportStreamContentBytes);
+				progress = "13";
+				System.out.println("There were " + amountRead + " bytes read from " + testFileNameLocation);
+				file.close();
+				String jsonMetadataFromFile = CaptureMetadata.transportStreamToJson(transportStreamContentBytes);
+				if (captureMetadata.doesMatch(jsonMetadataFromFile)) {
+					System.out.println("Metadata added to transport stream equals metadata read from transport stream.");
+				} else {
+					System.out.println("Metadata written not equal so what was read:");
+					System.out.println("orig:" + captureMetadata.getJson());
+					System.out.println("read:" + jsonMetadataFromFile);
+					
+				}
+				
+    		} catch (Throwable t) {
+    			System.out.println("Failure at progress " + progress + " with " + t.getMessage());
+    		} finally {
+    			if (file != null) try {file.close();} catch (Throwable t) {System.out.println("Could not close file.. " + t.getMessage());}
+    		}
+			
+
 
 		}
 	}
-
 
 	// Get the first capture from a persistence file for testing
 	private static CaptureHdhr getCaptureFromDisk(String tunerName, int tunerNumber, String recordPath) {
