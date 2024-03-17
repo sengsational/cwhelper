@@ -12,6 +12,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ public class CaptureMetadata implements Runnable {
 	
 	CaptureHdhr capture;
     Map<String, Object> metadata = new HashMap<>();
+    private static final SimpleDateFormat DF = new SimpleDateFormat("yyyy-MMdd");
 	private String lastJson;
     
     static final int JSONID = 0, DBID = 1, TYPE = 2, DEFAULT = 3; 
@@ -29,21 +31,21 @@ public class CaptureMetadata implements Runnable {
     static final String[][] REMAPPING = {
         {"Category", "SHOWTYPE","String",""},
         {"ChannelAffiliate","","String",""},
-        {"ChannelImageURL","","String",""},
+//      {"ChannelImageURL","","String",""},
         {"ChannelName","CHANNEL","String",""},
         {"ChannelNumber_1","VIR","String",""},
         {"ChannelNumber_2","SUB","String",""},
         {"EndTime", "ORIG_END","Long",""},
         {"EpisodeNumber","","String",""},
         {"EpisodeTitle", "SUBTITLE","String",""},
-        {"FirstAring","","Boolean","0000000000000"},
-        {"ImageURL","","String",""},
+        {"FirstAiring","","Boolean","0"},
+//      {"ImageURL","","String",""},
         {"OriginalAirdate","AIRDATE","String",""},
         {"ProgramID","EPISODE","String",""},
         {"RecordEndTime", "ENDTIME","Long",""},
         {"RecordStartTime", "STARTTIME","Long",""},
-        {"RecordSuccess","CONFIRMED","Boolean","0000000000001"},
-        {"Resume","","Boolean","0000000000000"},
+        {"RecordSuccess","","Boolean","1"},
+        {"Resume","","Boolean","2"},
         {"SeriesID","","String",""},
         {"StartTime", "ORIG_START","Long",""},
         {"Synopsis","DESCRIPTION","String",""},
@@ -107,7 +109,7 @@ public class CaptureMetadata implements Runnable {
 				switch (namePair[TYPE]) {
 				case "Long":
 					if (!namePair[DBID].isEmpty()) {
-						metadata.put(namePair[JSONID], rs.getTimestamp(namePair[DBID]).getTime());
+						metadata.put(namePair[JSONID], rs.getTimestamp(namePair[DBID]).getTime()/1000);
 					} else {
 						metadata.put(namePair[JSONID], namePair[DEFAULT]);
 					}
@@ -120,12 +122,27 @@ public class CaptureMetadata implements Runnable {
 					}
 					break;
 				case "String":
-					if (!namePair[DBID].isEmpty()) {
-						metadata.put(namePair[JSONID], rs.getString(namePair[DBID]));
-					} else {
-						metadata.put(namePair[JSONID], namePair[DEFAULT]);
+					switch (namePair[JSONID]) {
+					case "OriginalAirDate":
+						long airDateNumber = getDateNumberFromText(rs.getString(namePair[DBID]));
+					case "EpisodeNumber":
+						// We do not have episode number in the database.  Do nothing here. 
+						break;
+					case "EpisodeTitle":
+						// We populate episode *number* here.
+						String episodeNumber = getEpisodeNumberFromTitle(rs.getString(namePair[DBID]));
+						metadata.put("EpisodeNumber", episodeNumber);
+						//drop through to process episode *title* normally 
+					default:
+						
+						if (!namePair[DBID].isEmpty()) {
+							metadata.put(namePair[JSONID], rs.getString(namePair[DBID]));
+						} else {
+							metadata.put(namePair[JSONID], namePair[DEFAULT]);
+						}
+						
+						break;
 					}
-					break;
 				default:
 					break;
 				}
@@ -148,7 +165,28 @@ public class CaptureMetadata implements Runnable {
             
 	}
 
-    private static String transportStreamToJson(byte[] ts) {
+	//2019-12-13
+	private long getDateNumberFromText(String dateString) {
+		try {
+			return DF.parse(dateString).getTime() / 1000;
+		} catch (Throwable t) {
+			System.out.println(new Date() + " Error parsing date for original air date " + dateString);
+			// data doesn't support parsing...return zero is the best we can do.
+		}
+		return 0;
+	}
+
+	// "(S10E11) Ka I Ka 'Ino, No Ka 'Ino"
+    private String getEpisodeNumberFromTitle(String title) {
+    	int seasonLoc = title.indexOf("(S");
+    	int blankLoc = title.indexOf(" ", seasonLoc);
+    	if (seasonLoc > -1 && blankLoc > seasonLoc) {
+    		return title.substring(seasonLoc, blankLoc);
+    	}
+    	return "";
+	}
+
+	private static String transportStreamToJson(byte[] ts) {
         StringBuffer jsonBuffer = new StringBuffer();
         
     	if (ts.length != BLOCK_SIZE) {
