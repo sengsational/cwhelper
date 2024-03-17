@@ -43,23 +43,23 @@ public class BuildExeFromClassFiles {
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    public static final String JRE_PATH = USER + ".p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_17.0.1.v20211116-1657\\jre\\";
-    public static final String BASE_VERSION = "5-0-0-";
-    public static final String COMMA_VERSION = "5,0,0,";
-    public static final String DOT_VERSION = "5.0.0.";
+    public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
+    public static final String BASE_VERSION = "5-4-0-";
+    public static final String COMMA_VERSION = "5,4,0,";
+    public static final String DOT_VERSION = "5.4.0.";
 
     public static void main(String[] args) throws Exception {
     	
         boolean doJarSigning = false; // DRS 20230513 - Signing prevents Terry from iterating on his own.
         
-        boolean forceRevisionNumber = false; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "804";
+            revision = "1025";
         } else {
         	String fullVersion = ""; 
         	try {
-        		fullVersion = getVersionFromJarFile("CwHelper.jar");
+        		fullVersion = getVersionFromJarFile(PROJECT_DIRECTORY + "CwHelper.jar");
                 System.out.println("Version inside the jar file: " + fullVersion);
     			String[] versionArray = fullVersion.split(","); //[5,0,0,999]
     			int arraySize = versionArray.length; //4
@@ -149,7 +149,7 @@ public class BuildExeFromClassFiles {
                 
                 if (runnableJarFile.renameTo(runnableJarFileNewName)) {
                     System.out.println("CwHelper.jar renamed to CwHelper_" + BASE_VERSION + revision + ".jar");
-                    String contentsOfVersionFile = getVersionFromJarFile("CwHelper_" + BASE_VERSION + revision + ".jar");
+                    String contentsOfVersionFile = getVersionFromJarFile(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar");
                     System.out.println("Version inside the jar file: " + contentsOfVersionFile);
                     if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
                         System.out.println("version.txt is aligned");

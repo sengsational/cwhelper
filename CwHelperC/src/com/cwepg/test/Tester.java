@@ -23,7 +23,25 @@ public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
     	
-    	boolean testFileWrite = true;
+    	boolean testGetEpisode = true;
+    	if (testGetEpisode) {
+    		String title = "(S10E11) Ka I Ka 'Ino, No Ka 'Ino";
+	    	int seasonLoc = title.indexOf("(S");
+	    	int blankLoc = title.indexOf(" ", seasonLoc);
+	    	if (seasonLoc > -1 && blankLoc > seasonLoc) {
+	    		System.out.println("[" +  title.substring(seasonLoc, blankLoc) + "]");
+	    	}
+		}
+    	
+    	
+    	boolean testDateToString = true;
+    	if (testDateToString) {
+    		Date aDate = new Date();
+    		long aLong = aDate.getTime();
+    		System.out.println("a long to string [" + aLong + "]");
+    	}
+    	
+    	boolean testFileWrite = false;
     	if (testFileWrite) {
     		if (args.length == 0) {
     			System.out.println("put the file name on the command line.");

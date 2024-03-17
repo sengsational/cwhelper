@@ -2,8 +2,10 @@ package org.cwepg.hr;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -25,9 +27,12 @@ public class CaptureMetadata implements Runnable {
     Map<String, Object> metadata = new HashMap<>();
     private static final SimpleDateFormat DF = new SimpleDateFormat("yyyy-MMdd");
 	private String lastJson;
+	
     
     static final int JSONID = 0, DBID = 1, TYPE = 2, DEFAULT = 3; 
     static final int BLOCK_SIZE = 12032;
+    static final String RECORDS_TABLE_NAME = "CW_EPG_RECORDS";
+
     static final String[][] REMAPPING = {
         {"Category", "SHOWTYPE","String",""},
         {"ChannelAffiliate","","String",""},
@@ -58,7 +63,58 @@ public class CaptureMetadata implements Runnable {
 
 	@Override
 	public void run() {
-		System.out.println(new Date() + " CaptureMetadata will be added here.");
+		try {Thread.sleep(30000);}catch(Exception e) {}
+
+		// 1) Make sure the file is not empty and we can read it
+		File aFile = new File(capture.target.fileName);
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(aFile);
+			if (fis.read() == -1) {
+				System.out.println(new Date() + " WARNING: Transport stream file " + capture.target.fileName + " was empty.  No metadata being added to stream.");
+				return;
+			}
+		} catch (IOException i) {
+			System.out.println(new Date() + " WARNING: Transport stream file " + capture.target.fileName + " was not readable.  No metadata being added to stream.");
+			return;
+		} finally {
+			if (fis != null) {try {fis.close();} catch (Throwable t) {}}
+		}
+		
+		// 2) Populate local metadata, failing if unable to read the metdata from the database
+		loadMetadataFromDatabaseForCapture(capture, CaptureManager.dataPath, CaptureDataManager.mdbFileName, RECORDS_TABLE_NAME);
+		if (!valid()) {
+			System.out.println(new Date() + " WARNING: Unable to get metadata for capture for file " + capture.target.fileName + ".  No metadata being added to stream.");
+			return;
+		}
+		
+		// 3) Convert the metadata for use in transport stream and report
+		byte[] transportStreamBytes = metadataToTransportStream(this.metadata);
+		System.out.println(new Date() + " CaptureMetadata.run() " + capture.target.fileName + " can read [" + aFile.canRead() + "] can write [" + aFile.canWrite() + "]  metadata elements count " + metadata.size() + ".");
+		
+		// 4) Write to the transport stream file
+		String progress = "none";
+		RandomAccessFile file = null;
+		try {
+			file = new RandomAccessFile(capture.target.fileName, "rw");	progress = "A";
+	        byte[] transportStreamContentBytes = new byte[BLOCK_SIZE]; progress = "B";
+	        // 4a) Make sure the file is big enough
+			int amountRead = file.read(transportStreamContentBytes); progress = "C";  //Blocks if file is empty! We have no watchdog thread, but we should not get here if the file is empty.
+			if (amountRead < BLOCK_SIZE) {
+				System.out.println(new Date() + " WARNING: Capture in file " + capture.target.fileName + " was too small to hold metadata.  No metadata being added to stream.");
+				return;
+			}
+			// 4b) Actually write out the data and close the file
+			file.seek(0);
+    		file.write(transportStreamBytes); progress = "D";
+			file.close();
+			System.out.println(new Date() + " CaptureMetadata.run() wrote metadata to " + capture.target.fileName + " successfully.");
+		} catch (Throwable t) {
+			System.out.println(new Date() + " ERROR: CaptureMetadata.run() failure on " + capture.target.fileName + " at progress " + progress + " with " + t.getClass().getCanonicalName() + " " + t.getMessage());
+			System.err.println(new Date() + " ERROR: CaptureMetadata.run() failure on " + capture.target.fileName + " at progress " + progress + " with " + t.getClass().getCanonicalName() + " " + t.getMessage());
+		} finally {
+			if (file != null) try {file.close();} catch (Throwable t) {System.err.println(new Date() + " ERROR: CaptureMetadata.run() could not close file! " + t.getMessage());}
+		}
 	}
 
 	public void loadMetadataFromDatabaseForCapture(CaptureHdhr capture, String dataPath, String mdbFileName, String recordsTableName) {
@@ -73,14 +129,14 @@ public class CaptureMetadata implements Runnable {
         ResultSet rs = null;
         try {
         	String validateMdbPath = dataPath + mdbFileName;
-        	System.out.println("vmp [" + validateMdbPath +"]");
+        	//System.out.println("vmp [" + validateMdbPath +"]");
             connection = DriverManager.getConnection("jdbc:ucanaccess://" + validateMdbPath + ";singleConnection=true");
             statement = connection.createStatement();
             String query = "select * from " + recordsTableName + " where FILENAME='" + targetFileName + "'";
             System.out.println("Getting Metadata using [" + query + "]");
             rs = statement.executeQuery(query);
             while (rs.next()){
-                boolean debug = true;
+                boolean debug = false;
                 this.setFromDb(rs, debug);
             }
             statement.close();
@@ -264,7 +320,7 @@ public class CaptureMetadata implements Runnable {
         builder.delete(builder.length() - 1, builder.length());
         builder.append("}");
         this.lastJson = builder.toString();
-        System.out.println("builder [" + this.lastJson + "]") ;
+        //System.out.println("builder [" + this.lastJson + "]") ;
         byte[] metaBytes = builder.toString().getBytes(StandardCharsets.UTF_8);
         if (metaBytes.length > 11776) {
             throw new IllegalArgumentException("metadata json string exceeds allowable length");
