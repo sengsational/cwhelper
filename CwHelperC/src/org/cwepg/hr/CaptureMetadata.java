@@ -40,12 +40,12 @@ public class CaptureMetadata implements Runnable {
         {"EpisodeTitle", "SUBTITLE","String",""},
         {"FirstAiring","","Boolean","0"},
 //      {"ImageURL","","String",""},
-        {"OriginalAirdate","AIRDATE","String",""},
+        {"OriginalAirdate","AIRDATE","Long",""},
         {"ProgramID","EPISODE","String",""},
         {"RecordEndTime", "ENDTIME","Long",""},
         {"RecordStartTime", "STARTTIME","Long",""},
         {"RecordSuccess","","Boolean","1"},
-        {"Resume","","Boolean","2"},
+//      {"Resume","","Boolean","2"},
         {"SeriesID","","String",""},
         {"StartTime", "ORIG_START","Long",""},
         {"Synopsis","DESCRIPTION","String",""},
@@ -123,8 +123,10 @@ public class CaptureMetadata implements Runnable {
 					break;
 				case "String":
 					switch (namePair[JSONID]) {
-					case "OriginalAirDate":
+					case "OriginalAirdate":
 						long airDateNumber = getDateNumberFromText(rs.getString(namePair[DBID]));
+						System.out.println("orignal air date logic ran " + airDateNumber);
+						metadata.put("OriginalAirdate", airDateNumber);
 					case "EpisodeNumber":
 						// We do not have episode number in the database.  Do nothing here. 
 						break;
@@ -134,13 +136,11 @@ public class CaptureMetadata implements Runnable {
 						metadata.put("EpisodeNumber", episodeNumber);
 						//drop through to process episode *title* normally 
 					default:
-						
 						if (!namePair[DBID].isEmpty()) {
 							metadata.put(namePair[JSONID], rs.getString(namePair[DBID]));
 						} else {
 							metadata.put(namePair[JSONID], namePair[DEFAULT]);
 						}
-						
 						break;
 					}
 				default:
@@ -288,7 +288,7 @@ public class CaptureMetadata implements Runnable {
     
     private static String getDataTypeForKey(String key) {
     	for (int i = 0; i < REMAPPING.length; i++) {
-    		if (REMAPPING[i][JSONID].equals(key)) {
+    		if (REMAPPING[i][JSONID].contains(key)) {
     			return REMAPPING[i][TYPE];
     		}
     	}
