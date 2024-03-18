@@ -51,7 +51,7 @@ public class CaptureMetadata implements Runnable {
         {"RecordStartTime", "STARTTIME","Long",""},
         {"RecordSuccess","","Boolean","1"},
 //      {"Resume","","Boolean","2"},
-        {"SeriesID","","String",""},
+        {"SeriesID","EPISODE","String",""},
         {"StartTime", "ORIG_START","Long",""},
         {"Synopsis","DESCRIPTION","String",""},
         {"Title","TITLE","String",""},
