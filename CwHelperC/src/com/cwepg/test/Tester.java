@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.StringTokenizer;
 
 import org.cwepg.hr.CaptureManager;
+import org.cwepg.hr.CaptureMetadata;
 import org.cwepg.hr.Slot;
 import org.cwepg.hr.WakeupBuffer;
 
@@ -23,7 +24,19 @@ public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
     	
-    	boolean testGetEpisode = true;
+    	boolean testCrc = true;
+    	if (testCrc) {
+    		System.out.println("hash1: [" + CaptureMetadata.Crc16.getCrc16("This is a test") +"]");
+    		System.out.println("hash2: [" + CaptureMetadata.Crc16.getCrc16("This is a testa") +"]");
+    		System.out.println("hash3: [" + CaptureMetadata.Crc16.getCrc16("This is a testb") +"]");
+    		System.out.println("hash4: [" + CaptureMetadata.Crc16.getCrc16("This is a testzzzzzz") +"]");
+    		System.out.println("hash5: [" + CaptureMetadata.Crc16.getCrc16("") +"]");
+    		System.out.println("hash6: [" + CaptureMetadata.Crc16.getCrc16("") +"]");
+    		System.out.println("hash7: [" + CaptureMetadata.Crc16.getCrc16(null) +"]");
+    		System.out.println("hash8: [" + CaptureMetadata.Crc16.getCrc16(null) +"]");
+    	}
+    	
+    	boolean testGetEpisode = false;
     	if (testGetEpisode) {
     		String title = "(S10E11) Ka I Ka 'Ino, No Ka 'Ino";
 	    	int seasonLoc = title.indexOf("(S");
@@ -34,7 +47,7 @@ public class Tester {
 		}
     	
     	
-    	boolean testDateToString = true;
+    	boolean testDateToString = false;
     	if (testDateToString) {
     		Date aDate = new Date();
     		long aLong = aDate.getTime();
