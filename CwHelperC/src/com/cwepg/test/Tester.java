@@ -7,6 +7,7 @@ package com.cwepg.test;
 import java.awt.MenuItem;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -24,19 +25,44 @@ public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
     	
-    	boolean testCrc = false;
+    	boolean testLeadingZero = true;
+    	if (testLeadingZero) {
+    		int anInt = CaptureMetadata.Crc16.getCrc16Hex("'Xavier Riddle and the Secret Museum'");
+    		String hexAddress = String.format("%1$04X", anInt);
+    		System.out.println(hexAddress);
+    	}
+    	
+    	
+    	boolean testCrc = true;
     	if (testCrc) {
+    		String[] testSet = {
+    				"Xavier Riddle and the Secret Museum", 
+    				"\"Xavier Riddle and the Secret Museum\"", 
+    				"'Xavier Riddle and the Secret Museum'", 
+    				"(S03E01) Hang on to Yourself",
+    				"Call the Midwife"
+    				};
+    		
+    		for (int i = 0; i < testSet.length; i++) {
+        		System.out.println("hash String: [" + CaptureMetadata.Crc16.getCrc16(testSet[i]) +"] [" + testSet[i] + "]");
+        		System.out.println("hash UTF_8 : [" + CaptureMetadata.Crc16.getCrc16(testSet[i].getBytes(StandardCharsets.UTF_8)) +"] [" + testSet[i] + "]");
+        		System.out.println("hash UTF_16: [" + CaptureMetadata.Crc16.getCrc16(testSet[i].getBytes(StandardCharsets.UTF_16)) +"] [" + testSet[i] + "]");
+				
+			}
+
+    		String nullString = null;
     		System.out.println("hash1: [" + CaptureMetadata.Crc16.getCrc16("This is a test") +"]");
     		System.out.println("hash2: [" + CaptureMetadata.Crc16.getCrc16("This is a testa") +"]");
     		System.out.println("hash3: [" + CaptureMetadata.Crc16.getCrc16("This is a testb") +"]");
     		System.out.println("hash4: [" + CaptureMetadata.Crc16.getCrc16("This is a testzzzzzz") +"]");
     		System.out.println("hash5: [" + CaptureMetadata.Crc16.getCrc16("") +"]");
     		System.out.println("hash6: [" + CaptureMetadata.Crc16.getCrc16("") +"]");
-    		System.out.println("hash7: [" + CaptureMetadata.Crc16.getCrc16(null) +"]");
-    		System.out.println("hash8: [" + CaptureMetadata.Crc16.getCrc16(null) +"]");
+    		System.out.println("hash7: [" + CaptureMetadata.Crc16.getCrc16(nullString) +"]");
+    		System.out.println("hash8: [" + CaptureMetadata.Crc16.getCrc16(nullString) +"]");
+    		
     	}
     	
-    	boolean testGetEpisode = true;
+    	boolean testGetEpisode = false;
     	if (testGetEpisode) {
     		String title = "(S10E11) Ka I Ka 'Ino, No Ka 'Ino";
 	    	int seasonLoc = title.indexOf("(S");

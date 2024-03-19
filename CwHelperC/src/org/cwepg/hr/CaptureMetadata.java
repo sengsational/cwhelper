@@ -206,7 +206,7 @@ public class CaptureMetadata implements Runnable {
 						
 						// We populate series ID here.
 						String seasonNumber = getSeasonNumberFromEpisodeNumber(episodeNumber); // "10"
-						metadata.put("SeriesID", "C" + seasonNumber + "EN" + Crc16.getCrc16(rs.getString(namePair[DBID])));
+						metadata.put("SeriesID", "C" + seasonNumber + "EN" + Crc16.getCrc16(rs.getString("TITLE")));
 
 						break;
 					default:
@@ -533,8 +533,9 @@ public class CaptureMetadata implements Runnable {
 				String jsonMetadataFromFile = CaptureMetadata.transportStreamToJson(transportStreamContentBytes);
 				if (captureMetadata.doesMatch(jsonMetadataFromFile)) {
 					System.out.println("Metadata added to transport stream equals metadata read from transport stream.");
+					System.out.println("original and read:" + jsonMetadataFromFile);
 				} else {
-					System.out.println("Metadata written not equal so what was read:");
+					System.out.println("Metadata written not equal to what was read:");
 					System.out.println("orig:" + captureMetadata.getJson());
 					System.out.println("read:" + jsonMetadataFromFile);
 					
@@ -603,12 +604,25 @@ public class CaptureMetadata implements Runnable {
         
         public static String getCrc16(String string) {
         	if (string == null || string.length() == 0) return (Math.random() + "").substring(2,6);
+            int crc = getCrc16Hex(string);
+            return String.format("%1$04X", crc);
+        }
+
+		public static String getCrc16(byte[] bytes) {
+            int crc = 0x0000;
+            for (byte b : bytes) {
+                crc = (crc >>> 8) ^ Crc16.CRC_TABLE[(crc ^ b) & 0xff];
+            }
+            return  String.format("%1$04X", crc);
+		}
+
+		public static int getCrc16Hex(String string) {
             byte[] bytes = string.getBytes();
             int crc = 0x0000;
             for (byte b : bytes) {
                 crc = (crc >>> 8) ^ Crc16.CRC_TABLE[(crc ^ b) & 0xff];
             }
-            return Integer.toHexString(crc).toUpperCase();
-        }
+            return crc;
+		}
 	}
 }
