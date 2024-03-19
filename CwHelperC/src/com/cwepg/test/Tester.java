@@ -24,7 +24,7 @@ public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
     	
-    	boolean testCrc = true;
+    	boolean testCrc = false;
     	if (testCrc) {
     		System.out.println("hash1: [" + CaptureMetadata.Crc16.getCrc16("This is a test") +"]");
     		System.out.println("hash2: [" + CaptureMetadata.Crc16.getCrc16("This is a testa") +"]");
@@ -36,14 +36,21 @@ public class Tester {
     		System.out.println("hash8: [" + CaptureMetadata.Crc16.getCrc16(null) +"]");
     	}
     	
-    	boolean testGetEpisode = false;
+    	boolean testGetEpisode = true;
     	if (testGetEpisode) {
     		String title = "(S10E11) Ka I Ka 'Ino, No Ka 'Ino";
 	    	int seasonLoc = title.indexOf("(S");
 	    	int blankLoc = title.indexOf(" ", seasonLoc);
 	    	if (seasonLoc > -1 && blankLoc > seasonLoc) {
-	    		System.out.println("[" +  title.substring(seasonLoc, blankLoc) + "]");
+	    		System.out.println("[" +  title.substring(seasonLoc + 1, blankLoc - 1) + "]");
 	    	}
+	    	System.out.println("EpisodeNumber [" + CaptureMetadata.getEpisodeNumberFromTitle(title) +"]");
+	    	System.out.println("Season Number [" + CaptureMetadata.getSeasonNumberFromEpisodeNumber(title) +"]");
+	    	System.out.println("Cleaned Title [" + title.replace(CaptureMetadata.getEpisodeNumberFromTitle(title), "").replace("()", "").trim() + "]");
+	    	
+	    	title = "Ka I Ka 'Ino, No Ka 'Ino";
+	    	System.out.println("EpisodeNumber [" + CaptureMetadata.getEpisodeNumberFromTitle(title) +"]");
+	    	System.out.println("Season Number [" + CaptureMetadata.getSeasonNumberFromEpisodeNumber(title) +"]");
 		}
     	
     	

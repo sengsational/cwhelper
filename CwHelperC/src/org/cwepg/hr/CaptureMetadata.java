@@ -191,14 +191,24 @@ public class CaptureMetadata implements Runnable {
 						break;
 					case "EpisodeTitle":
 						// We populate episode *number* here.
-						String episodeNumber = getEpisodeNumberFromTitle(rs.getString(namePair[DBID])); //"(S10E11)"
+						String episodeNumber = getEpisodeNumberFromTitle(rs.getString(namePair[DBID])); //"S10E11"
 						metadata.put("EpisodeNumber", episodeNumber);
+						
+						// Remove (SxxEyy) from EpisodeTitle, if it exists, and save.
+						if (episodeNumber.length() > 0) {
+							String episodeTitle = rs.getString(namePair[DBID]).replace(episodeNumber, "").replace("()", "").trim();
+							if (episodeTitle.length() > 0) {
+								metadata.put("EpisodeTitle", episodeTitle);
+							} else {
+								metadata.put("EpisodeTitle", rs.getString("TITLE")); // Better than nothing?
+							}
+						}
 						
 						// We populate series ID here.
 						String seasonNumber = getSeasonNumberFromEpisodeNumber(episodeNumber); // "10"
 						metadata.put("SeriesID", "C" + seasonNumber + "EN" + Crc16.getCrc16(rs.getString(namePair[DBID])));
-						
-						//drop through to process episode *title* normally 
+
+						break;
 					default:
 						if (!namePair[DBID].isEmpty()) {
 							metadata.put(namePair[JSONID], rs.getString(namePair[DBID]));
@@ -241,23 +251,23 @@ public class CaptureMetadata implements Runnable {
 	}
 
 	// "(S10E11) Ka I Ka 'Ino, No Ka 'Ino"
-    private static String getEpisodeNumberFromTitle(String title) {
+    public static String getEpisodeNumberFromTitle(String title) {
     	int seasonLoc = title.indexOf("(S");
     	int blankLoc = title.indexOf(" ", seasonLoc);
     	if (seasonLoc > -1 && blankLoc > seasonLoc) {
-    		return title.substring(seasonLoc, blankLoc); // "(S10E11)"
+    		return title.substring(seasonLoc + 1, blankLoc - 1); // "S10E11"
     	} else {
     		System.out.println(new Date() + " WARNING: Unable to determine episode number from title [" + title + "]");
     	}
     	return "";
 	}
     
-    private static String getSeasonNumberFromEpisodeNumber(String episodeNumber) {
+    public static String getSeasonNumberFromEpisodeNumber(String episodeNumber) {
     	if (episodeNumber.length() == 0) return "00";
     	int sLoc = episodeNumber.indexOf("S");
     	int eLoc = episodeNumber.indexOf("E", sLoc);
-    	if (sLoc > -1 && eLoc > -1 && eLoc > sLoc) {
-    		return episodeNumber.substring(sLoc, sLoc + 2);
+    	if (sLoc > -1 && eLoc > -1 && eLoc > sLoc && episodeNumber.length() > (sLoc + 3)) {
+    		return episodeNumber.substring(sLoc + 1, sLoc + 3);
     	} else {
     		System.out.println(new Date() + " WARNING: Unable to determine season number from episodeNumber [" + episodeNumber + "]");
     	}
