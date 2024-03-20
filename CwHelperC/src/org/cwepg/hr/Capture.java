@@ -28,7 +28,7 @@ public abstract class Capture implements Runnable, Comparable {
     static final int END = 1;
     static String[] EVENT_NAMES = {"START", "END"};
     static final SimpleDateFormat GCDTF = new SimpleDateFormat("yyyyMMddHHmm");
-    static final boolean dc = true; // dump compare
+    static final boolean dc = false; // dump compare
     
     public Capture(){
         

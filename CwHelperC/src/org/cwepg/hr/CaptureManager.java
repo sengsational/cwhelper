@@ -1235,7 +1235,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         // is to build the channels from the file saved during
         // the last scan.  Scan will not be performed unless 
         // the user initiates it because it takes a long time.
-        tm.loadChannelsFromFile(); // runs scanRefreshLineUpTm(), which runs LineupHdhr.scan()
+        // DRS 20240320 - Commented 1 - No longer required because it happens when CaptureManager starts up.
+        // tm.loadChannelsFromFile(); // runs scanRefreshLineUpTm(), which runs LineupHdhr.scan()
         
         // If the user has defined alternate channels, process those now.
         // Alternate channels are ones that are on a different frequency, 

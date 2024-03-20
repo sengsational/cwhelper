@@ -25,7 +25,8 @@ public class CaptureMetadata implements Runnable {
 	
 	CaptureHdhr capture;
     Map<String, Object> metadata = new HashMap<>();
-    private static final SimpleDateFormat DF = new SimpleDateFormat("yyyy-MMdd");
+    private static final SimpleDateFormat DF = new SimpleDateFormat("yyyy-MM-dd");
+    private static final SimpleDateFormat DF2 = new SimpleDateFormat("yyyyMMdd");
 	private String lastJson;
 	
     
@@ -43,7 +44,7 @@ public class CaptureMetadata implements Runnable {
         {"EndTime", "ORIG_END","Long",""},
         {"EpisodeNumber","","String",""},				//Built from SUBTITLE
         {"EpisodeTitle", "SUBTITLE","String",""},
-        {"FirstAiring","","Boolean","0"},
+//      {"FirstAiring","","Boolean","0"},
 //      {"ImageURL","","String",""},
         {"OriginalAirdate","AIRDATE","Long",""},
         {"ProgramID","EPISODE","String",""},
@@ -164,7 +165,11 @@ public class CaptureMetadata implements Runnable {
 				
 				switch (namePair[TYPE]) {
 				case "Long":
-					if (!namePair[DBID].isEmpty()) {
+					if ("OriginalAirdate".equals(namePair[JSONID])) {
+						long airDateNumber = getDateNumberFromText(rs.getString(namePair[DBID]));
+						if (airDateNumber == 0) System.out.println(new Date() + " WARNING: Unable to get date from AIRDATE database field [" + rs.getString(namePair[DBID]) +"]");
+						metadata.put("OriginalAirdate", airDateNumber);
+					} else if (!namePair[DBID].isEmpty()) {
 						metadata.put(namePair[JSONID], rs.getTimestamp(namePair[DBID]).getTime()/1000);
 					} else {
 						metadata.put(namePair[JSONID], namePair[DEFAULT]);
@@ -179,10 +184,6 @@ public class CaptureMetadata implements Runnable {
 					break;
 				case "String":
 					switch (namePair[JSONID]) {
-					case "OriginalAirdate":
-						long airDateNumber = getDateNumberFromText(rs.getString(namePair[DBID]));
-						System.out.println("orignal air date logic ran " + airDateNumber);
-						metadata.put("OriginalAirdate", airDateNumber);
 					case "EpisodeNumber":
 						// We do not have episode number in the database.  Do nothing here. Populate based on EpisodeTitle. 
 						break;
@@ -190,15 +191,17 @@ public class CaptureMetadata implements Runnable {
 						// We do not have series ID in the database.  Do nothing here. Populate based on EpisodeTitle. 
 						break;
 					case "EpisodeTitle":
-						// We populate episode *number* here.
-						String episodeNumber = getEpisodeNumberFromTitle(rs.getString(namePair[DBID])); //"S10E11"
+						// We populate episode *number* here. If not found, populated with "".
+						String episodeNumber = getEpisodeNumberFromEpisodeTitle(rs.getString(namePair[DBID])); //"S10E11"
 						metadata.put("EpisodeNumber", episodeNumber);
 						
-						// Remove (SxxEyy) from EpisodeTitle, if it exists, and save.
+						metadata.put("EpisodeTitle", rs.getString(namePair[DBID]));
+						
+						// Remove (SxxEyy) from EpisodeTitle, if it exists, and overwrite.
 						if (episodeNumber.length() > 0) {
-							String episodeTitle = rs.getString(namePair[DBID]).replace(episodeNumber, "").replace("()", "").trim();
-							if (episodeTitle.length() > 0) {
-								metadata.put("EpisodeTitle", episodeTitle);
+							String cleanedEpisodeTitle = rs.getString(namePair[DBID]).replace(episodeNumber, "").replace("()", "").trim();
+							if (cleanedEpisodeTitle.length() > 0) {
+								metadata.put("EpisodeTitle", cleanedEpisodeTitle);
 							} else {
 								metadata.put("EpisodeTitle", rs.getString("TITLE")); // Better than nothing?
 							}
@@ -239,25 +242,33 @@ public class CaptureMetadata implements Runnable {
             
 	}
 
-	//2019-12-13
+	//2019-12-13 or 20191213
 	private long getDateNumberFromText(String dateString) {
+		StringBuffer statusBuf = new StringBuffer();
 		try {
 			return DF.parse(dateString).getTime() / 1000;
 		} catch (Throwable t) {
-			System.out.println(new Date() + " Error parsing date for original air date " + dateString);
-			// data doesn't support parsing...return zero is the best we can do.
+			statusBuf.append("(error parsing date with yyyy-MM-dd, ");
 		}
+		if (statusBuf.length() > 0) {
+			try {
+				return DF2.parse(dateString).getTime() / 1000;
+			} catch (Throwable t) {
+				statusBuf.append("error parsing date for yyyyMMdd)");
+			}
+		}
+		System.out.println(new Date() + " WARNING: Unable to parse AIRDATE database field [" + dateString + "] " + statusBuf.toString() + " setting to '0'");
 		return 0;
 	}
 
 	// "(S10E11) Ka I Ka 'Ino, No Ka 'Ino"
-    public static String getEpisodeNumberFromTitle(String title) {
-    	int seasonLoc = title.indexOf("(S");
-    	int blankLoc = title.indexOf(" ", seasonLoc);
+    public static String getEpisodeNumberFromEpisodeTitle(String episodeTitle) {
+    	int seasonLoc = episodeTitle.indexOf("(S");
+    	int blankLoc = episodeTitle.indexOf(" ", seasonLoc);
     	if (seasonLoc > -1 && blankLoc > seasonLoc) {
-    		return title.substring(seasonLoc + 1, blankLoc - 1); // "S10E11"
+    		return episodeTitle.substring(seasonLoc + 1, blankLoc - 1); // "S10E11"
     	} else {
-    		System.out.println(new Date() + " WARNING: Unable to determine episode number from title [" + title + "]");
+    		System.out.println(new Date() + " WARNING: Unable to determine episode number from episode title [" + episodeTitle + "]");
     	}
     	return "";
 	}
@@ -538,17 +549,12 @@ public class CaptureMetadata implements Runnable {
 					System.out.println("Metadata written not equal to what was read:");
 					System.out.println("orig:" + captureMetadata.getJson());
 					System.out.println("read:" + jsonMetadataFromFile);
-					
 				}
-				
     		} catch (Throwable t) {
     			System.out.println("Failure at progress " + progress + " with " + t.getMessage());
     		} finally {
     			if (file != null) try {file.close();} catch (Throwable t) {System.out.println("Could not close file.. " + t.getMessage());}
     		}
-			
-
-
 		}
 	}
 

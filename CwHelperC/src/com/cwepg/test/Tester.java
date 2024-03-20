@@ -70,12 +70,12 @@ public class Tester {
 	    	if (seasonLoc > -1 && blankLoc > seasonLoc) {
 	    		System.out.println("[" +  title.substring(seasonLoc + 1, blankLoc - 1) + "]");
 	    	}
-	    	System.out.println("EpisodeNumber [" + CaptureMetadata.getEpisodeNumberFromTitle(title) +"]");
+	    	System.out.println("EpisodeNumber [" + CaptureMetadata.getEpisodeNumberFromEpisodeTitle(title) +"]");
 	    	System.out.println("Season Number [" + CaptureMetadata.getSeasonNumberFromEpisodeNumber(title) +"]");
-	    	System.out.println("Cleaned Title [" + title.replace(CaptureMetadata.getEpisodeNumberFromTitle(title), "").replace("()", "").trim() + "]");
+	    	System.out.println("Cleaned Title [" + title.replace(CaptureMetadata.getEpisodeNumberFromEpisodeTitle(title), "").replace("()", "").trim() + "]");
 	    	
 	    	title = "Ka I Ka 'Ino, No Ka 'Ino";
-	    	System.out.println("EpisodeNumber [" + CaptureMetadata.getEpisodeNumberFromTitle(title) +"]");
+	    	System.out.println("EpisodeNumber [" + CaptureMetadata.getEpisodeNumberFromEpisodeTitle(title) +"]");
 	    	System.out.println("Season Number [" + CaptureMetadata.getSeasonNumberFromEpisodeNumber(title) +"]");
 		}
     	
