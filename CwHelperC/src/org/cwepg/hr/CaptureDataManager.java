@@ -293,22 +293,28 @@ public class CaptureDataManager {
         }
         return list;
     }
-
+    
+    //DRS 20240314 - Added method with existing signature 
     static boolean tableReadable(String aTable) {
+    	return tableReadable(aTable, CaptureManager.dataPath, CaptureDataManager.mdbFileName);
+    }
+
+    //DRS 20240314 - Expanded method signature 
+    static boolean tableReadable(String aTable, String dataPath, String mdbFileName) {
         Connection connection = null;
         Statement statement = null;
         String driverNameSimple = UcanaccessDriver.class.getSimpleName();
         String driverName = "net.ucanaccess.jdbc.UcanaccessDriver";
         try {
             Class.forName(driverName);
-            connection = DriverManager.getConnection("jdbc:ucanaccess://" + CaptureManager.dataPath + CaptureDataManager.mdbFileName + ";singleConnection=true");
+            connection = DriverManager.getConnection("jdbc:ucanaccess://" + dataPath + mdbFileName + ";singleConnection=true");
             statement = connection.createStatement();
             String query = "select count(*) from " + aTable;
-            System.out.print(new Date() + " Check if table " + aTable + " exists in " + CaptureDataManager.mdbFileName + " using [" + query + "] ");
+            System.out.print(new Date() + " Check if table " + aTable + " exists in " + mdbFileName + " using [" + query + "] ");
             statement.execute(query);
             statement.close();
             connection.close();
-            System.out.println("OK -- jdbc:ucanaccess://" + CaptureManager.dataPath + CaptureDataManager.mdbFileName);
+            System.out.println("OK -- jdbc:ucanaccess://" + dataPath + mdbFileName);
             return true;
         } catch (SQLException e) {
             System.out.println(new Date() + " ERROR: table does not exist or database file is not writeable. " + e.getMessage());

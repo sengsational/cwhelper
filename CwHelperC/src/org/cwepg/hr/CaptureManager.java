@@ -237,6 +237,11 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                             System.out.println(new Date() + " There is/are " + activeCaptures.size() + " active capture after adding " + capture.getTitle());
                             System.out.println(new Date() + " Handled START event for " + tuner.id + "-" + tuner.number + " " + capture.channel.channelKey + " " + capture.slot);
                             System.out.println(new Date() + " The file [" + capture.target.fileName +"] " + (new File(capture.target.fileName).exists()?"has been created.":"has NOT BEEN CREATED!"));
+                            //DRs 20240313 - Added 'if' - add metadata to transport stream file - separate thread in so we can pause if needed
+                            if (capture.getTunerType() == Tuner.HDHR_TYPE) {
+                            	Thread metaThread = new Thread(new CaptureMetadata((CaptureHdhr)capture), "Thread-Metadata save " + capture.target.fileName);
+                            	metaThread.start();
+                            }
                         // DRS 20220711 - Added catch - Attempt to reschedule if device unavailable.
                         } catch (DeviceUnavailableException d) {
                             successful = false;
@@ -407,7 +412,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     	CaptureManager.running = false;
     }
     
-    public static String shutdown(String who){
+	public static String shutdown(String who){
         if (!runFlag) {
             System.out.println(new Date() + " CaptureManager runFlag is already false (" + who + ")");
             return "Thanks, but a shutdown was already in process.";
@@ -1230,7 +1235,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         // is to build the channels from the file saved during
         // the last scan.  Scan will not be performed unless 
         // the user initiates it because it takes a long time.
-        tm.loadChannelsFromFile(); // runs scanRefreshLineUpTm(), which runs LineupHdhr.scan()
+        // DRS 20240320 - Commented 1 - No longer required because it happens when CaptureManager starts up.
+        // tm.loadChannelsFromFile(); // runs scanRefreshLineUpTm(), which runs LineupHdhr.scan()
         
         // If the user has defined alternate channels, process those now.
         // Alternate channels are ones that are on a different frequency, 

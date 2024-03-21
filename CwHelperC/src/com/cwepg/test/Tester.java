@@ -6,6 +6,8 @@ package com.cwepg.test;
 
 import java.awt.MenuItem;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -13,6 +15,7 @@ import java.util.Date;
 import java.util.StringTokenizer;
 
 import org.cwepg.hr.CaptureManager;
+import org.cwepg.hr.CaptureMetadata;
 import org.cwepg.hr.Slot;
 import org.cwepg.hr.WakeupBuffer;
 
@@ -21,8 +24,94 @@ import com.sun.jna.platform.win32.Kernel32;
 public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
+    	
+    	boolean testLeadingZero = true;
+    	if (testLeadingZero) {
+    		int anInt = CaptureMetadata.Crc16.getCrc16Hex("'Xavier Riddle and the Secret Museum'");
+    		String hexAddress = String.format("%1$04X", anInt);
+    		System.out.println(hexAddress);
+    	}
+    	
+    	
+    	boolean testCrc = true;
+    	if (testCrc) {
+    		String[] testSet = {
+    				"Xavier Riddle and the Secret Museum", 
+    				"\"Xavier Riddle and the Secret Museum\"", 
+    				"'Xavier Riddle and the Secret Museum'", 
+    				"(S03E01) Hang on to Yourself",
+    				"Call the Midwife"
+    				};
+    		
+    		for (int i = 0; i < testSet.length; i++) {
+        		System.out.println("hash String: [" + CaptureMetadata.Crc16.getCrc16(testSet[i]) +"] [" + testSet[i] + "]");
+        		System.out.println("hash UTF_8 : [" + CaptureMetadata.Crc16.getCrc16(testSet[i].getBytes(StandardCharsets.UTF_8)) +"] [" + testSet[i] + "]");
+        		System.out.println("hash UTF_16: [" + CaptureMetadata.Crc16.getCrc16(testSet[i].getBytes(StandardCharsets.UTF_16)) +"] [" + testSet[i] + "]");
+				
+			}
+
+    		String nullString = null;
+    		System.out.println("hash1: [" + CaptureMetadata.Crc16.getCrc16("This is a test") +"]");
+    		System.out.println("hash2: [" + CaptureMetadata.Crc16.getCrc16("This is a testa") +"]");
+    		System.out.println("hash3: [" + CaptureMetadata.Crc16.getCrc16("This is a testb") +"]");
+    		System.out.println("hash4: [" + CaptureMetadata.Crc16.getCrc16("This is a testzzzzzz") +"]");
+    		System.out.println("hash5: [" + CaptureMetadata.Crc16.getCrc16("") +"]");
+    		System.out.println("hash6: [" + CaptureMetadata.Crc16.getCrc16("") +"]");
+    		System.out.println("hash7: [" + CaptureMetadata.Crc16.getCrc16(nullString) +"]");
+    		System.out.println("hash8: [" + CaptureMetadata.Crc16.getCrc16(nullString) +"]");
+    		
+    	}
+    	
+    	boolean testGetEpisode = false;
+    	if (testGetEpisode) {
+    		String title = "(S10E11) Ka I Ka 'Ino, No Ka 'Ino";
+	    	int seasonLoc = title.indexOf("(S");
+	    	int blankLoc = title.indexOf(" ", seasonLoc);
+	    	if (seasonLoc > -1 && blankLoc > seasonLoc) {
+	    		System.out.println("[" +  title.substring(seasonLoc + 1, blankLoc - 1) + "]");
+	    	}
+	    	System.out.println("EpisodeNumber [" + CaptureMetadata.getEpisodeNumberFromEpisodeTitle(title) +"]");
+	    	System.out.println("Season Number [" + CaptureMetadata.getSeasonNumberFromEpisodeNumber(title) +"]");
+	    	System.out.println("Cleaned Title [" + title.replace(CaptureMetadata.getEpisodeNumberFromEpisodeTitle(title), "").replace("()", "").trim() + "]");
+	    	
+	    	title = "Ka I Ka 'Ino, No Ka 'Ino";
+	    	System.out.println("EpisodeNumber [" + CaptureMetadata.getEpisodeNumberFromEpisodeTitle(title) +"]");
+	    	System.out.println("Season Number [" + CaptureMetadata.getSeasonNumberFromEpisodeNumber(title) +"]");
+		}
+    	
+    	
+    	boolean testDateToString = false;
+    	if (testDateToString) {
+    		Date aDate = new Date();
+    		long aLong = aDate.getTime();
+    		System.out.println("a long to string [" + aLong + "]");
+    	}
+    	
+    	boolean testFileWrite = false;
+    	if (testFileWrite) {
+    		if (args.length == 0) {
+    			System.out.println("put the file name on the command line.");
+    			System.exit(0);
+    		}
+    		StringBuffer fileNameBuf = new StringBuffer();
+    		for (String arg : args) {
+				fileNameBuf.append(arg).append(" ");
+			}
+    		String progress = "none";
+    		try(RandomAccessFile file = new RandomAccessFile(fileNameBuf.toString().trim(), "rw")) {
+    			progress = "1";
+        		file.seek(10); progress = "2";
+        		int aByte = file.read(); progress = "3";
+        		System.out.println("found a byte [" + aByte + "]"); progress = "4";
+        		byte[] bytes = "Hello World".getBytes("UTF-8"); progress = "5";
+        		file.write(bytes); progress = "6";
+        		file.close();
+    		} catch (Throwable t) {
+    			System.out.println("Failure at progress " + progress + " with " + t.getMessage());
+    		}
+    	}
         
-        boolean testDoubleTick = true;
+        boolean testDoubleTick = false;
         if (testDoubleTick) {
             String targetFile = "F:\\tv\\23.3-230317-1550-2023 NCAA Men's Basketball's Tournament-First Round{colon} Vermont {colon} Marquette_002.tp";
             targetFile = targetFile.replaceAll("\\'", "\\''");

@@ -35,15 +35,15 @@ public class BuildExeFromClassFiles {
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
      */
-    public static final String USER = "C:\\Users\\tmpet\\";
-    public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";
+    public static final String USER = "C:\\Users\\Owner\\";
+    public static final String PROJECT_DIRECTORY = USER + "github\\cwhelper\\CwHelperC\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
     public static final String LIBRARY_DIRECTORY = PROJECT_DIRECTORY + "CwHelper_lib\\";
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    public static final String JRE_PATH = USER + ".p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_17.0.9.v20231028-0858\\jre\\";
+    public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
     public static final String DOT_VERSION = "5.4.0.";
@@ -52,14 +52,14 @@ public class BuildExeFromClassFiles {
     	
         boolean doJarSigning = false; // DRS 20230513 - Signing prevents Terry from iterating on his own.
         
-        boolean forceRevisionNumber = false; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "804";
+            revision = "1025";
         } else {
         	String fullVersion = ""; 
         	try {
-        		fullVersion = getVersionFromJarFile("CwHelper.jar");
+        		fullVersion = getVersionFromJarFile(PROJECT_DIRECTORY + "CwHelper.jar");
                 System.out.println("Version inside the jar file: " + fullVersion);
     			String[] versionArray = fullVersion.split(","); //[5,0,0,999]
     			int arraySize = versionArray.length; //4
@@ -149,7 +149,7 @@ public class BuildExeFromClassFiles {
                 
                 if (runnableJarFile.renameTo(runnableJarFileNewName)) {
                     System.out.println("CwHelper.jar renamed to CwHelper_" + BASE_VERSION + revision + ".jar");
-                    String contentsOfVersionFile = getVersionFromJarFile("CwHelper_" + BASE_VERSION + revision + ".jar");
+                    String contentsOfVersionFile = getVersionFromJarFile(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar");
                     System.out.println("Version inside the jar file: " + contentsOfVersionFile);
                     if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
                         System.out.println("version.txt is aligned");
