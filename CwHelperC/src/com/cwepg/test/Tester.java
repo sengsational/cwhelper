@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 
 import org.cwepg.hr.CaptureManager;
 import org.cwepg.hr.CaptureMetadata;
@@ -25,7 +26,26 @@ public class Tester {
     
     public static void main(String[] args) throws InterruptedException, IOException, Exception {
     	
-    	boolean testLeadingZero = true;
+    	boolean testMenInBlack = true;
+    	if (testMenInBlack) {
+			long airDateNumber = CaptureMetadata.getDateNumberFromText("1997" + "0101");
+			System.out.println("airDateNumber " + airDateNumber); //airDateNumber 852094800
+			Date movieDate = new Date(airDateNumber * 1000);
+			System.out.println("movie LOC date:" + movieDate + " <<< " + movieDate.getTime());
+			
+			Calendar cal = Calendar.getInstance();
+			cal.clear();
+			cal.set(1997,Calendar.JANUARY,1);
+			cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+			System.out.println("jan 1 UTC date:" + cal.getTime() + " <<< " + cal.getTime().getTime());
+
+			cal = Calendar.getInstance();
+			cal.clear();
+			cal.set(1997,Calendar.JANUARY,1);
+			System.out.println("jan 1 LOC date:" + cal.getTime() + " <<< " + cal.getTime().getTime());
+    	}
+    	
+    	boolean testLeadingZero = false;
     	if (testLeadingZero) {
     		int anInt = CaptureMetadata.Crc16.getCrc16Hex("'Xavier Riddle and the Secret Museum'");
     		String hexAddress = String.format("%1$04X", anInt);
@@ -33,7 +53,7 @@ public class Tester {
     	}
     	
     	
-    	boolean testCrc = true;
+    	boolean testCrc = false;
     	if (testCrc) {
     		String[] testSet = {
     				"Xavier Riddle and the Secret Museum", 

@@ -3,3 +3,7 @@
 /.gitignore
 /copyToProd.bat
 /CwHelper.p12
+/CwHelper*.jar
+/CwHelper*.zip
+/CwHelper.exe
+/CwHelper.jar

@@ -167,8 +167,10 @@ public class CaptureMetadata implements Runnable {
 				case "Long":
 					if ("OriginalAirdate".equals(namePair[JSONID])) {
 						long airDateNumber = getDateNumberFromText(rs.getString(namePair[DBID]));
-						if (airDateNumber == 0) System.out.println(new Date() + " WARNING: Unable to get date from AIRDATE database field [" + rs.getString(namePair[DBID]) +"]");
-						metadata.put("OriginalAirdate", airDateNumber);
+						if (airDateNumber == 0) {
+							airDateNumber = getDateNumberFromText(rs.getString("MOVIE_YEAR") + "0101");
+						}
+						if (airDateNumber !=0) metadata.put("OriginalAirdate", airDateNumber);
 					} else if (!namePair[DBID].isEmpty()) {
 						metadata.put(namePair[JSONID], rs.getTimestamp(namePair[DBID]).getTime()/1000);
 					} else {
@@ -243,7 +245,7 @@ public class CaptureMetadata implements Runnable {
 	}
 
 	//2019-12-13 or 20191213
-	private long getDateNumberFromText(String dateString) {
+	public static long getDateNumberFromText(String dateString) {
 		StringBuffer statusBuf = new StringBuffer();
 		try {
 			return DF.parse(dateString).getTime() / 1000;
@@ -257,7 +259,7 @@ public class CaptureMetadata implements Runnable {
 				statusBuf.append("error parsing date for yyyyMMdd)");
 			}
 		}
-		System.out.println(new Date() + " WARNING: Unable to parse AIRDATE database field [" + dateString + "] " + statusBuf.toString() + " setting to '0'");
+		//System.out.println(new Date() + " WARNING: Unable to parse AIRDATE database field [" + dateString + "] " + statusBuf.toString() + " setting to '0'");
 		return 0;
 	}
 
