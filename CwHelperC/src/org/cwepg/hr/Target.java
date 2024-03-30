@@ -55,7 +55,7 @@ public class Target {
     }
 
     public void setFileName(String fileName, String defaultRecordPath, String analogFileExtension, String protocol, int tunerType, boolean update, String appendFileNameString) throws Exception {
-    	setFileName(fileName, defaultRecordPath, analogFileExtension, protocol, tunerType, update, appendFileNameString);
+    	setFileName(fileName, defaultRecordPath, analogFileExtension, protocol, tunerType, update, appendFileNameString, 1);
     }
         
     public void setFileName(String fileName, String defaultRecordPath, String analogFileExtension, String protocol, int tunerType, boolean update, String appendFileNameString, int retryCount) throws Exception {
