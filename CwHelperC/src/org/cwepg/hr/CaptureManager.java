@@ -258,7 +258,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                                         System.out.println(new Date() + " Created replacement [" + replacementCapture + "]");
                                         String fileNameAppendRandom = "_" + (Math.random() + "").substring(3, 6);
                                         fileNameAppendRandom = ""; // Terry wanted to try this.  We might or might not get a conflict...I didn't research it.
-                                        Target replacementTarget = new Target(captureHdhr.target, captureHdhr, fileNameAppendRandom);
+                                        Target replacementTarget = new Target(captureHdhr.target, captureHdhr, fileNameAppendRandom, 2);
                                         replacementCapture.setTarget(replacementTarget);
                                         scheduleCapture(replacementCapture, true);
                                         System.out.println(new Date() + " Replacement scheduled ok.");
