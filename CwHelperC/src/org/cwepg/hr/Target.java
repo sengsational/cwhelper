@@ -27,9 +27,9 @@ public class Target {
         this.valid = false;
     }
     
-    public Target(Target copyTarget, Capture copyCapture, String appendFileNameString) throws Exception {
+    public Target(Target copyTarget, Capture copyCapture, String appendFileNameString, int retryCount) throws Exception {
         this(copyTarget.fileName, copyTarget.title);
-        this.setFileName(copyTarget.fileName, "", "", copyCapture.getChannelProtocol(), Tuner.HDHR_TYPE, false, appendFileNameString);
+        this.setFileName(copyTarget.fileName, "", "", copyCapture.getChannelProtocol(), Tuner.HDHR_TYPE, false, appendFileNameString, retryCount);
         this.valid = true;
     }
     
@@ -55,7 +55,10 @@ public class Target {
     }
 
     public void setFileName(String fileName, String defaultRecordPath, String analogFileExtension, String protocol, int tunerType, boolean update, String appendFileNameString) throws Exception {
+    	setFileName(fileName, defaultRecordPath, analogFileExtension, protocol, tunerType, update, appendFileNameString, 1);
+    }
         
+    public void setFileName(String fileName, String defaultRecordPath, String analogFileExtension, String protocol, int tunerType, boolean update, String appendFileNameString, int retryCount) throws Exception {
         if (appendFileNameString != null && appendFileNameString.indexOf("WATCH") < 0 && !appendFileNameString.equals("")){
             fileName = Target.insertTextIntoFilename(fileName, appendFileNameString);
         }
@@ -116,7 +119,7 @@ public class Target {
             }
             break;
         }
-        this.mkdirsAndTestWrite(true, this.fileName, 1);
+        this.mkdirsAndTestWrite(true, this.fileName, retryCount);
     }
     
     // this.ip + "|" + this.port + "|" + this.fileName + "|" + this.title + "|" + this.machineName;
