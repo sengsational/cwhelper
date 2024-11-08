@@ -52,7 +52,7 @@ public class CaptureMetadata implements Runnable {
         {"RecordStartTime", "STARTTIME","Long",""},
         {"RecordSuccess","","Boolean","1"},
 //      {"Resume","","Boolean","2"},
-        {"SeriesID","","String",""},					//Built from SUBTITLE
+        {"SeriesID","","String",""},					//Built from SUBTITLE & TITLE hash or if unavailable from TITLE hash only
         {"StartTime", "ORIG_START","Long",""},
         {"Synopsis","DESCRIPTION","String",""},
         {"Title","TITLE","String",""},
@@ -214,6 +214,10 @@ public class CaptureMetadata implements Runnable {
 						metadata.put("SeriesID", "C" + seasonNumber + "EN" + Crc16.getCrc16(rs.getString("TITLE")));
 
 						break;
+					case "Title":
+						// if `SeriesID` doesn't get populated during `EpisodeTitle` processing (above), use default here. 
+						if (metadata.get("SeriesID") == null) metadata.put("SeriesID", "C00EN" + Crc16.getCrc16(rs.getString(namePair[DBID]))); //DRS 20240404 - Issue #31 
+						// Fall through for regular processing of the `Title` String
 					default:
 						if (!namePair[DBID].isEmpty()) {
 							metadata.put(namePair[JSONID], rs.getString(namePair[DBID]));
@@ -500,7 +504,7 @@ public class CaptureMetadata implements Runnable {
 		boolean testGetMetadata = true;
 		if (testGetMetadata) {
 			String recordsTableName = "CW_EPG_RECORDS";
-			String dataPath = "c:\\my\\dev\\";
+			String dataPath = "c:\\tv\\";
 			String mdbFileName = "cw_record.mdb";
 			CaptureHdhr capture = getCaptureFromDisk("1010CC54", 1, dataPath);
 			System.out.println("capture [" + capture + "]");
@@ -514,6 +518,10 @@ public class CaptureMetadata implements Runnable {
 			byte[] transportStreamBytes = captureMetadata.metadataToTransportStream(originalMetadata);
 			
 			String testFileNameLocation = dataPath + capture.target.fileName.substring(capture.target.fileName.lastIndexOf("\\"));
+			int tpLoc = testFileNameLocation.indexOf(".tp");
+			if (tpLoc > -1) {
+				testFileNameLocation = testFileNameLocation.replace(".tp", ".mpg");
+			}
 			System.out.println("test file name [" + testFileNameLocation + "]");
 			File aFile = new File(testFileNameLocation);
 			System.out.println("can read [" + aFile.canRead() + "] can write [" + aFile.canWrite() + "]");
