@@ -45,12 +45,9 @@ public class ServiceLauncher {
                 cwepgExecutablePathSource   = "the path found in registry HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgfolder";
                 hdhrPathSource              = cwepgExecutablePathSource;
                 dataPathSource              = cwepgExecutablePathSource;
-            } else {
-                throw new Exception(" HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgfolder not found.");
             }
         } catch (Throwable e1) {
-            // DRS 20231018 - throw exception if there is an error accessing the registry
-            throw(e1);
+            // stays empty if there is an error accessing the registry (reverse a86a97b)
         }
         
         try {
@@ -59,12 +56,9 @@ public class ServiceLauncher {
             if (cwepgdatafolder != null){
                 dataPath                    = cwepgdatafolder;
                 dataPathSource              = "the path found in registry HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgdatafolder";
-            } else {
-                throw new Exception(" HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgdatafolder not found.");
             }
         } catch (Throwable e1) {
-            // DRS 20231018 - throw exception if there is an error accessing the registry
-            throw(e1);
+            // stays empty if there is an error accessing the registry (reverse a86a97b)
         }
         
 
@@ -93,6 +87,18 @@ public class ServiceLauncher {
             }
         } catch (Throwable e1) {
             // stays empty if there is an error accessing the registry
+        }
+
+        //DRS 20241108 - Added try/catch - overwrite the data path if "ProgramData" is populated in the Windows environment
+        try {
+            // overwrite previous data path if "ProgramData" is populated
+            String programDataFolderFromWindows = System.getenv("ProgramData");
+            if (programDataFolderFromWindows != null){
+                dataPath = programDataFolderFromWindows + "\\CW_EPG";
+                dataPathSource = "the path found by System.getenv(\"ProgramData\") method";
+            }
+        } catch (Throwable e1) {
+            // stays empty if there is an error accessing the environment variable
         }
         
         // DRS20210306 - Added boolean and try/catch
