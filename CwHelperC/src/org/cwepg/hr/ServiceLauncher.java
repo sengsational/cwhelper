@@ -68,11 +68,7 @@ public class ServiceLauncher {
             String pathFromFile = in.readLine();
             
             cwepgExecutablePath         = pathFromFile;
-            hdhrPath                    = pathFromFile;
-            dataPath                    = pathFromFile;
             cwepgExecutablePathSource   = "the path found in file: " + new File("CwHdHrDir.txt").getPath();
-            hdhrPathSource              = cwepgExecutablePathSource;
-            dataPathSource              = cwepgExecutablePathSource;
             in.close();
         } catch (Throwable e) {
             // stays empty if the file is not found
