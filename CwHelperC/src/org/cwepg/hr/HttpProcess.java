@@ -51,6 +51,10 @@ public class HttpProcess implements Runnable {
             //String targetPage = "http://" + ipAddress + ":5004/auto" + "/" + channelKey + "?duration=0"; //DRS 20220709 - Changed target to include "auto" rather than specific tuner.  Nobody should notice we didn't use the specified tuner.  Only one physical cable input on the http-capable tuners, so no difference in signal.
             String targetPage = "http://" + ipAddress + ":5004/tuner" + tunerNumber + "/" + channelKey + "?duration=0"; //DRS 20220711 - Changed back to tuner number.  We let it fail, then retry on another specific tuner. 
             File download = new File(fileName);
+            //DRS 20241113 -  Http capture type fails if directory does not already exist #37 - Added 'if' block
+    		if (download.getParentFile().mkdirs()) {
+    			System.out.println(new Date() + " Directory " + download.getParentFile().getAbsolutePath() + " did not exist.  Directory was created.");
+    		}
             ZeroCopyConsumer<File> zcConsumer = new ZeroCopyConsumer<File>(download) {
               @Override
               protected File process(final HttpResponse response, final File file, final ContentType contentType) throws Exception {
