@@ -110,7 +110,7 @@ public class ServiceLauncher {
         // TMP 20241114 - Remove executable path if we have a Store package using alias "cw_epg.exe" 
         try {
         	// use MSIX execution alias if OS > Win 9 (i.e., if a Store package, alias needs no path def'n)
-        	int OS = Integer.parseInt(System.getProperty("os.version"));  // Not sure if this needs exception process??
+        	float OS = Float.parseFloat(System.getProperty("os.version"));  // Not sure if this needs exception process??
         	if (OS > 9) { cwepgExecutablePath = ""; }        		
         	} catch (Throwable e) {
         		// stays unchanged if not OS 10/11
