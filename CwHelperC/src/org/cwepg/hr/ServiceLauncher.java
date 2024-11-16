@@ -63,18 +63,6 @@ public class ServiceLauncher {
         
 
         try {
-            // overwrite local runtime path if the configuration file exists
-            BufferedReader in = new BufferedReader(new FileReader("CwHdHrDir.txt"));
-            String pathFromFile = in.readLine();
-            
-            cwepgExecutablePath         = pathFromFile;
-            cwepgExecutablePathSource   = "the path found in file: " + new File("CwHdHrDir.txt").getPath();
-            in.close();
-        } catch (Throwable e) {
-            // stays empty if the file is not found
-        }
-
-        try {
             // overwrite previous path if registry value available
             String registryFolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\Silicondust\\HDHomeRun", "InstallDir");
             if (registryFolder != null){
@@ -91,11 +79,34 @@ public class ServiceLauncher {
             String programDataFolderFromWindows = System.getenv("ProgramData");
             if (programDataFolderFromWindows != null){
                 dataPath = programDataFolderFromWindows + "\\CW_EPG";
-                dataPathSource = "the path found by System.getenv(\"ProgramData\") method";
+                dataPathSource = "the path found by System.getenv(\"ProgramData\") method, + \"\\CW_EPG\"";
             }
         } catch (Throwable e1) {
             // stays empty if there is an error accessing the environment variable
         }
+        // DRS 2024115 - Move below dataPath definition and use dataPath
+        try {
+            // overwrite local runtime path if the configuration file exists
+            BufferedReader in = new BufferedReader(new FileReader(dataPath + "CwHdHrDir.txt"));
+            String pathFromFile = in.readLine();
+            
+            cwepgExecutablePath         = pathFromFile;
+            cwepgExecutablePathSource   = "the path found in file: " + new File(dataPath + "CwHdHrDir.txt").getPath();
+            in.close();
+        } catch (Throwable e) {
+            // stays empty if the file is not found
+        }
+
+        // TMP 20241114 - Remove executable path if we have a Store package using alias "cw_epg.exe" 
+        try {
+        	// use MSIX execution alias if OS > Win 9 (i.e., if a Store package, alias needs no path def'n)
+        	float OS = Float.parseFloat(System.getProperty("os.version"));  // Not sure if this needs exception process??
+        	if (OS > 9) cwepgExecutablePath = ""; 
+        	else; // Stays unchanged if OS not 10/11 
+    	} catch (Throwable e) {
+    		// stays unchanged if OS version not parsable
+    	}        
+        
         
         // DRS20210306 - Added boolean and try/catch
         String logPath = dataPath + "\\logs";
