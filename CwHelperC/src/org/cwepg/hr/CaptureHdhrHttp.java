@@ -27,6 +27,7 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
         killAfterSeconds = this.slot.getRemainingSeconds() + 120; // wait 2 minutes for normal end, and if not gone yet, kill it.
         int durationSeconds = this.slot.getRemainingSeconds() - 1; // Ending a second early helps keep the logs from being jumbled.
         String channel = "v" + this.channel.virtualChannel + "." + this.channel.virtualSubchannel;
+        this.target.fixFileName(); //DRS 20241116 - Added 1 -  Http capture type fails if target file name exists #39 
         runningHttpRequest = new HttpRequest(tuner.number, tuner.ipAddressTuner, channel, durationSeconds, this.target.getFileNameOrWatch(), killAfterSeconds);
         if (!runningHttpRequest.checkAvailable()) throw new DeviceUnavailableException("The device is not available. " + runningHttpRequest);
     }
