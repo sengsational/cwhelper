@@ -6,13 +6,24 @@ package com.cwepg.build;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+import java.util.zip.ZipException;
 
 // import org.cwepg.hr.CaptureManager;
 
@@ -35,30 +46,31 @@ public class BuildExeFromClassFiles {
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
      */
-    public static final String USER = "C:\\Users\\tmpet\\";
-    public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";
-	//public static final String USER = "C:\\Users\\Owner\\";
-    //public static final String PROJECT_DIRECTORY = USER + "github\\cwhelper\\CwHelperC\\";
+    //public static final String USER = "C:\\Users\\tmpet\\";
+    //public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";
+	public static final String USER = "C:\\Users\\Owner\\";
+    public static final String PROJECT_DIRECTORY = USER + "github\\cwhelper\\CwHelperC\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
     public static final String LIBRARY_DIRECTORY = PROJECT_DIRECTORY + "CwHelper_lib\\";
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    public static final String JRE_PATH = "C:\\Program Files\\Eclipse Adoptium\\jdk-11.0.15.10-hotspot\\";
-    //public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
+    //public static final String JRE_PATH = "C:\\Program Files\\Eclipse Adoptium\\jdk-11.0.15.10-hotspot\\";
+    public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
     public static final String DOT_VERSION = "5.4.0.";
+    public static final String CLASSPATH_CONFIG_FILE = ".classpath";
 
     public static void main(String[] args) throws Exception {
     	
         boolean doJarSigning = false; // DRS 20230513 - Signing prevents Terry from iterating on his own.
         
-        boolean forceRevisionNumber = false; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1025";
+            revision = "1038";
         } else {
         	String fullVersion = ""; 
         	try {
@@ -140,54 +152,128 @@ public class BuildExeFromClassFiles {
 
             String[] zipTheExeParams = {JRE_PATH + "bin\\" + "jar.exe", "-cMfv", zipDestinationFileNameString, "CwHelper.exe"};
             if (runOsProcess(zipTheExeParams, "deflated", PROJECT_DIRECTORY)) {
-                //Rename what we presume is the previously manually created "Runnable Jar"
-                File runnableJarFile = new File(PROJECT_DIRECTORY + "CwHelper.jar");
-                File runnableJarFileNewName = new File(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar");
-                
-                // If destination already exists, rename it first
-                if (runnableJarFileNewName.exists()) {
-                    int randomInt = (int)(Math.random() * 10000);
-                    runnableJarFileNewName.renameTo(new File(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".jar"));
-                }
-                
-                if (runnableJarFile.renameTo(runnableJarFileNewName)) {
-                    System.out.println("CwHelper.jar renamed to CwHelper_" + BASE_VERSION + revision + ".jar");
-                    String contentsOfVersionFile = getVersionFromJarFile(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar");
-                    System.out.println("Version inside the jar file: " + contentsOfVersionFile);
-                    if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
-                        System.out.println("version.txt is aligned");
-                        if (doJarSigning) {
-                            String[] signTheJarFile = {JRE_PATH + "bin\\" + "jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
-                            if (runOsProcess(signTheJarFile, "jar signed.", null)) {
-                                String[] verifyTheJarFile = {JRE_PATH +"bin\\" + "jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
-                                if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
-                                    System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
-                                } else {
-                                    System.out.println("ERROR: Unable to sign the jar file.");
-                                }
-                            }
-                        } else {
-                            System.out.println("NOTICE: doJarSigning was false.  Jar file remains unsigned.");
-                        }
-                    } else {
-                        System.out.println("ERROR!!!!!!!! The version.txt inside the jar file does not align with the revision [" + COMMA_VERSION +  revision + "] that we just renamed it to. ERROR!!!!!!!!!" );
-                    }
-    
-                } else {
-                    System.out.println("Failed to rename " + runnableJarFile.getAbsolutePath() + " " + (runnableJarFile.exists()?"File Existed":"ERROR: FILE NOT FOUND"));
-                }
-
+            	boolean useOldJarFileRenaming = false;
+            	if (useOldJarFileRenaming) {
+            		jarFileRenaming(revision, doJarSigning);
+            	} else {
+            		System.out.println("Creating runnable jar from project " + PROJECT_DIRECTORY);
+            		makeJarFromProject(revision, doJarSigning);
+            	}
             } else {
                 System.out.println("ERROR: Exe not zipped into compressed file.");
             }
-            
-            
         } else {
             System.out.println("ERROR: Exe not created, so no attempt to zip being made.");
         }
     }
 
-    private static String getVersionFromJarFile(String jarFileName) throws IOException {
+
+	private static void makeJarFromProject(String revision, boolean doJarSigning) throws Exception {
+        String outputJar = PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar";
+        File runnableJarFileNewName = new File(outputJar);
+        
+        // If destination already exists, rename it first
+        if (runnableJarFileNewName.exists()) {
+            int randomInt = (int)(Math.random() * 10000);
+            runnableJarFileNewName.renameTo(new File(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".jar"));
+        }
+
+        // Define the class to start in the manifest
+        Manifest manifest = new Manifest();
+        Attributes attributes = manifest.getMainAttributes();
+        attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attributes.put(Attributes.Name.CLASS_PATH, ".");
+        attributes.put(Attributes.Name.MAIN_CLASS, "org.cwepg.hr.ServiceLauncher");
+        
+        // Read the build information from the project and make some definitions
+    	ClasspathReader reader = new ClasspathReader(CLASSPATH_CONFIG_FILE, PROJECT_DIRECTORY);
+    	if (!reader.load()) throw new Exception("Unable to load " + CLASSPATH_CONFIG_FILE);
+    	//else System.out.println("read " + reader.getLineCount() + " lines from " + CLASSPATH_CONFIG_FILE);
+    	
+    	String classFilesDirectory = reader.getClassFilesDirectory();
+
+    	String[] jarFileNames = reader.getLibraryEntries(PROJECT_DIRECTORY);
+    	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
+    	
+        // Take all the jars in "jarFileNames" and merge them into "outputJar"
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(outputJar), manifest)) {
+            for (int i = 0; i < jarFileNames.length; i++) {
+                String inputJar = jarFileNames[i];
+                //System.out.println("Processing [" + inputJar + "]");
+                mergeJar(jos, inputJar);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        // Take all the files in "classesFileList" and merge them into "outputJar"
+        System.out.println("Looking in [" + PROJECT_DIRECTORY + classFilesDirectory + "] for class files.");
+		List<String> classesFileList = getAbsoluteFileNames(PROJECT_DIRECTORY + classFilesDirectory);
+		for (String string : classesFileList) {
+			//System.out.println("here is a class file found: " + string);
+		}
+        boolean usePath = true;
+        JarUpdater.updateZipFileWithFilesOnDisk(new File(outputJar), classesFileList, usePath, PROJECT_DIRECTORY + classFilesDirectory);
+		
+	}
+
+    public static List<String> getAbsoluteFileNames(String directoryPath) throws IOException {
+        List<String> fileNames = new ArrayList<>();
+        getAbsoluteFileNamesRecursive(directoryPath, fileNames);
+        return fileNames;
+    }
+
+    private static void getAbsoluteFileNamesRecursive(String directoryPath, List<String> fileNames) throws IOException {
+        File directory = new File(directoryPath);
+
+        if (!directory.exists() || !directory.isDirectory()) {
+            return;
+        }
+
+        for (File file : directory.listFiles()) {
+            if (file.isFile()) {
+            	String fileToSave = file.getAbsolutePath();
+                fileNames.add(fileToSave);
+            } else if (file.isDirectory()) {
+                getAbsoluteFileNamesRecursive(file.getAbsolutePath(), fileNames);
+            }
+        }
+    }
+
+    static void mergeJar(JarOutputStream jos, String inputJar) throws IOException {
+    	int duplicateEntryCount = 0;
+        try (JarInputStream jis = new JarInputStream(new FileInputStream(inputJar))) {
+            JarEntry entry;
+            while ((entry = jis.getNextJarEntry()) != null) {
+                try {
+                    jos.putNextEntry(entry);
+                    copyStream(jis, jos);
+                    jos.closeEntry();
+                } catch (ZipException e) {
+                	String message = e.getMessage();
+                	if (message.contains("duplicate entry")) {
+                		duplicateEntryCount++;
+                	} else {
+                		System.out.println(e.getMessage() + " 1 continuing to process.");
+                	}
+                }
+            }
+            if (duplicateEntryCount > 0) System.out.println("Jar " + inputJar + " had " + duplicateEntryCount + " duplicate entries.");
+        }
+    }
+
+    static void copyStream(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = in.read(buffer)) != -1) {
+        	try {
+                out.write(buffer, 0, bytesRead);
+        	} catch (ZipException e) {
+        		System.out.println(e.getMessage() + " 2 continuing to process.");
+        	}
+        }
+    }
+	private static String getVersionFromJarFile(String jarFileName) throws IOException {
         return JarUpdater.getFileContent(jarFileName, "version.txt");
     }
 
@@ -196,7 +282,9 @@ public class BuildExeFromClassFiles {
         File jarFile = new File(jarFileName);
 
         try {
-            JarUpdater.updateZipFileWithFilesOnDisk(jarFile, contents);
+        	boolean usePath = false;
+        	String baseDirectory = "";
+            JarUpdater.updateZipFileWithFilesOnDisk(jarFile, contents, usePath, baseDirectory);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -214,7 +302,7 @@ public class BuildExeFromClassFiles {
         }
     }
 
-    private static boolean runOsProcess(String[] parms, String requiredResult, String wDir) throws Exception {
+    static boolean runOsProcess(String[] parms, String requiredResult, String wDir) throws Exception {
         System.out.println("\n--------------------- run OS process ----------------------------");
         StringBuffer debugString = new StringBuffer();
         debugString.append("runOsProcess with [").append(String.join(" ", parms)).append("] and create directory [").append(wDir).append("]\n");
@@ -283,7 +371,48 @@ public class BuildExeFromClassFiles {
     	}
     	return revisionNumber;
     }
-    	
+
+    private static void jarFileRenaming(String revision, boolean doJarSigning) throws Exception {
+        //Rename what we presume is the previously manually created "Runnable Jar"
+        File runnableJarFile = new File(PROJECT_DIRECTORY + "CwHelper.jar");
+        File runnableJarFileNewName = new File(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar");
+        
+        // If destination already exists, rename it first
+        if (runnableJarFileNewName.exists()) {
+            int randomInt = (int)(Math.random() * 10000);
+            runnableJarFileNewName.renameTo(new File(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + "_" + randomInt + ".jar"));
+        }
+        
+        if (runnableJarFile.renameTo(runnableJarFileNewName)) {
+            System.out.println("CwHelper.jar renamed to CwHelper_" + BASE_VERSION + revision + ".jar");
+            String contentsOfVersionFile = getVersionFromJarFile(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar");
+            System.out.println("Version inside the jar file: " + contentsOfVersionFile);
+            if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
+                System.out.println("version.txt is aligned");
+                if (doJarSigning) {
+                    String[] signTheJarFile = {JRE_PATH + "bin\\" + "jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
+                    if (runOsProcess(signTheJarFile, "jar signed.", null)) {
+                        String[] verifyTheJarFile = {JRE_PATH +"bin\\" + "jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
+                        if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
+                            System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
+                        } else {
+                            System.out.println("ERROR: Unable to sign the jar file.");
+                        }
+                    }
+                } else {
+                    System.out.println("NOTICE: doJarSigning was false.  Jar file remains unsigned.");
+                }
+            } else {
+                System.out.println("ERROR!!!!!!!! The version.txt inside the jar file does not align with the revision [" + COMMA_VERSION +  revision + "] that we just renamed it to. ERROR!!!!!!!!!" );
+            }
+
+        } else {
+            System.out.println("Failed to rename " + runnableJarFile.getAbsolutePath() + " " + (runnableJarFile.exists()?"File Existed":"ERROR: FILE NOT FOUND"));
+        }
+		
+	}
+    
+    
 /*    	
   	private static String getRevisionFromSourceControl() throws Exception {
         //https://stackoverflow.com/a/14915348/897007
