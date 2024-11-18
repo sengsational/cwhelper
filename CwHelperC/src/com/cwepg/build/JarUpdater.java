@@ -116,7 +116,7 @@ public class JarUpdater {
             // Add ZIP entry to output stream.
             // DRS 202041116 - Added 'if/else', existing content in else - enhance to allow other than files into root directory
             if (usePath) {
-            	String absoluteFileNameString = fileList[i].getAbsolutePath();
+            	String absoluteFileNameString = fileList[i].getAbsolutePath().replace("\\","/");
             	if (baseDirectory != null && baseDirectory.length() > 0 && absoluteFileNameString.length() > (baseDirectory.length() + 1) ) {
             		absoluteFileNameString = absoluteFileNameString.substring(baseDirectory.length() + 1);
             	}
