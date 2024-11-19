@@ -5,6 +5,7 @@
 package com.cwepg.build;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -196,14 +197,39 @@ public class BuildExeFromClassFiles {
     	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
     	
         // Take all the jars in "jarFileNames" and merge them into "outputJar"
+    	ArrayList<CheckEntry> checkEntryList = new ArrayList<>(); // To post analyze the duplication between jar files
         try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(outputJar), manifest)) {
             for (int i = 0; i < jarFileNames.length; i++) {
                 String inputJar = jarFileNames[i];
                 //System.out.println("Processing [" + inputJar + "]");
-                mergeJar(jos, inputJar);
+                mergeJar(jos, inputJar, checkEntryList);
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        
+        // quickie analysis of the duplication between jar files merged
+        boolean saveInterJarDuplicationReport = false;
+        if (saveInterJarDuplicationReport) {
+        	// For each item already flagged as duplicate, set the original one as a duplicate as well
+        	for (CheckEntry checkEntry : checkEntryList) {
+        		if (checkEntry.isDuplicate()) {
+                	for (CheckEntry dupCheckEntry : checkEntryList) {
+                		if (dupCheckEntry.getName().equals(checkEntry.getName())) {
+                			dupCheckEntry.setDuplicate(true);
+                		}
+                	}
+        			
+        		}
+    		}
+        	String jarFileDuplicationReportFileName = "JarFileDuplicationReport.csv";
+        	BufferedWriter out = new BufferedWriter(new FileWriter(jarFileDuplicationReportFileName));
+        	out.write(CheckEntry.getHeader() + "\n");
+        	for (CheckEntry checkEntry : checkEntryList) {
+        		out.write(checkEntry.getCsv() + "\n");
+        	}        	
+        	out.close();
+        	System.out.println("saved " + new File(jarFileDuplicationReportFileName).getAbsolutePath());
         }
         
         // Take all the files in "classesFileList" and merge them into "outputJar"
@@ -240,18 +266,22 @@ public class BuildExeFromClassFiles {
         }
     }
 
-    static void mergeJar(JarOutputStream jos, String inputJar) throws IOException {
+    static void mergeJar(JarOutputStream jos, String inputJar, ArrayList<CheckEntry> checkEntryList) throws IOException {
     	int duplicateEntryCount = 0;
+    	String inputJarFileName = new File(inputJar).getName();
         try (JarInputStream jis = new JarInputStream(new FileInputStream(inputJar))) {
             JarEntry entry;
             while ((entry = jis.getNextJarEntry()) != null) {
+            	CheckEntry checkEntry = new CheckEntry(entry, inputJarFileName);
                 try {
+                	if (!checkEntry.isDirectory()) checkEntryList.add(checkEntry);
                     jos.putNextEntry(entry);
                     copyStream(jis, jos);
                     jos.closeEntry();
                 } catch (ZipException e) {
                 	String message = e.getMessage();
                 	if (message.contains("duplicate entry")) {
+                		checkEntry.setDuplicate(true);
                 		duplicateEntryCount++;
                 	} else {
                 		System.out.println(e.getMessage() + " 1 continuing to process.");
