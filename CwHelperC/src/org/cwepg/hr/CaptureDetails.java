@@ -18,6 +18,7 @@ public class CaptureDetails implements Comparable, Cloneable {
     private static final int FIELDS = 0;
     private static final int VALUES = 1;
     private static final SimpleDateFormat DBDTF = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+    private static final SimpleDateFormat DBDTFS = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss"); //DRS 20241122 - Added variable and used it twice - Issue #46
     private static final SimpleDateFormat GCDTF = new SimpleDateFormat("yyyyMMddHHmm");
 
 
@@ -122,7 +123,8 @@ public class CaptureDetails implements Comparable, Cloneable {
         } else {
             loadDetails(signalDetails); // instance variables are set here, such as tsmiss
         }
-        this.endEvent = new Date(new Date().getTime() + 15000); // Add 15 seconds to the end time because it truncates seconds 
+        //this.endEvent = new Date(new Date().getTime() + 15000); // Add 15 seconds to the end time because it truncates seconds // DRS 20241122 - Comment 1, Add 1 - actual time, with seconds, now goes into the database, no truncation problem. 
+        this.endEvent = new Date();  
         String[] updateData = getSignalQualityUpdateData(true);
         executeDatabaseFunction("update", updateData[FIELDS], updateData[VALUES]);
         int strengthValue = getStrengthValue(durationMinutes, httpType);
@@ -159,9 +161,11 @@ public class CaptureDetails implements Comparable, Cloneable {
     public String[] getCaptureInsertData(boolean useNow, boolean writeToDatabase) {
         String toDateFormattingStart = "TO_DATE('";
         String toDateFormattingEnd = "','MM/DD/YYYY HH24:MI')~";
+        String toDateFormattingSecondsEnd = "','MM/DD/YYYY HH24:MI:SS')~"; //DRS 20241122 - Added variable and used it once - Issue #46
         if (!writeToDatabase) {
             toDateFormattingStart = "'";
             toDateFormattingEnd = "'~";
+            toDateFormattingSecondsEnd = "'~";
         }
         Date dateToUse = this.startEvent;
         if (useNow || this.startEvent == null){
@@ -180,7 +184,7 @@ public class CaptureDetails implements Comparable, Cloneable {
             fields.append("scheduledStart~");values.append("' '~");
         }
         if (dateToUse != null){
-            fields.append("startEvent~");values.append(toDateFormattingStart + DBDTF.format(dateToUse) + toDateFormattingEnd);
+            fields.append("startEvent~");values.append(toDateFormattingStart + DBDTFS.format(dateToUse) + toDateFormattingSecondsEnd);
         } else {
             fields.append("startEvent~");values.append("' '~");
         }
@@ -219,14 +223,16 @@ public class CaptureDetails implements Comparable, Cloneable {
     public String[] getSignalQualityUpdateData(boolean writeToDatabase) {
         String toDateFormattingStart = "TO_TIMESTAMP('";
         String toDateFormattingEnd = "','MM/DD/YYYY HH:MI')~";
+        String toDateFormattingSecondsEnd = "','MM/DD/YYYY HH:MI:SS')~"; //DRS 20241122 - Added variable and used it once - Issue #46
         if (!writeToDatabase) {
             toDateFormattingStart = "'";
             toDateFormattingEnd = "'~";
+            toDateFormattingSecondsEnd = "'~";
         }
         StringBuffer fields = new StringBuffer();
         StringBuffer values = new StringBuffer();
         if (this.endEvent != null){
-            fields.append("endEvent~");values.append(toDateFormattingStart + DBDTF.format(this.endEvent) + toDateFormattingEnd);
+            fields.append("endEvent~");values.append(toDateFormattingStart + DBDTFS.format(this.endEvent) + toDateFormattingSecondsEnd);
         } else {
            fields.append("endEvent~");values.append(toDateFormattingStart + "01/01/1900 00:00" + toDateFormattingEnd);
         }
