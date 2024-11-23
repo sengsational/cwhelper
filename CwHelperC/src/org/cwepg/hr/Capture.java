@@ -197,6 +197,11 @@ public abstract class Capture implements Runnable, Comparable {
         return target.fileName.replaceAll("\\'", "\\''");
     }
 
+    // DRS 20241123 - Added method - Issue #47
+    public String getNoExtensionFileNameEscaped() {
+    	return target.getNoExtensionFilename().replaceAll("\\'", "\\''");
+    }
+
     public String getTitle() {
         return target.title;
     }

@@ -14,6 +14,8 @@ public class Slot {
     private static final SimpleDateFormat DF = new SimpleDateFormat(DATE_FORMAT);
     private static final SimpleDateFormat DFS = new SimpleDateFormat("MM/dd/yy HH:mm:ss");
     private static final SimpleDateFormat DFSS = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    private static final SimpleDateFormat DFSQL = new SimpleDateFormat("#yyyy-MM-dd HH:mm:ss#");
+    
 	public Calendar start = Calendar.getInstance();
 	public Calendar end = Calendar.getInstance();
     static final boolean dc = false; // dump compare
@@ -522,6 +524,17 @@ public class Slot {
     public String getFormattedStopTimeString() {
         return DFSS.format(end.getTime());
     }
+
+    // DRS 20241123 - Added method - Issue #47
+	public String[] getSqlSpanValues(int minutes) {
+		int seconds = minutes * 60 / 2;
+		String[] earlyLateArray = new String[2];
+		Calendar early = (Calendar) start.clone(); early.add(Calendar.SECOND, -seconds);
+		Calendar late = (Calendar) start.clone(); late.add(Calendar.SECOND, seconds);
+		earlyLateArray[0] = DFSQL.format(early.getTime());
+		earlyLateArray[1] = DFSQL.format(late.getTime());
+		return earlyLateArray;
+	}
 
     public int getDurationMinutes() {
         int durationMinutes = -1;

@@ -123,7 +123,13 @@ public class CaptureMetadata implements Runnable {
 		//CaptureDataManager.tableReadable(recordsTableName, dataPath, mdbFileName);
 
 		String targetFileName = capture.getFileNameEscaped();
-		System.out.println("looking up [" + targetFileName +  "] in " + recordsTableName);
+		// DRS 20241123 - Added renamedTargetFileName, sqlSpan variables and used them in logging and SQL query - Issue #47
+		String renamedTargetFileName = "(unable to construct renamed target file name)";
+		String[] sqlSpan = capture.slot.getSqlSpanValues(1); 
+		try { renamedTargetFileName = capture.getNoExtensionFileNameEscaped() + "_%." + Target.getFileExtension(targetFileName);} catch (Throwable t) {System.out.println(new Date() + " Unable to construct renamed file wildcard search parameter.");}
+		
+		System.out.println("looking up [" + targetFileName + "] or [" +renamedTargetFileName +"] in " + recordsTableName);
+		System.out.println("between    [" + sqlSpan[0] + "] and [" + sqlSpan[1] + "]" );
 		
         Connection connection = null;
         Statement statement = null;
@@ -133,7 +139,7 @@ public class CaptureMetadata implements Runnable {
         	//System.out.println("vmp [" + validateMdbPath +"]");
             connection = DriverManager.getConnection("jdbc:ucanaccess://" + validateMdbPath + ";singleConnection=true");
             statement = connection.createStatement();
-            String query = "select * from " + recordsTableName + " where FILENAME='" + targetFileName + "'";
+            String query = "select * from " + recordsTableName + " where (FILENAME='" + targetFileName + "' or FILENAME like '" + renamedTargetFileName + "') and (STARTTIME >= " + sqlSpan[0] + " and STARTTIME <= " + sqlSpan[1] +")";
             System.out.println("Getting Metadata using [" + query + "]");
             rs = statement.executeQuery(query);
             while (rs.next()){

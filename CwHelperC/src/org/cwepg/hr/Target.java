@@ -287,6 +287,17 @@ public class Target {
         if (debug) System.out.println(new Date() + " DEBUGFUSION  getNoPathExtensionFilename returned [" + returnString + "]");
         return returnString;
     }
+    
+    // DRS20241123 - Added method - Issue #47
+    private static String getNoExtensionFilename(String fn) {
+        String returnString = fn;
+        int dotLoc = fn.lastIndexOf(".");
+        if (dotLoc < 1 || (fn.length() - dotLoc) > 4 || fn.endsWith("."));  //no extension or long extention that's not really an extension
+        else returnString = fn.substring(0,dotLoc);
+        if (debug) System.out.println(new Date() + " getNoExtensionFilename returned [" + returnString + "]");
+        return returnString;
+	}
+    
 
     public static String getFileExtension(String fileName) {
         int dotLoc = fileName.lastIndexOf(".");
@@ -304,7 +315,11 @@ public class Target {
         return Target.getNoPathNoExtensionFilename(this.fileName);
     }
 
-    private static String insertTextIntoFilename(String fileName, String appendFileNameString) {
+	public String getNoExtensionFilename() {
+        return Target.getNoExtensionFilename(this.fileName);
+	}
+
+	private static String insertTextIntoFilename(String fileName, String appendFileNameString) {
         StringBuffer fnBuf = new StringBuffer(fileName);
         int loc = fileName.indexOf(Target.getNoPathNoExtensionFilename(fileName));
         int length = Target.getNoPathNoExtensionFilename(fileName).length();
@@ -436,5 +451,6 @@ public class Target {
             }
 	    }
 	}
+
 
 }
