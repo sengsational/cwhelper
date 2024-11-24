@@ -123,10 +123,11 @@ public class CaptureMetadata implements Runnable {
 		//CaptureDataManager.tableReadable(recordsTableName, dataPath, mdbFileName);
 
 		String targetFileName = capture.getFileNameEscaped();
-		// DRS 20241123 - Added renamedTargetFileName, sqlSpan variables and used them in logging and SQL query - Issue #47
+		// DRS 20241123 - Reworked targetFileName, added renamedTargetFileName, sqlSpan variables and used them in logging and SQL query - Issue #47
+		targetFileName = Target.getNonAppendedFileName(targetFileName);
 		String renamedTargetFileName = "(unable to construct renamed target file name)";
 		String[] sqlSpan = capture.slot.getSqlSpanValues(1); 
-		try { renamedTargetFileName = capture.getNoExtensionFileNameEscaped() + "_%." + Target.getFileExtension(targetFileName);} catch (Throwable t) {System.out.println(new Date() + " Unable to construct renamed file wildcard search parameter.");}
+		try { renamedTargetFileName = Target.getNoExtensionFilename(Target.getNonAppendedFileName(targetFileName)) + "_%." + Target.getFileExtension(targetFileName);} catch (Throwable t) {System.out.println(new Date() + " Unable to construct renamed file wildcard search parameter.");}
 		
 		System.out.println("looking up [" + targetFileName + "] or [" +renamedTargetFileName +"] in " + recordsTableName);
 		System.out.println("between    [" + sqlSpan[0] + "] and [" + sqlSpan[1] + "]" );

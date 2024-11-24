@@ -289,7 +289,7 @@ public class Target {
     }
     
     // DRS20241123 - Added method - Issue #47
-    private static String getNoExtensionFilename(String fn) {
+    static String getNoExtensionFilename(String fn) {
         String returnString = fn;
         int dotLoc = fn.lastIndexOf(".");
         if (dotLoc < 1 || (fn.length() - dotLoc) > 4 || fn.endsWith("."));  //no extension or long extention that's not really an extension
