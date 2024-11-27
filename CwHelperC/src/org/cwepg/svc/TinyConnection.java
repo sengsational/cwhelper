@@ -86,7 +86,8 @@ class TinyConnection implements Runnable {
 		try {
 			req = in.readLine();
 			String requestMsg =  "request [" + req + "] " + clock.format(new Date());
-			if(!mLastRequest.equals(requestMsg)) System.out.println(requestMsg);
+			boolean wasPing = req != null && req.contains("/ping ");
+			if(!mLastRequest.equals(requestMsg) && !wasPing) System.out.println(requestMsg);
             mLastRequest = requestMsg;
 
 			// loop through and discard rest of request
@@ -104,8 +105,10 @@ class TinyConnection implements Runnable {
             if (action == null || !action.startsWith("/")) throw new Exception(new Date() + " The action was null or did not start with /.");
             boolean isTextFileOperation = (action.endsWith(".html") || action.endsWith(".js")|| action.endsWith(".json")) && action.startsWith("/");
             boolean isBinaryFileOperation = action.endsWith(".png") && action.startsWith("/");
-            
-            if (action.equals("/set")){ // ************* SET ***************
+
+            if (action.equals("/ping")){ // ************* PING ***************
+                out.print(HEAD + "<h2>Version: " + CaptureManager.version + "</h2><br>" + FOOT);
+            } else if (action.equals("/set")){ // ************* SET ***************
                 String setItem = null;
                 int goodSettingCount = 0;
                 setItem = (String)request.get("simulate");
