@@ -225,6 +225,23 @@ public class Target {
         }
         
     }
+
+    // DRS 20241129 - Added method - Issue #48
+    public void removeFile() {
+        if (this.isWatch()) return;
+        try {
+            File aFile = new File(this.fileName);
+            if (aFile.exists()) {
+            	long sizeOfFile = aFile.length();
+            	boolean fileDeleted = aFile.delete();
+            	System.out.println(new Date() + (fileDeleted?" Deleted ":"Unable to delete ") + aFile.getAbsolutePath() + " of size " + sizeOfFile);
+            } else {
+            	System.out.println(new Date() + "File " + aFile.getAbsolutePath() + " was not found.  Nothing to delete.");
+            }
+        } catch (Throwable t) {
+        	System.out.println(new Date() + " Unable to remove file. " + t.getClass().getName() + " " + t.getMessage());
+        }
+	}
     
     // DRS 20150718 - new method
     public String testPathWritability() throws Exception { 
@@ -451,6 +468,4 @@ public class Target {
             }
 	    }
 	}
-
-
 }

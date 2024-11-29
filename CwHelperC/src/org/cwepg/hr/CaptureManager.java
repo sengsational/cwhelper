@@ -247,6 +247,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                             successful = false;
                             System.out.println(new Date() + " WARNING: Device for capture was unavailable! " + d.getMessage());
                             if (capture instanceof CaptureHdhr) {
+                            	if (capture instanceof CaptureHdhrHttp) capture.target.removeFile(); // DRS 20241129 - Added 'if' - issue #48
                                 System.out.println(new Date() + " Attempting to define and schedule a replacement for [" + capture + "]");
                                 System.out.println(new Date() + " CaptureManager.hdhrRecordMonitorSeconds = " + CaptureManager.hdhrRecordMonitorSeconds);
                                 CaptureHdhr captureHdhr = (CaptureHdhr)capture;
