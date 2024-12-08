@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -177,8 +179,12 @@ public class LineUpHdhr extends LineUp {
         tuner.lineUp.clearAllChannels(); // DRS 2019 12 15 - Added Line
         int count = 0;
         for (String programDefinition : programDefinitions) {
-            addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
-            count++;
+            boolean added = addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
+            if (added) {
+                count++;
+                 System.out.println(new Date() + " Successfully added channel    [" + programDefinition + "]");
+            }
+            else System.out.println(new Date() + " Not able to add channel using [" + programDefinition + "]");
         }
         System.out.println(new Date() + " " + count + " channels added to tuner: " + tuner.getFullName());
     }
@@ -619,5 +625,16 @@ public class LineUpHdhr extends LineUp {
         }
         System.out.println(new Date() + " Tried " + maxTries + "time(s) for " + url + " without success.");
         return "";
+    }
+    
+    public static void main(String[] args) throws Exception {
+        LineUpHdhr lineup = new LineUpHdhr();
+        String programDefinitionString = new String(Files.readAllBytes(Paths.get("c:\\my\\dev\\tuning command 12-8-2024.txt")));
+        //String programDefinitionString = new String(Files.readAllBytes(Paths.get("c:\\my\\dev\\TerrysConnect4XML7Dec24.txt")));
+        TunerHdhr tuner =  new TunerHdhr("10119D6F-1", true, TunerHdhr.VCHANNEL);
+        String xmlFileName = "c:\\my\\dev\\programDefString.xml";
+        lineup.loadChannelsFromXmlString(programDefinitionString, xmlFileName, null, tuner);
+        System.out.println("LineUpHdhr.main() output:\n" + tuner);
+        
     }
 }
