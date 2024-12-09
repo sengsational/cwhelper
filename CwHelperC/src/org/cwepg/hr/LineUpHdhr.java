@@ -179,12 +179,9 @@ public class LineUpHdhr extends LineUp {
         tuner.lineUp.clearAllChannels(); // DRS 2019 12 15 - Added Line
         int count = 0;
         for (String programDefinition : programDefinitions) {
+        	// DRS 20241208 - alterned 2 - issue #49
             boolean added = addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
-            if (added) {
-                count++;
-                 System.out.println(new Date() + " Successfully added channel    [" + programDefinition + "]");
-            }
-            else System.out.println(new Date() + " Not able to add channel using [" + programDefinition + "]");
+            if (added) count++;
         }
         System.out.println(new Date() + " " + count + " channels added to tuner: " + tuner.getFullName());
     }

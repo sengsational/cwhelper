@@ -18,6 +18,7 @@ public abstract class LineUp {
     String signalType;
     boolean completedDump = true; // false; for debugging matching replacement captures
     
+    //DRS 20241208 - Change signature to return boolean - Issue #49
     public boolean addChannel(Channel channel) {
         Channel nullChannel = channels.get(channel.channelKey);
         if ( nullChannel == null){
