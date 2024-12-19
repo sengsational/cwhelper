@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -177,8 +179,9 @@ public class LineUpHdhr extends LineUp {
         tuner.lineUp.clearAllChannels(); // DRS 2019 12 15 - Added Line
         int count = 0;
         for (String programDefinition : programDefinitions) {
-            addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
-            count++;
+        	// DRS 20241208 - altered 2 - issue #49
+            boolean added = addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
+            if (added) count++;
         }
         System.out.println(new Date() + " " + count + " channels added to tuner: " + tuner.getFullName());
     }

@@ -236,7 +236,9 @@ public class CaptureHdhr extends Capture implements Runnable {
                 System.out.println(string + " {" + cl.getCommands() + "} said: [" + clResult + "]");
                 try {
                     mNonDotCount = clResult.replace(".","").length();
-                    if (mNonDotCount > 0) System.out.println(new Date() + " There were " + mNonDotCount + " errors in the recording status results (CaptureHdhr report).");
+                	// DRS 20241218 - Added 'if', existing code in 'else if' - Issue #50
+                    if (clResult != null && clResult.contains("error")) System.out.println(new Date() + " ERROR: hdhomerun_config.exe 'save' command threw an error: [" + clResult + "] (CaptureHdhr.report()).");
+                    else if (mNonDotCount > 0) System.out.println(new Date() + " There were " + mNonDotCount + " errors in the recording status results (CaptureHdhr.report()).");
                 } catch (Throwable t) {
                     // do nothing because this isn't critical
                 }

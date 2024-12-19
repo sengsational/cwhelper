@@ -253,6 +253,9 @@ public class ChannelDigital extends Channel implements Comparable {
         if (dotLoc > 0 && dotLoc < this.channelVirtual.length()) {
             this.virtualChannel = Integer.parseInt(this.channelVirtual.substring(0, dotLoc));
             try { this.virtualSubchannel = Integer.parseInt(this.channelVirtual.substring(dotLoc + 1)); } catch (Throwable t) {this.virtualSubchannel = 0;}
+        } else { // DRS 20241208 - Added else - Issue #49
+            try {this.virtualChannel = Integer.parseInt(this.channelVirtual);} catch (Throwable t) {System.out.println(new Date() + " ERROR: Unable to parse channelVirtual " + this.channelVirtual);}
+            this.virtualSubchannel = 0;
         }
 
         if (virtualHandlingRequired) {

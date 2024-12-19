@@ -18,11 +18,14 @@ public abstract class LineUp {
     String signalType;
     boolean completedDump = true; // false; for debugging matching replacement captures
     
-    public void addChannel(Channel channel) {
+    //DRS 20241208 - Change signature to return boolean - Issue #49
+    public boolean addChannel(Channel channel) {
         Channel nullChannel = channels.get(channel.channelKey);
         if ( nullChannel == null){
             channels.put(channel.channelKey, channel);
+            return true;
         } 
+        return false;
     }
     
     public void clearAllChannels() {
