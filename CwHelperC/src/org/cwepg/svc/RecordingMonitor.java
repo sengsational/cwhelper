@@ -61,6 +61,15 @@ public class RecordingMonitor extends Thread implements Runnable {
             try {
                 // See how many discontinuities there are
                 String report = myErrors.getResults();
+                //DRS 20241221 - Added 'if' - Issue #51
+                if (report != null && report.contains("error")) {
+                	String errorMessage = report.substring(report.indexOf("error"));
+                	System.out.println(new Date() + " ERROR: hdhomerun_config.exe 'save' command threw an error: [" + errorMessage + "] (RecordingMonitor.run()).");
+                	if (errorMessage.contains("error writing output")) {
+                    	System.out.println(new Date() + " ERROR: hdhomerun_config.exe 'save' could not write to disk.  No replacement recording will be created.");
+                		break OUT;
+                	}
+                }
                 int reportLength = report.length();
                 int nonDotCount = report.replace(".","").length();
                 String durationStartOrFiveMinuteMessage = "since start";
