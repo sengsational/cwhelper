@@ -172,7 +172,7 @@ public class CaptureHdhr extends Capture implements Runnable {
                             pidCount = retriesExpired(pidCount, cl, waitTime, "setPid");  //<<<< retriesExpired
                             commandFailure = true;
                             this.lockKey = "" + (int)(Math.random()*1000) + 1; 
-                            break RETRY_LOOP;
+                            continue RETRY_LOOP; // DRS 20241230 - changed to 'continue' from 'break' - Issue #53
                             //continue; // back to 'do'
                         }
                         commandFailure = false; 
