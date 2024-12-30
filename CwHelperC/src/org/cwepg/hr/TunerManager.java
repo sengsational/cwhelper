@@ -484,7 +484,7 @@ public class TunerManager {
                     String t = tok.nextToken();
                     if (t.equals("at") && tok.hasMoreTokens()){
                     	ipAddress = tok.nextToken();
-                        if (NetworkDetails.isOnMachineSubnet(ipAddress, "255,255,255.0", false)) {
+                        if (NetworkDetails.isOnMachineSubnet(ipAddress, "255.255.255.0", false)) {
                         	buf.append(l).append("\n");
                         	lineWasSaved = true;
                         }
