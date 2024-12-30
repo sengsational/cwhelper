@@ -12,6 +12,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -19,6 +20,8 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
+
+import org.cwepg.svc.NetworkDetails;
 
 public class TunerHdhr extends Tuner {
 
@@ -85,65 +88,13 @@ public class TunerHdhr extends Tuner {
         this.isVchannel = (hdhrModel == TunerHdhr.VCHANNEL);
         this.ipAddressTuner = ipAddress; // might be null
         if (ipAddress != null && !"".equals(ipAddress)) {
-            this.ipAddressMachine = getMachineIpForTunerIp(ipAddress);
+        	try {
+        		this.ipAddressMachine = NetworkDetails.getMachineIpForTunerIp(ipAddress); //DRS 20241229 - Calling alternative class to get IP for the machine, removed local method - Issue #52.
+        	} catch (UnknownHostException e) {
+        		System.out.println(new Date() + " WARNING: unable to assign machine IP address in TunerHdhr constructor. " + e.getMessage());
+        	}
         }
         System.out.println(new Date() + " TunerHdhr constructor with ipAddressTuner " + ipAddress + " resulting in ipAddressMachine " + ipAddressMachine + " isVchannel (new tuner type) " + isVchannel);
-    }
-    
-    //DRS 20181112
-    private String getMachineIpForTunerIp(String tunerIp) {
-        boolean debug = false;
-        if (debug) System.out.println(new Date() + " DEBUG: tunerIp " + tunerIp);
-        String[] tunerIpNumbers = tunerIp.split("\\.");
-        if (debug) System.out.println(new Date() + " DEBUG: tunerIpNumbers length " + tunerIpNumbers.length);
-        if (tunerIpNumbers.length < 4){
-            if (debug) System.out.println(new Date() + " DEBUG: there were not 4 numbers in the IP address provided [" + tunerIp +"]");
-            return null; 
-        }
-        String tunerIpPrefix = tunerIpNumbers[0] + "." + tunerIpNumbers[1];
-        if (debug) System.out.println(new Date() + " DEBUG: tunerIpPrefix " + tunerIpPrefix);
-        StringBuffer buf = new StringBuffer();
-        String foundMachineAddress = null;
-        try {
-            for (int tries = 2; tries > 0; tries--) {
-                Enumeration e = NetworkInterface.getNetworkInterfaces();
-                if (debug) System.out.println(new Date() + " DEBUG: interface has elements " + e.hasMoreElements());
-                while(e.hasMoreElements()) {
-                    NetworkInterface n = (NetworkInterface) e.nextElement();
-                    if (debug) System.out.println(new Date() + " DEBUG: interface " + n.getName() + " " + n.getDisplayName());
-                    buf.append("  Interface [" + n.getName() + "] Addresses [" );
-                    Enumeration ee = n.getInetAddresses();
-                    if (debug) System.out.println(new Date() + " DEBUG: addresses has elements " + ee.hasMoreElements());
-                    while (ee.hasMoreElements()) {
-                        InetAddress i = (InetAddress) ee.nextElement();
-                        String aMachineAddress = i.getHostAddress();
-                        if (debug) System.out.println(new Date() + " DEBUG: address " + aMachineAddress);
-                        buf.append(aMachineAddress + ", ");
-                        if (aMachineAddress.startsWith(tunerIpPrefix)) {
-                            if (debug) System.out.println(new Date() + " DEBUG: found address: " + aMachineAddress + " returning.");
-                            foundMachineAddress = aMachineAddress;
-                            break;
-                        }
-                    }
-                    buf.append("]");
-                    if (foundMachineAddress != null) break;
-                }
-                if (foundMachineAddress != null) {
-                    break;
-                } else {
-                    System.out.println(new Date() + " The prefix [" + tunerIpPrefix + "] was not found in the list of interfaces [" + buf.toString() + "].  Retrying after 1 second.");
-                    Thread.sleep(1000);
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(new Date()  + " ERROR: Could not get IP address of the machine for tuner " + tunerIp + " " + e.getMessage());
-        } finally {
-            if (debug) System.out.println(new Date() + " Looked at these machine IP's: " + buf.toString());
-        }
-        if (foundMachineAddress == null) {
-            System.out.println(new Date() + " The prefix [" + tunerIpPrefix + "] was not found in the list of interfaces [" + buf.toString() + "]");
-        }
-        return foundMachineAddress; // null if not found
     }
 
     public void addCapturesFromStore(){

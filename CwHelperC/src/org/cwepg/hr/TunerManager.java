@@ -37,6 +37,7 @@ import org.cwepg.reg.FusionRegistryEntry;
 import org.cwepg.reg.Registry;
 import org.cwepg.reg.RegistryHelperFusion;
 import org.cwepg.svc.HdhrCommandLine;
+import org.cwepg.svc.NetworkDetails;
 
 public class TunerManager {
 	
@@ -407,6 +408,7 @@ public class TunerManager {
             boolean isPost = false;
             liveDiscoverText = LineUpHdhr.getPage("http://ipv4-api.hdhomerun.com/discover", maxSeconds, quiet, isPost);
             liveDiscoverText = reformatWebDiscover(liveDiscoverText);
+            liveDiscoverText = removeNonAccessableIps(liveDiscoverText); // DRS 20241229 - Added 1 - Issue #52
         }
         liveDevices = findTunerDevicesFromText(liveDiscoverText, true); // devices.txt is always written out here (we read the old one already).
         System.out.println(new Date() + " Got " + liveDevices.size() + " items from active discover command. [" +  getDeviceListAsString(devices) + "]");
@@ -465,6 +467,39 @@ public class TunerManager {
 
         return tunerList;
     }
+
+    //DRS 20241229 - Added method - Issue #52
+	private String removeNonAccessableIps(String output) {
+        // output looks like this [hdhomerun device 1076C3A7 found at 169.254.246.92]
+		StringBuffer buf = new StringBuffer();
+		BufferedReader in = null;
+    	try {
+			in = new BufferedReader(new StringReader(output));
+			String l = null;
+			String ipAddress = "(undefined)";
+			while ((l = in.readLine()) != null){
+				boolean lineWasSaved = false;
+			    StringTokenizer tok = new StringTokenizer(l);
+                while(tok.hasMoreTokens()){
+                    String t = tok.nextToken();
+                    if (t.equals("at") && tok.hasMoreTokens()){
+                    	ipAddress = tok.nextToken();
+                        if (NetworkDetails.isOnMachineSubnet(ipAddress, "255,255,255.0", false)) {
+                        	buf.append(l).append("\n");
+                        	lineWasSaved = true;
+                        }
+                    }
+                }
+                if (!lineWasSaved) System.out.println(new Date() + " Tuner was not included since it was not on the machine's subnet [" + l + "]");
+			}
+			in.close();
+		} catch (IOException e) {
+			System.out.println(new Date() + " Error reading StringReader. " + e.getMessage());
+		} finally {
+			if (in != null ) try {in.close();} catch (Throwable t) {}
+		}
+    	return buf.toString();
+	}
 
 	//DRS 20220707 - Fix broken logging of devices 
     private String reformatWebDiscover(String liveDiscoverText) {
