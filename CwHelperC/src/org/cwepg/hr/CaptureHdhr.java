@@ -156,7 +156,7 @@ public class CaptureHdhr extends Capture implements Runnable {
                 cl = new HdhrCommandLine(discover, 5, false);
                 goodResult = cl.runProcess();
                 report("discover", cl, false);
-                if("no devices found".equals(cl.getOutput())) System.out.println(new Date() + " WARNING: No HDHR devices found.");
+                if("no devices found".equals(report(cl))) System.out.println(new Date() + " WARNING: No HDHR devices found.");
             } else if (!((TunerHdhr)tuner).isVchannel) { // Normal good processing here
                 int pidCount = 0;
                 commandFailure = false;

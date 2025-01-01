@@ -137,7 +137,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             // DRS 20201029 - Rewrote this code to keep machines from nodding-off
             long msFirstSleep = Long.MAX_VALUE;
             long msSecondSleep = Long.MAX_VALUE;
-            long msUntilEvent = getMsUntilNextEvent() - LEAD_TIME_MS; // Can be negative
+            long msUntilEvent = getMsUntilNextEvent(false) - LEAD_TIME_MS; // Can be negative
 	    	long msInitialSubtraction = msUntilEvent - (loopLeadTimeSeconds * 1000); // Can be negative
 	    	if (msUntilEvent < 0) { // The start time is in the past - no sleeping required
 	    	    msFirstSleep = 0;
@@ -328,7 +328,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 }
 			}
 	    	// DRS 20201231 - Added if/else - Do "allow sleep" here, every loop, instead of when removing capture.
-            if (activeCaptures.size() == 0 && !WakeupEvent.isRunning()) { // DRS 20210104 - Added isRunning clause - prevent allow sleep if WakeupEvent is running
+            if (activeCaptures.size() == 0 && !WakeupEvent.isRunning() && Math.abs(getMsUntilNextEvent(true)) < 30000) { //DRS 20250101 - Added pending activity clause - Issue #54 // DRS 20210104 - Added isRunning clause - prevent allow sleep if WakeupEvent is running
                 //System.out.println(new Date() + " allowSleep() has been issued.");                        
                 if (isSleepManaged) WakeupManager.allowSleep();
             } else { //everything in the 'else' is logging only.
@@ -340,7 +340,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                     if (activeCaptures.size() != 0) {
                         System.out.println(new Date() + " Not issuing allowSleep because there is/are " + activeCaptures.size() + " capture(s).");
                     } else {
-                        System.out.println(new Date() + " Not issuing allowSleep because there is an active WakeupEvent.");
+                        System.out.println(new Date() + " Not issuing allowSleep because there is an active WakeupEvent or pending activity.");
                     }
                 }
             }
@@ -437,7 +437,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     }
     
     // Helpers for the run method
-    public static long getMsUntilNextEvent(){     // DRS 20160425 - changed to public static - Support CwHelper Restart
+    public static long getMsUntilNextEvent(boolean silent){    //DRS 20250101 - added silent parameter - Issue #54 // DRS 20160425 - changed to public static - Support CwHelper Restart
         nextEventType = "";
     	nextEventCalendar = null;
         if (CaptureManager.emailer != null){
@@ -470,7 +470,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     	long msUntilNextEvent = Long.MAX_VALUE;
     	if (nextEventCalendar != null){
     		msUntilNextEvent = nextEventCalendar.getTimeInMillis() - Calendar.getInstance().getTimeInMillis();
-    		System.out.println(new Date() + " The next event (" + nextEventType + ") is scheduled for " + Tuner.SDF.format(nextEventCalendar.getTime()) + " which is " + msUntilNextEvent + "ms from now.");
+    		if (!silent) System.out.println(new Date() + " The next event (" + nextEventType + ") is scheduled for " + Tuner.SDF.format(nextEventCalendar.getTime()) + " which is " + msUntilNextEvent + "ms from now.");
     	}
     	return msUntilNextEvent;
     }
