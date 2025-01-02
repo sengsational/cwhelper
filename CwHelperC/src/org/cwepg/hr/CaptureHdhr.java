@@ -139,13 +139,21 @@ public class CaptureHdhr extends Capture implements Runnable {
             report("setChannel", cl, false);
             if (report(cl)!= null && report(cl).indexOf("ERROR:") > -1) errorWasReturned = true;
             
-            // Silicon Dust Command Line Data: 103AEA6C key 8851 get /tuner0/streaminfo
-            String[] getStreamInfo = {tuner.id, "key", this.lockKey, "get", "/tuner" + tuner.number +"/streaminfo"};  
-            cl = new HdhrCommandLine(getStreamInfo, 5, false);
-            goodResult = cl.runProcess();
-            if (!goodResult) throw new Exception("failed to handle " + cl.getCommands());
-            report("getStreamInfo", cl, false);
-            if (report(cl)!= null && report(cl).indexOf("ERROR:") > -1) errorWasReturned = true;
+            
+            //DRS 20250102 - Existing code in new "do/while" and new streamInfoTries varibale (to retry for streaminfo if it's empty string per Terry)
+            int streamInfoTries = 2;
+            do {
+                // Silicon Dust Command Line Data: 103AEA6C key 8851 get /tuner0/streaminfo
+                String[] getStreamInfo = {tuner.id, "key", this.lockKey, "get", "/tuner" + tuner.number +"/streaminfo"};  
+                cl = new HdhrCommandLine(getStreamInfo, 5, false);
+                goodResult = cl.runProcess();
+                if (!goodResult) throw new Exception("failed to handle " + cl.getCommands());
+                report("getStreamInfo", cl, false);
+                String streamInfoReport = report(cl);
+                if (streamInfoReport!= null && streamInfoReport.indexOf("ERROR:") > -1) errorWasReturned = true;
+                if (streamInfoReport.length() != 0) break; //only retry if the report is empty
+            	streamInfoTries--;
+            } while (streamInfoTries > 0);
     
             // No stream info (should be "none")... do we have a device?
             if (cl.getOutput().trim().length() == 0 || errorWasReturned){
@@ -192,7 +200,7 @@ public class CaptureHdhr extends Capture implements Runnable {
                 deviceFound = true;
                 break;
             }
-            waitTime = 30;
+            if (waitTime < 30) waitTime = waitTime * 3; // DRS 20250102 - increment wait time per Terry (instead of 30 seconds)
         } // Retry loop ends
 
         if (!deviceFound) throw new Exception("ERROR: No HDHR devices found after retries.");

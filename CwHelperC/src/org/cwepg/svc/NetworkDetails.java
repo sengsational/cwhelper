@@ -100,7 +100,7 @@ public class NetworkDetails {
 		if (foundMachineAddresses.size() == 0 || msSinceLast > 100000) queryLan(debug); //only query if it's not been done yet, or has been a while.
 		
 		for (String aMachineIp : foundMachineAddresses) {
-			if (NetworkDetails.isSameSubnet(aMachineIp, someIpAddress, "255.255.255.0", true)) return aMachineIp;
+			if (NetworkDetails.isSameSubnet(aMachineIp, someIpAddress, "255.255.255.0", false)) return aMachineIp;
 		}
 		return null;
 	}

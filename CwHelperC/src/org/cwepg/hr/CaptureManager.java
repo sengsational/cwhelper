@@ -328,7 +328,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 }
 			}
 	    	// DRS 20201231 - Added if/else - Do "allow sleep" here, every loop, instead of when removing capture.
-            if (activeCaptures.size() == 0 && !WakeupEvent.isRunning() && Math.abs(getMsUntilNextEvent(true)) < 30000) { //DRS 20250101 - Added pending activity clause - Issue #54 // DRS 20210104 - Added isRunning clause - prevent allow sleep if WakeupEvent is running
+            if (activeCaptures.size() == 0 && !WakeupEvent.isRunning() && !(Math.abs(getMsUntilNextEvent(true)) < 30000)) { //DRS 20250101 - Added pending activity clause - Issue #54 // DRS 20210104 - Added isRunning clause - prevent allow sleep if WakeupEvent is running
                 //System.out.println(new Date() + " allowSleep() has been issued.");                        
                 if (isSleepManaged) WakeupManager.allowSleep();
             } else { //everything in the 'else' is logging only.
