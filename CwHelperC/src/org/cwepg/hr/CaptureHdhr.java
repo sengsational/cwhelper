@@ -146,6 +146,7 @@ public class CaptureHdhr extends Capture implements Runnable {
                 // Silicon Dust Command Line Data: 103AEA6C key 8851 get /tuner0/streaminfo
                 String[] getStreamInfo = {tuner.id, "key", this.lockKey, "get", "/tuner" + tuner.number +"/streaminfo"};  
                 cl = new HdhrCommandLine(getStreamInfo, 5, false);
+                try {Thread.sleep(1000);} catch (InterruptedException e) {};
                 goodResult = cl.runProcess();
                 if (!goodResult) throw new Exception("failed to handle " + cl.getCommands());
                 report("getStreamInfo", cl, false);
