@@ -61,7 +61,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static int fusionLeadTime = 120; // start Fusion recordings 120 seconds from 'now' or they won't start
     public static int leadTimeSeconds = 90; // number of seconds to subtract from the wait duration. This allows the set() method to be set  in accordance with the start time of the recording and not worry about adjusting for startup delay.
     public static int loopLeadTimeSeconds = leadTimeSeconds - LL_OFFSET; // DRS 20210201 - Added 1 - machine wakes 10 seconds before the sleep is scheduled to end.
-    public static boolean isSleepManaged = false;
+    public static boolean isSleepManaged = true;
     public static boolean myhdWakeup = true;
     public static boolean endFusionWatchEvents = false;
     public static boolean trayIcon = true;

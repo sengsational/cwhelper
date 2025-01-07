@@ -41,7 +41,7 @@ public class WebHelpDoc {
         buf.append("<tr><td>/set</td><td>rerundiscover</td><td>ie true</td><td>Set to true if your HDHR devices are sometimes powered down and therefore disappear from your network.  Default is false.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>shortenexternalrecordingseconds</td><td>ie 15</td><td>Number of seconds early to stop recordings on external tuners (those that use CapDVHS.ini). Default: 15</td></tr>\n");
         buf.append("<tr><td>/set</td><td>simulate</td><td>ie true</td><td>Use if you do not have a HDHR installed</td></tr>\n");
-        buf.append("<tr><td>/set</td><td>sleepmanaged</td><td>ie true</td><td>Use to keep the machine awake for recordings.  Default is false.</td></tr>\n");
+        buf.append("<tr><td>/set</td><td>sleepmanaged</td><td>ie true</td><td>Use to keep the machine awake for recordings.  Default is true.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>trayicon</td><td>ie false</td><td>Set to false if you do not want the application to have a tray icon.  Default is true.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>alltraditionalhdhr</td><td>ie true</td><td>Set to true you want to have all tuners treated as if they were tradional (not new model) tuners.  Default is false.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>unlockwithforce</td><td>ie false</td><td>Set to true you want to force unlock HDHR tuners that are locked when a recording is starting.  Default is false.</td></tr>\n");
