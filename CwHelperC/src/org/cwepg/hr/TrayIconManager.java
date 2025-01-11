@@ -26,6 +26,8 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.UIManager;
 
+import org.cwepg.svc.SplashScreenCloser;
+
 public class TrayIconManager implements Runnable {
     
     private static boolean runFlag = false;
@@ -71,6 +73,8 @@ public class TrayIconManager implements Runnable {
             System.out.println(new Date() + " TrayIconManager run() is starting.");
             setRunning(true);
             addIcon(); // <<<<<<<<<<<<<<< ADD ICON
+            // DRS 20250110 - Added 1 here (removed from CaptureManager.main()) - Issue #56
+            new SplashScreenCloser(1); // starts itself waits 1 second and closes the splash window
         }
         TrayIconManager.runThread = Thread.currentThread();
 

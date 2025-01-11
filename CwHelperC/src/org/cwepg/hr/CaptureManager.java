@@ -1215,7 +1215,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         System.out.println(new Date() + " Setting sun.java2d.3d3 to false.");
         System.setProperty("sun.java2d.d3d", "false"); 
         
-        new SplashScreenCloser(2); // starts itself waits 2 seconds and closes the splash window
+        // DRS 20250110 - Moved 1 down and added to it TrayIconManager - Issue #56
+        //new SplashScreenCloser(2); // starts itself waits 2 seconds and closes the splash window
         
         // DRS 20210306 - Move this to the ServiceLauncher
         //CaptureManager.webServer = new TinyWebServer(WEB_SERVER_PORT); 
@@ -1230,6 +1231,9 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     	// also create the instance of TunerManager.  If there
     	// is no device on the network, simulate mode is set.
         CaptureManager cm = CaptureManager.getInstance(cwepgPathFinal, hdhrPathFinal, dataPathFinal); // runs tunerManager.countTuners() here, which runs LineupHdhr.scan()
+        // DRS 20250110 - Moved 1 here instead of above. Splash shows when trayIcon is started or in this line if no trayIcon configured - Issue #56
+        if (!CaptureManager.trayIcon) new SplashScreenCloser(2); // starts itself waits 2 seconds and closes the splash window
+
         TunerManager tm = TunerManager.getInstance();
         
         // We need to get the channel list loaded.  The default
