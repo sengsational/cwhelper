@@ -511,7 +511,7 @@ class TinyConnection implements Runnable {
                     }
                     
                     //if (tunerString != null && (tunerString.equalsIgnoreCase("myhd") || tunerString.indexOf(".") > 0 || tunerString.indexOf("-") > 0)){
-                    if (tunerManager.getTuner(tunerString) != null){
+                    if (tunerManager.getTuner(tunerString) != null || ("*".equals(tunerString))){ // DRS 20250113 - Added 'or' item - Issue #57
                         tunerManager.clearLastReason();
                         Capture capture = null;
                         ArrayList<Capture> captureList = null;
@@ -534,7 +534,7 @@ class TinyConnection implements Runnable {
                             tunerType = Tuner.FUSION_TYPE;
                             System.out.println(new Date() + " WARNING: Tuner.FUSION_TYPE detected.  Uncommon.");
                             capture = tunerManager.getCaptureForChannelNameSlotAndTuner(channelName, slot, tunerString, protocol);
-                        } else if (tunerString.indexOf("-") > -1){ /******* HDHR **********/
+                        } else if (tunerString.indexOf("-") > -1 || "*".equals(tunerString)){ /******* HDHR **********/ // DRS 20250113 - Added 'or' item - Issue #57
                             tunerType = Tuner.HDHR_TYPE;
                             if (tunerString.toUpperCase().indexOf("FFFFFFFF") > -1){
                                 Tuner realHdhr = tunerManager.getRealHdhrTuner(tunerString);
@@ -543,6 +543,10 @@ class TinyConnection implements Runnable {
                             // DRS 20110214 - Added 'if' (existing in else)
                             if ("*".equals(channelName)){ // Multiple captures for signal testing
                                 captureList = tunerManager.getCapturesForAllChannels(channelName, slot, tunerString, protocol);
+                                targetList = new ArrayList<Target>();
+                            // DRS 20250113 - Added 'else if' - New feature Issue #57
+                            } else if ("*".equals(tunerString)) {
+                            	captureList = tunerManager.getCapturesForAllTuners(channelName, slot, protocol);
                                 targetList = new ArrayList<Target>();
                             } else if (recurring != null) { // DRS 20231218 - Added 'else if' - recurring recordings
                             	captureList = tunerManager.getCapturesForRecurring(channelName, slot, tunerString, protocol, recurring);

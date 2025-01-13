@@ -1459,6 +1459,34 @@ public class TunerManager {
         return captureList;
     }
 
+    // DRS 20250113 - Added method - Issue #57
+    public ArrayList<Capture> getCapturesForAllTuners(String channelName, Slot slot, String protocol) {
+        ArrayList<Capture> captureList = new ArrayList<Capture>();
+        try {
+            List<Capture> fullLengthCapturesList = TunerManager.getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol);
+            if (fullLengthCapturesList.size() == 0) {
+            	lastReason = "No tuners available for " + channelName + ".  Nothing scheduled.";
+            	throw new Exception(lastReason);
+            } else {
+            	int captureCount = fullLengthCapturesList.size();
+            	List<Slot> slotList = slot.split(captureCount);
+            	for (int i = 0; i < fullLengthCapturesList.size(); i++) {
+                	Capture fullLengthCapture = fullLengthCapturesList.get(i);
+                	if (fullLengthCapture.getTunerType() == Tuner.HDHR_TYPE) {
+                		CaptureHdhr fullLengthCaptureHdhr = (CaptureHdhr)fullLengthCapture;
+                		String tunerName = fullLengthCaptureHdhr.getChannel().tuner.getFullName();
+                        captureList.add(getCaptureForChannelNameSlotAndTuner(channelName, slotList.get(i), tunerName, protocol));
+                	}
+    			}
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            lastReason = "Failed to get captures for all tuners. " + e.getMessage();
+            System.out.println(new Date() + " " + lastReason);
+        }
+        return captureList;
+	}
+
     // DRS 20231218 - Added method - recurring recordings
     public ArrayList<Capture> getCapturesForRecurring(String channelName, Slot originalSlot, String tunerString,
 			String protocol, String recurring) {
@@ -2641,6 +2669,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             System.out.println("tunerPathAsOptions\n" + tunerManager.getTunerPathAsOptions());
         }
     }
+
 
 
 }
