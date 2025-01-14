@@ -1460,24 +1460,32 @@ public class TunerManager {
     }
 
     // DRS 20250113 - Added method - Issue #57
-    public ArrayList<Capture> getCapturesForAllTuners(String channelName, Slot slot, String protocol) {
+    public ArrayList<Capture> getCapturesForAllTuners(String channelName, Slot slot, String protocol, String tunerString) {
         ArrayList<Capture> captureList = new ArrayList<Capture>();
+        boolean oneCapturePerDevice = "*".equals(tunerString);
+        Set<String> deviceSet = new HashSet<>();
         try {
             List<Capture> fullLengthCapturesList = TunerManager.getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol);
             if (fullLengthCapturesList.size() == 0) {
             	lastReason = "No tuners available for " + channelName + ".  Nothing scheduled.";
             	throw new Exception(lastReason);
             } else {
-            	int captureCount = fullLengthCapturesList.size();
+            	List<CaptureHdhr> fullLengthCaptureHdhrList = new ArrayList<>();
+            	for (Capture capture : fullLengthCapturesList) {
+            		if (capture.getTunerType() == Tuner.HDHR_TYPE) {
+                		String tunerIpAddress = ((TunerHdhr)((CaptureHdhr)capture).getChannel().tuner).ipAddressTuner;
+                		if (!deviceSet.contains(tunerIpAddress) || !oneCapturePerDevice) {
+                			fullLengthCaptureHdhrList.add((CaptureHdhr)capture);
+                			deviceSet.add(tunerIpAddress);
+                		}
+            		}
+				}
+            	int captureCount = fullLengthCaptureHdhrList.size();
             	List<Slot> slotList = slot.split(captureCount);
-            	for (int i = 0; i < fullLengthCapturesList.size(); i++) {
-                	Capture fullLengthCapture = fullLengthCapturesList.get(i);
-                	if (fullLengthCapture.getTunerType() == Tuner.HDHR_TYPE) {
-                		CaptureHdhr fullLengthCaptureHdhr = (CaptureHdhr)fullLengthCapture;
-                		String tunerName = fullLengthCaptureHdhr.getChannel().tuner.getFullName();
-                        captureList.add(getCaptureForChannelNameSlotAndTuner(channelName, slotList.get(i), tunerName, protocol));
-                	}
-    			}
+            	for (int i = 0; i < fullLengthCaptureHdhrList.size(); i++) {
+            		String tunerName = fullLengthCaptureHdhrList.get(i).getChannel().tuner.getFullName();
+                    captureList.add(getCaptureForChannelNameSlotAndTuner(channelName, slotList.get(i), tunerName, protocol));
+				}
             }
         } catch (Exception e) {
             e.printStackTrace();
