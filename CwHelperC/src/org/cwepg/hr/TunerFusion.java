@@ -297,8 +297,10 @@ public class TunerFusion extends Tuner {
                 Enumeration<Driver> drivers = DriverManager.getDrivers();
                 while (drivers.hasMoreElements()) {
                     Driver aDriver = drivers.nextElement();
-                    System.out.println(new Date() + " Deregistering driver " + aDriver);
-                    DriverManager.deregisterDriver(aDriver);
+                    // DRS 2025401131 - Commented 2, Added 1 - Issue # 58
+                    //System.out.println(new Date() + " Deregistering driver " + aDriver);
+                    //DriverManager.deregisterDriver(aDriver);
+                    System.out.println(new Date() + " No driver deregistration being done for " + aDriver);
                 }
             } catch (Throwable t) {
                 System.out.println(new Date() + " Blew up when trying to deregister. " + t.getMessage());
