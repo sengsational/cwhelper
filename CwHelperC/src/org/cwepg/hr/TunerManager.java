@@ -1473,8 +1473,9 @@ public class TunerManager {
             	List<CaptureHdhr> fullLengthCaptureHdhrList = new ArrayList<>();
             	for (Capture capture : fullLengthCapturesList) {
             		if (capture.getTunerType() == Tuner.HDHR_TYPE) {
-                		String tunerIpAddress = ((TunerHdhr)((CaptureHdhr)capture).getChannel().tuner).ipAddressTuner;
-                		if (!deviceSet.contains(tunerIpAddress) || !oneCapturePerDevice) {
+            			TunerHdhr tuner = (TunerHdhr)((CaptureHdhr)capture).getChannel().tuner;
+                		String tunerIpAddress = tuner.ipAddressTuner;
+                		if (!deviceSet.contains(tunerIpAddress) || !oneCapturePerDevice || tuner.isDualInputDevice()) {
                 			fullLengthCaptureHdhrList.add((CaptureHdhr)capture);
                 			deviceSet.add(tunerIpAddress);
                 		}

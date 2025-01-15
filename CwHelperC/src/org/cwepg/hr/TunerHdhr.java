@@ -28,6 +28,7 @@ public class TunerHdhr extends Tuner {
     int tunerType = Tuner.HDHR_TYPE;
     public static final int ORIGINAL = 0;
     public static final int VCHANNEL = 1;
+    public static final int MAX_DUAL_INPUT = Integer.parseInt("10200000", 16); // DRS 20250114 - Added 1 - Issue #57 
     boolean isVchannel = false;
 //    boolean isHttpCapable = false;
     String ipAddressTuner;
@@ -252,6 +253,13 @@ public class TunerHdhr extends Tuner {
         return this.tunerType;
     }
     
+    // DRS 20250114 - Added method - Issue #57 (Terry says the only tuners with separate inputs are less than this value.  Others have single input split internally to multiple tuners)
+    public boolean isDualInputDevice() {
+    	int tunerDecimalName = 0;
+		try {tunerDecimalName = Integer.parseInt(this.id, 16);} catch(Throwable t) {} // take default
+		return tunerDecimalName < TunerHdhr.MAX_DUAL_INPUT;
+	}
+
     public void scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception  {
         ((LineUpHdhr)this.lineUp).scan(this, useExistingFile, signalType, maxSeconds);
     }
@@ -369,6 +377,7 @@ public class TunerHdhr extends Tuner {
         tuner = new TunerHdhr("1013FADA-9", false);
         System.out.println(tuner.getRecordPath());
     }
+
 
 
 }
