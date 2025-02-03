@@ -98,55 +98,58 @@ public class RecordingMonitor extends Thread implements Runnable {
                     TunerManager tunerManager = TunerManager.getInstance();
                     Channel channel = capture.getChannel();
 
-                    //List<Capture> allPossibleCaptures = new ArrayList<Capture>();
-
-                    // Build list of alternate captures.  
-                    //List<Capture> allAlternateCaptures = new ArrayList<Capture>();
-                    //Channel[] alternateChannels = channel.getAltChannelList();
-                    //for (Channel alternateChannel : alternateChannels) {
-                    //    List<Capture> alternateCaptures = tunerManager.getAvailableCapturesForChannelNameAndSlot(alternateChannel.getCleanedChannelName(), capture.getSlot(), capture.getChannelProtocol());
-                    //    for (Capture alternateCapture : alternateCaptures) {
-                    //        //allAlternateCaptures.add(alternateCapture);
-                    //        allPossibleCaptures.add(alternateCapture);
-                    //    }
-                    //}
-                    
-                    // Build list of standard captures.  Typical.  Happens when more than one tuner can pull in a station.
-                    //List<Capture> allStandardCaptures = tunerManager.getAvailableCapturesForChannelNameAndSlot(channel.getCleanedChannelName(), capture.getSlot(), capture.getChannelProtocol());
-                    
-
-                    //for (Capture capture : allAlternateCaptures) {
-                    //    allPossibleCaptures.add(capture);
-                    //}
-                    
-                    //for (Capture capture : allStandardCaptures) {
-                    //    allPossibleCaptures.add(capture);
-                    //}
-                    
                     if (debug) System.out.println(new Date() + " channel " + channel);
                     
-                    List<Capture> allPossibleCaptures = tunerManager.getAvailableCapturesAltChannelListAndSlot(channel.getAltChannelList(debug), capture.getSlot(), capture.getChannelProtocol(), debug);
+                    boolean useOldTechniqueWithoutTunerPriority = false;
+                    if (useOldTechniqueWithoutTunerPriority) {
+                        List<Capture> allPossibleCaptures = tunerManager.getAvailableCapturesAltChannelListAndSlot(channel.getAltChannelList(debug), capture.getSlot(), capture.getChannelProtocol(), debug);
 
-                    boolean foundAlternative = false;
-                    for (Capture capture : allPossibleCaptures) {
-                        System.out.println(new Date() + " Trying to schedule a backup capture: " + capture);
-                        Target target = new Target(this.capture.getFileName(), this.capture.getTitle(), "", "", this.capture.getChannelProtocol(), Tuner.HDHR_TYPE);
-                        if (capture != null && target.getFileNameOrWatch() != null && target.isValid()) {
-                            capture.setTarget(target);
-                            CaptureManager.scheduleCapture(capture, true);
-                            CaptureManager.requestInterrupt("RecordingMonitor.run"); // need to interrupt so it reads new schedule
-                            foundAlternative = true;
-                        } 
-                        if (foundAlternative) {
-                            System.out.println(new Date() + " A backup capture was scheduled. " + capture);
-                            break OUT; // Only one backup recording can be spawned.
-                        } else {
-                            System.out.println(new Date() + " A backup capture not successful with:  " + capture);
+                        boolean foundAlternative = false;
+                        for (Capture capture : allPossibleCaptures) {
+                            System.out.println(new Date() + " Trying to schedule a backup capture: " + capture);
+                            Target target = new Target(this.capture.getFileName(), this.capture.getTitle(), "", "", this.capture.getChannelProtocol(), Tuner.HDHR_TYPE);
+                            if (capture != null && target.getFileNameOrWatch() != null && target.isValid()) {
+                                capture.setTarget(target);
+                                CaptureManager.scheduleCapture(capture, true);
+                                CaptureManager.requestInterrupt("RecordingMonitor.run"); // need to interrupt so it reads new schedule
+                                foundAlternative = true;
+                            } 
+                            if (foundAlternative) {
+                                System.out.println(new Date() + " A backup capture was scheduled. " + capture);
+                                break OUT; // Only one backup recording can be spawned.
+                            } else {
+                                System.out.println(new Date() + " A backup capture not successful with:  " + capture);
+                            }
                         }
-                    }
-                    if (!foundAlternative) {
-                        System.out.println(new Date() + " No alternative tuners were found to allow a backup capture to begin. This capture will not get a backup: " + this.capture);
-                        break OUT;
+                        if (!foundAlternative) {
+                            System.out.println(new Date() + " No alternative tuners were found to allow a backup capture to begin. This capture will not get a backup: " + this.capture);
+                            break OUT;
+                        }
+                    } else {
+                    	// This same technique is used in CaptureManager.run() for cases where device unavailable. This uses channel_map.txt priorities.
+                        System.out.println(new Date() + " Attempting to define and schedule a replacement for [" + capture + "] in RecordingMonitor");
+                        CaptureHdhr captureHdhr = (CaptureHdhr)capture;
+                        captureHdhr.addCurrentTunerToFailedDeviceList();
+                        captureHdhr.target.fileName = Target.getNonAppendedFileName(captureHdhr.target.fileName);
+                        Capture replacementCapture = TunerManager.getReplacementCapture(captureHdhr);
+                        if (replacementCapture != null) {
+                            try {
+                                System.out.println(new Date() + " Created replacement [" + replacementCapture + "]");
+                                String fileNameAppendRandom = "_" + (Math.random() + "").substring(3, 6);
+                                Target replacementTarget = new Target(captureHdhr.target, captureHdhr, fileNameAppendRandom, 2);
+                                replacementCapture.setTarget(replacementTarget);
+                                CaptureManager.scheduleCapture(replacementCapture, true);
+                                System.out.println(new Date() + " Replacement scheduled ok. Calling interrupt.");
+                                CaptureManager.requestInterrupt("RecordingMonitor.run"); // need to interrupt so it reads new schedule
+                            } catch (Exception e) {
+                                System.out.println(new Date() + " Could not schedule replacement capture! " + e.getMessage());
+                                System.err.println(new Date() + " Could not schedule replacement capture! " + e.getMessage());
+                                e.printStackTrace();
+                            }
+                        } else {
+                            System.out.println(new Date() + " Unable to create replacement for  [" + capture + "] in RecordingMonitor");
+                        }
+
                     }
                 }
             } catch (Throwable t) {

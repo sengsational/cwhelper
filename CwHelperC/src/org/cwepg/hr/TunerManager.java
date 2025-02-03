@@ -1478,6 +1478,8 @@ public class TunerManager {
                 		if (!deviceSet.contains(tunerIpAddress) || !oneCapturePerDevice || tuner.isDualInputDevice()) {
                 			fullLengthCaptureHdhrList.add((CaptureHdhr)capture);
                 			deviceSet.add(tunerIpAddress);
+                		} else {
+                			System.out.println(new Date() + " Skipping [" + tuner.id + "] containsIp:" + deviceSet.contains(tunerIpAddress) + " oneCaptureEach:" + oneCapturePerDevice + " dualInput:" + tuner.isDualInputDevice());
                 		}
             		}
 				}
@@ -1825,8 +1827,11 @@ public class TunerManager {
         // **************************************************************************************************************
         CSVReader reader = null;
         ArrayList<String> priortySortedTuners = new ArrayList<String>();
+    	String dataPath = CaptureManager.dataPath;
+    	if (dataPath.equals("")) dataPath = ".\\"; //For testing
         try {
-            reader = new CSVReader(new BufferedReader(new FileReader(CaptureManager.dataPath + File.separator + "channel_maps.txt"))); 
+        	System.out.println(new Date() + " Reading " + dataPath + File.separator + "channel_maps.txt");
+            reader = new CSVReader(new BufferedReader(new FileReader(dataPath + File.separator + "channel_maps.txt"))); 
             reader.readHeader();
             Map<String, String> map = null;
             while ((map = reader.readValues()) != null) {
@@ -1839,6 +1844,8 @@ public class TunerManager {
                     try {
                         if (rawTunerNameString!=null) {
                             priortySortedTuners.add(rawTunerNameString.trim());
+                            String channelText = channel.virtualHandlingRequired?channel.channelVirtual:channel.frequency;
+                            System.out.println(new Date() + " Channel " + channelText + " tuner priority order for replacement: " + rawTunerNameString);
                         }
                     } catch (Throwable t) {
                         System.out.println(new Date() + " Could not parse " + rawTunerNameString);
@@ -1852,7 +1859,7 @@ public class TunerManager {
             if (reader != null) try {reader.close();} catch (Throwable t) {};
         }
         if (priortySortedTuners.size() == 0) {
-            System.out.println(new Date() + " No matches found comparing " + channel.frequency + " and " + channel.pid + " with all of the " + (channel.virtualHandlingRequired?"'Vir' and 'Sub'":"'Phy' and 'Prog'") + " in the file " + CaptureManager.dataPath + File.separator + "channel_maps.txt");
+            System.out.println(new Date() + " No matches found comparing " + channel.frequency + " and " + channel.pid + " with all of the " + (channel.virtualHandlingRequired?"'Vir' and 'Sub'":"'Phy' and 'Prog'") + " in the file " + dataPath + File.separator + "channel_maps.txt");
         }
         return priortySortedTuners;
     }

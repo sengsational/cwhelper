@@ -14,7 +14,7 @@ public class Target {
 
 	String ip;
     String machineName;
-	String fileName;
+	public String fileName;
     String title;
     int port;
     boolean valid = true;

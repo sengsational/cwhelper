@@ -256,7 +256,7 @@ public class TunerHdhr extends Tuner {
     // DRS 20250114 - Added method - Issue #57 (Terry says the only tuners with separate inputs are less than this value.  Others have single input split internally to multiple tuners)
     public boolean isDualInputDevice() {
     	int tunerDecimalName = 0;
-		try {tunerDecimalName = Integer.parseInt(this.id, 16);} catch(Throwable t) {} // take default
+		try {tunerDecimalName = Integer.parseInt(this.id, 16);} catch(Throwable t) {System.out.println(new Date() + " WARNING: Unable to parse integer [" + this.id +"] " + t.getMessage());} // take default
 		return tunerDecimalName < TunerHdhr.MAX_DUAL_INPUT;
 	}
 
