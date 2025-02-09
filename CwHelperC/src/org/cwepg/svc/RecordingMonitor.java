@@ -85,7 +85,11 @@ public class RecordingMonitor extends Thread implements Runnable {
                 
                 float severity = 0;
                 
-                if (((float)reportLength) > 0F) severity = ((float)nonDotCount)/((float)reportLength);
+                if (reportLength > 0) {
+                    if (((float)reportLength) > 0F) severity = ((float)nonDotCount)/((float)reportLength);
+                } else {
+                	System.out.println(new Date() + " WARNING: Unable to get report of signal quality.");
+                }
                 
                 if (debug || (loopCount%loopsPerMessage == 0)) {
                     if (nonDotCount > 0) System.out.println(new Date() + " There were " + nonDotCount + " errors resulting in " + durationStartOrFiveMinuteMessage + " severity " + severity + " as compared to " + this.triggerThreshhold);

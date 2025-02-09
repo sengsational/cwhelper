@@ -645,10 +645,16 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         for (int i = 0 ; i < 20; i++){
             if ((sleeping || who.endsWith(TinyWebServer.TINY_END)) && runThread!=null) {
                 CaptureManager.runThread.interrupt();
-                CaptureManager.interrupterList[0] += " ok.";
+                CaptureManager.interrupterList[0] += " ok. ALIVE: " + runThread.isAlive() + " ISINTERRUPTED: " + runThread.isInterrupted();
                 return;
             }
             try {Thread.sleep(500);} catch (InterruptedException e){};
+        }
+        if (runThread != null) {
+    		System.out.println(new Date() + " WARNING: CaptureManager main thread problem.");
+    		System.out.println(new Date() + " ALIVE: " + runThread.isAlive() + " STATE: " + runThread.getState() + " ISINTERRUPTED: " + runThread.isInterrupted());
+        } else {
+        	System.out.println(new Date() + " ERROR: runThread was null."); // We do not expect this to ever happen
         }
         StringBuffer buf = new StringBuffer(new Date() + " WARNING: CaptureManager main thread was running for more than 10 seconds after an interrupt request came in.  We will still run an interrupt, but weird things might happen.\n");
         for (String s: CaptureManager.interrupterList){
