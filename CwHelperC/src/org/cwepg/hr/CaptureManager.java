@@ -51,6 +51,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     static final int SIMULATE_START = CaptureHdhr.START + 100;
     static final int SIMULATE_END = CaptureHdhr.END + 100;
     static final String[] interrupterList = new String[30];
+    static final Object lock = new Object(); //DRS 20250220 - Added lock whenever accessing interrupterList - Issue #60
 
     public static final Thread runThread = Thread.currentThread();
     public static String dataPath = "";
@@ -184,7 +185,9 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
 	    		// DRS 20101029 - END - Rewrote this code to keep machines from nodding-off
 
 			} catch (InterruptedException e) {
-				System.out.println(new Date() + " >>> CaptureManager.run() resetting sleep time. Interupted by:" + CaptureManager.interrupterList[0]);
+				synchronized(lock) {
+					System.out.println(new Date() + " >>> CaptureManager.run() resetting sleep time. Interupted by:" + CaptureManager.interrupterList[0]);
+				}
 				Calendar nowCalendar = Calendar.getInstance(); nowCalendar.add(Calendar.SECOND, -5);
 				if (nextEventCalendar != null && nowCalendar.after(nextEventCalendar)) {
 				    System.out.println(new Date() + " >>>>  M I S S E D   E V E N T <<<<  A " + nextEventType + " event was missed, probably because the system was sleeping.");
@@ -634,10 +637,12 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         // if (CaptureManager.interrupterList[0].startsWith(thisGuy)) return;
         
         // Lets keep track of who's calling interrupts on us
-        for (int i = CaptureManager.interrupterList.length - 2; i >= 0 ; i--) {
-            CaptureManager.interrupterList[i + 1] = CaptureManager.interrupterList[i];
+        synchronized(lock) {
+            for (int i = CaptureManager.interrupterList.length - 2; i >= 0 ; i--) {
+                CaptureManager.interrupterList[i + 1] = CaptureManager.interrupterList[i];
+            }
+            CaptureManager.interrupterList[0] = thisGuy;
         }
-        CaptureManager.interrupterList[0] = thisGuy;
 
         // instead of letting anyone call interrupt on us,
         // we make sure we're sleeping before we interrupt
@@ -645,7 +650,9 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         for (int i = 0 ; i < 20; i++){
             if ((sleeping || who.endsWith(TinyWebServer.TINY_END)) && runThread!=null) {
                 CaptureManager.runThread.interrupt();
-                CaptureManager.interrupterList[0] += " ok. ALIVE: " + runThread.isAlive() + " ISINTERRUPTED: " + runThread.isInterrupted();
+                synchronized(lock) {
+                    CaptureManager.interrupterList[0] += " ok. ALIVE: " + runThread.isAlive() + " ISINTERRUPTED: " + runThread.isInterrupted();
+                }
                 return;
             }
             try {Thread.sleep(500);} catch (InterruptedException e){};
@@ -657,8 +664,10 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         	System.out.println(new Date() + " ERROR: runThread was null."); // We do not expect this to ever happen
         }
         StringBuffer buf = new StringBuffer(new Date() + " WARNING: CaptureManager main thread was running for more than 10 seconds after an interrupt request came in.  We will still run an interrupt, but weird things might happen.\n");
-        for (String s: CaptureManager.interrupterList){
-            if (s != null && s.length() > 0) buf.append("\t" + s + "\n");
+        synchronized(lock) {
+            for (String s: CaptureManager.interrupterList){
+                if (s != null && s.length() > 0) buf.append("\t" + s + "\n");
+            }
         }
         System.out.println(buf.toString());
         System.err.println(buf.toString());
