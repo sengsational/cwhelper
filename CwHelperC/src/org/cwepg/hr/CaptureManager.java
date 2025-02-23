@@ -185,6 +185,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
 	    		// DRS 20101029 - END - Rewrote this code to keep machines from nodding-off
 
 			} catch (InterruptedException e) {
+				sleeping = false; //DRS 20250222 - Don't wait until catch completes before setting sleeping variable - Issue #60
 				synchronized(lock) {
 					System.out.println(new Date() + " >>> CaptureManager.run() resetting sleep time. Interupted by:" + CaptureManager.interrupterList[0]);
 				}

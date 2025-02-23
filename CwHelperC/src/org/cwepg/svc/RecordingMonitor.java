@@ -12,6 +12,7 @@ import org.cwepg.hr.Capture;
 import org.cwepg.hr.CaptureHdhr;
 import org.cwepg.hr.CaptureManager;
 import org.cwepg.hr.Channel;
+import org.cwepg.hr.ChannelDigital;
 import org.cwepg.hr.Target;
 import org.cwepg.hr.Tuner;
 import org.cwepg.hr.TunerManager;
@@ -92,7 +93,11 @@ public class RecordingMonitor extends Thread implements Runnable {
                 }
                 
                 if (debug || (loopCount%loopsPerMessage == 0)) {
-                    if (nonDotCount > 0) System.out.println(new Date() + " There were " + nonDotCount + " errors resulting in " + durationStartOrFiveMinuteMessage + " severity " + severity + " as compared to " + this.triggerThreshhold);
+                    if (nonDotCount > 0) {
+                    	String recordingSpecifier = "";
+                    	try {recordingSpecifier = ((ChannelDigital)this.capture.getChannel()).getChannelKey() + " " + ((ChannelDigital)this.capture.getChannel()).getTunerName();} catch (Throwable t) {/*only for logging, do nothing*/}
+                    	System.out.println(new Date() + " There were " + nonDotCount + " errors resulting in " + durationStartOrFiveMinuteMessage + " severity " + severity + " as compared to " + this.triggerThreshhold + " " + recordingSpecifier);
+                    }
                 }
                 
                 
