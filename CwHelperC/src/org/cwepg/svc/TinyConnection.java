@@ -14,10 +14,9 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URLDecoder;
-import java.sql.Timestamp;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,17 +26,14 @@ import java.util.StringTokenizer;
 
 import org.cwepg.hr.Capture;
 import org.cwepg.hr.CaptureManager;
-import org.cwepg.hr.DbCopier;
 import org.cwepg.hr.Emailer;
 import org.cwepg.hr.ShutdownHookThread;
 import org.cwepg.hr.Slot;
 import org.cwepg.hr.Target;
 import org.cwepg.hr.Tuner;
-import org.cwepg.hr.TunerExternal;
 import org.cwepg.hr.TunerFusion;
 import org.cwepg.hr.TunerManager;
 import org.cwepg.hr.WakeupEvent;
-import org.cwepg.reg.Registry;
 
 class TinyConnection implements Runnable {
 	protected Socket client;
@@ -67,7 +63,7 @@ class TinyConnection implements Runnable {
         this.tunerManager = TunerManager.getInstance();
         
 		try {
-			in = new BufferedReader(new InputStreamReader(new DataInputStream(client.getInputStream())));
+			in = new BufferedReader(new InputStreamReader(new DataInputStream(client.getInputStream()), StandardCharsets.UTF_8));
 			out = new PrintStream(client.getOutputStream());
 			dataout = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
 		} catch (IOException e) {
