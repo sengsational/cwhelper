@@ -4,6 +4,7 @@
  */
 package org.cwepg.hr;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -192,6 +193,10 @@ public abstract class Capture implements Runnable, Comparable {
     public String getFileName() {
         return target.fileName;
     }
+    
+	public boolean fileExists() {
+		return new File(target.fileName).exists();
+	}
 
     public String getFileNameEscaped() {
         return target.fileName.replaceAll("\\'", "\\''");
@@ -378,5 +383,6 @@ public abstract class Capture implements Runnable, Comparable {
     public String getLastError() {
         return lastError;
     }
+
 
 }

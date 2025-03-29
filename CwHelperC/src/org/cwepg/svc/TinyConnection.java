@@ -63,7 +63,7 @@ class TinyConnection implements Runnable {
         this.tunerManager = TunerManager.getInstance();
         
 		try {
-			in = new BufferedReader(new InputStreamReader(new DataInputStream(client.getInputStream()), StandardCharsets.UTF_8));
+			in = new BufferedReader(new InputStreamReader(new DataInputStream(client.getInputStream())));
 			out = new PrintStream(client.getOutputStream());
 			dataout = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
 		} catch (IOException e) {
