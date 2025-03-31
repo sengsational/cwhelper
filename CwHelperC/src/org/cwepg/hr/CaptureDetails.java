@@ -115,7 +115,7 @@ public class CaptureDetails implements Comparable, Cloneable {
         executeDatabaseFunction("insert into", insertData[FIELDS], insertData[VALUES]);
     }
 
-    public void updateCaptureEndEvent(String signalDetails, int nonDotCount, int durationMinutes) {
+    public void updateCaptureEndEvent(String signalDetails, int nonDotCount, int durationMinutes, boolean fileExists) {
         boolean httpType = false;
         if (signalDetails != null && signalDetails.contains("\"Resource\":")) {
             loadHttpDetails(signalDetails);
@@ -135,7 +135,7 @@ public class CaptureDetails implements Comparable, Cloneable {
                 Emailer emailer = CaptureManager.getEmailer();
                 if (emailer != null){
                     if (emailer.isValid()){
-                        emailer.sendWarningEmail(tunerName, channelKey, targetFile, tsmiss, nonDotCount, strengthValue);
+                        emailer.sendWarningEmail(tunerName, channelKey, targetFile, tsmiss, nonDotCount, strengthValue, fileExists);
                     } else {
                         throw new Exception("emailer was not valid.");
                     }
@@ -757,7 +757,7 @@ public class CaptureDetails implements Comparable, Cloneable {
             //String tableKey = "200911011305|1013FADA-1|11.1:1-8vsb";
             System.out.println(details);
             int durationMinutes = 30;
-            details.updateCaptureEndEvent(data2, 0, durationMinutes);
+            details.updateCaptureEndEvent(data2, 0, durationMinutes, true);
         }
         
         boolean testDatabaseRead = true;
