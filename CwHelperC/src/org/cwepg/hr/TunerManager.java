@@ -1459,6 +1459,45 @@ public class TunerManager {
         return captureList;
     }
 
+    // DRS 20250113 - Added method - Issue #57
+    public ArrayList<Capture> getCapturesForAllTuners(String channelName, Slot slot, String protocol, String tunerString) {
+        ArrayList<Capture> captureList = new ArrayList<Capture>();
+        boolean oneCapturePerDevice = "*".equals(tunerString);
+        Set<String> deviceSet = new HashSet<>();
+        try {
+            List<Capture> fullLengthCapturesList = TunerManager.getAvailableCapturesForChannelNameAndSlot(channelName, slot, protocol);
+            if (fullLengthCapturesList.size() == 0) {
+            	lastReason = "No tuners available for " + channelName + ".  Nothing scheduled.";
+            	throw new Exception(lastReason);
+            } else {
+            	List<CaptureHdhr> fullLengthCaptureHdhrList = new ArrayList<>();
+            	for (Capture capture : fullLengthCapturesList) {
+            		if (capture.getTunerType() == Tuner.HDHR_TYPE) {
+            			TunerHdhr tuner = (TunerHdhr)((CaptureHdhr)capture).getChannel().tuner;
+                		String tunerIpAddress = tuner.ipAddressTuner;
+                		if (!deviceSet.contains(tunerIpAddress) || !oneCapturePerDevice || tuner.isDualInputDevice()) {
+                			fullLengthCaptureHdhrList.add((CaptureHdhr)capture);
+                			deviceSet.add(tunerIpAddress);
+                		} else {
+                			System.out.println(new Date() + " Skipping [" + tuner.id + "] containsIp:" + deviceSet.contains(tunerIpAddress) + " oneCaptureEach:" + oneCapturePerDevice + " dualInput:" + tuner.isDualInputDevice());
+                		}
+            		}
+				}
+            	int captureCount = fullLengthCaptureHdhrList.size();
+            	List<Slot> slotList = slot.split(captureCount);
+            	for (int i = 0; i < fullLengthCaptureHdhrList.size(); i++) {
+            		String tunerName = fullLengthCaptureHdhrList.get(i).getChannel().tuner.getFullName();
+                    captureList.add(getCaptureForChannelNameSlotAndTuner(channelName, slotList.get(i), tunerName, protocol));
+				}
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            lastReason = "Failed to get captures for all tuners. " + e.getMessage();
+            System.out.println(new Date() + " " + lastReason);
+        }
+        return captureList;
+	}
+
     // DRS 20231218 - Added method - recurring recordings
     public ArrayList<Capture> getCapturesForRecurring(String channelName, Slot originalSlot, String tunerString,
 			String protocol, String recurring) {
@@ -1788,8 +1827,11 @@ public class TunerManager {
         // **************************************************************************************************************
         CSVReader reader = null;
         ArrayList<String> priortySortedTuners = new ArrayList<String>();
+    	String dataPath = CaptureManager.dataPath;
+    	if (dataPath.equals("")) dataPath = ".\\"; //For testing
         try {
-            reader = new CSVReader(new BufferedReader(new FileReader(CaptureManager.dataPath + File.separator + "channel_maps.txt"))); 
+        	System.out.println(new Date() + " Reading " + dataPath + File.separator + "channel_maps.txt");
+            reader = new CSVReader(new BufferedReader(new FileReader(dataPath + File.separator + "channel_maps.txt"))); 
             reader.readHeader();
             Map<String, String> map = null;
             while ((map = reader.readValues()) != null) {
@@ -1802,6 +1844,8 @@ public class TunerManager {
                     try {
                         if (rawTunerNameString!=null) {
                             priortySortedTuners.add(rawTunerNameString.trim());
+                            String channelText = channel.virtualHandlingRequired?channel.channelVirtual:channel.frequency;
+                            System.out.println(new Date() + " Channel " + channelText + " tuner priority order for replacement: " + rawTunerNameString);
                         }
                     } catch (Throwable t) {
                         System.out.println(new Date() + " Could not parse " + rawTunerNameString);
@@ -1815,7 +1859,7 @@ public class TunerManager {
             if (reader != null) try {reader.close();} catch (Throwable t) {};
         }
         if (priortySortedTuners.size() == 0) {
-            System.out.println(new Date() + " No matches found comparing " + channel.frequency + " and " + channel.pid + " with all of the " + (channel.virtualHandlingRequired?"'Vir' and 'Sub'":"'Phy' and 'Prog'") + " in the file " + CaptureManager.dataPath + File.separator + "channel_maps.txt");
+            System.out.println(new Date() + " No matches found comparing " + channel.frequency + " and " + channel.pid + " with all of the " + (channel.virtualHandlingRequired?"'Vir' and 'Sub'":"'Phy' and 'Prog'") + " in the file " + dataPath + File.separator + "channel_maps.txt");
         }
         return priortySortedTuners;
     }
@@ -2641,6 +2685,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             System.out.println("tunerPathAsOptions\n" + tunerManager.getTunerPathAsOptions());
         }
     }
+
 
 
 }

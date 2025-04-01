@@ -14,10 +14,9 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URLDecoder;
-import java.sql.Timestamp;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,17 +26,14 @@ import java.util.StringTokenizer;
 
 import org.cwepg.hr.Capture;
 import org.cwepg.hr.CaptureManager;
-import org.cwepg.hr.DbCopier;
 import org.cwepg.hr.Emailer;
 import org.cwepg.hr.ShutdownHookThread;
 import org.cwepg.hr.Slot;
 import org.cwepg.hr.Target;
 import org.cwepg.hr.Tuner;
-import org.cwepg.hr.TunerExternal;
 import org.cwepg.hr.TunerFusion;
 import org.cwepg.hr.TunerManager;
 import org.cwepg.hr.WakeupEvent;
-import org.cwepg.reg.Registry;
 
 class TinyConnection implements Runnable {
 	protected Socket client;
@@ -67,7 +63,7 @@ class TinyConnection implements Runnable {
         this.tunerManager = TunerManager.getInstance();
         
 		try {
-			in = new BufferedReader(new InputStreamReader(new DataInputStream(client.getInputStream())));
+			in = new BufferedReader(new InputStreamReader(new DataInputStream(client.getInputStream()), StandardCharsets.UTF_8));
 			out = new PrintStream(client.getOutputStream());
 			dataout = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
 		} catch (IOException e) {
@@ -511,7 +507,7 @@ class TinyConnection implements Runnable {
                     }
                     
                     //if (tunerString != null && (tunerString.equalsIgnoreCase("myhd") || tunerString.indexOf(".") > 0 || tunerString.indexOf("-") > 0)){
-                    if (tunerManager.getTuner(tunerString) != null){
+                    if (tunerManager.getTuner(tunerString) != null || tunerString.startsWith("*")){ // DRS 20250113 - Added 'or' item - Issue #57
                         tunerManager.clearLastReason();
                         Capture capture = null;
                         ArrayList<Capture> captureList = null;
@@ -534,7 +530,7 @@ class TinyConnection implements Runnable {
                             tunerType = Tuner.FUSION_TYPE;
                             System.out.println(new Date() + " WARNING: Tuner.FUSION_TYPE detected.  Uncommon.");
                             capture = tunerManager.getCaptureForChannelNameSlotAndTuner(channelName, slot, tunerString, protocol);
-                        } else if (tunerString.indexOf("-") > -1){ /******* HDHR **********/
+                        } else if (tunerString.indexOf("-") > -1 || tunerString.startsWith("*")){ /******* HDHR **********/ // DRS 20250113 - Added 'or' item - Issue #57
                             tunerType = Tuner.HDHR_TYPE;
                             if (tunerString.toUpperCase().indexOf("FFFFFFFF") > -1){
                                 Tuner realHdhr = tunerManager.getRealHdhrTuner(tunerString);
@@ -543,6 +539,10 @@ class TinyConnection implements Runnable {
                             // DRS 20110214 - Added 'if' (existing in else)
                             if ("*".equals(channelName)){ // Multiple captures for signal testing
                                 captureList = tunerManager.getCapturesForAllChannels(channelName, slot, tunerString, protocol);
+                                targetList = new ArrayList<Target>();
+                            // DRS 20250113 - Added 'else if' - New feature Issue #57
+                            } else if (tunerString.startsWith("*")) {
+                            	captureList = tunerManager.getCapturesForAllTuners(channelName, slot, protocol, tunerString);
                                 targetList = new ArrayList<Target>();
                             } else if (recurring != null) { // DRS 20231218 - Added 'else if' - recurring recordings
                             	captureList = tunerManager.getCapturesForRecurring(channelName, slot, tunerString, protocol, recurring);

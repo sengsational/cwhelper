@@ -51,6 +51,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     static final int SIMULATE_START = CaptureHdhr.START + 100;
     static final int SIMULATE_END = CaptureHdhr.END + 100;
     static final String[] interrupterList = new String[30];
+    static final Object lock = new Object(); //DRS 20250220 - Added lock whenever accessing interrupterList - Issue #60
 
     public static final Thread runThread = Thread.currentThread();
     public static String dataPath = "";
@@ -184,7 +185,10 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
 	    		// DRS 20101029 - END - Rewrote this code to keep machines from nodding-off
 
 			} catch (InterruptedException e) {
-				System.out.println(new Date() + " >>> CaptureManager.run() resetting sleep time. Interupted by:" + CaptureManager.interrupterList[0]);
+				sleeping = false; //DRS 20250222 - Don't wait until catch completes before setting sleeping variable - Issue #60
+				synchronized(lock) {
+					System.out.println(new Date() + " >>> CaptureManager.run() resetting sleep time. Interupted by:" + CaptureManager.interrupterList[0]);
+				}
 				Calendar nowCalendar = Calendar.getInstance(); nowCalendar.add(Calendar.SECOND, -5);
 				if (nextEventCalendar != null && nowCalendar.after(nextEventCalendar)) {
 				    System.out.println(new Date() + " >>>>  M I S S E D   E V E N T <<<<  A " + nextEventType + " event was missed, probably because the system was sleeping.");
@@ -248,6 +252,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                             System.out.println(new Date() + " WARNING: Device for capture was unavailable! " + d.getMessage());
                             if (capture instanceof CaptureHdhr) {
                             	if (capture instanceof CaptureHdhrHttp) capture.target.removeFile(); // DRS 20241129 - Added 'if' - issue #48
+                            	// Copied this technique and used it in RecordingMonitor.run() if there is a weak recording.
                                 System.out.println(new Date() + " Attempting to define and schedule a replacement for [" + capture + "]");
                                 System.out.println(new Date() + " CaptureManager.hdhrRecordMonitorSeconds = " + CaptureManager.hdhrRecordMonitorSeconds);
                                 CaptureHdhr captureHdhr = (CaptureHdhr)capture;
@@ -555,7 +560,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             System.out.println(new Date() + " Saving capture details " + capture);
             try {
                 int durationMinutes = capture.slot.getDurationMinutes();
-                new CaptureDetails(capture).updateCaptureEndEvent(capture.getSignalQualityData(), capture.getNonDotCount(), durationMinutes);
+                new CaptureDetails(capture).updateCaptureEndEvent(capture.getSignalQualityData(), capture.getNonDotCount(), durationMinutes, capture.fileExists());
             } catch (Throwable t){
                 System.out.println(new Date() + " Could not save capture details! " + t.getMessage());
                 System.err.println(new Date() + " Could not save capture details! " + t.getMessage());
@@ -633,10 +638,12 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         // if (CaptureManager.interrupterList[0].startsWith(thisGuy)) return;
         
         // Lets keep track of who's calling interrupts on us
-        for (int i = CaptureManager.interrupterList.length - 2; i >= 0 ; i--) {
-            CaptureManager.interrupterList[i + 1] = CaptureManager.interrupterList[i];
+        synchronized(lock) {
+            for (int i = CaptureManager.interrupterList.length - 2; i >= 0 ; i--) {
+                CaptureManager.interrupterList[i + 1] = CaptureManager.interrupterList[i];
+            }
+            CaptureManager.interrupterList[0] = thisGuy;
         }
-        CaptureManager.interrupterList[0] = thisGuy;
 
         // instead of letting anyone call interrupt on us,
         // we make sure we're sleeping before we interrupt
@@ -644,14 +651,24 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         for (int i = 0 ; i < 20; i++){
             if ((sleeping || who.endsWith(TinyWebServer.TINY_END)) && runThread!=null) {
                 CaptureManager.runThread.interrupt();
-                CaptureManager.interrupterList[0] += " ok.";
+                synchronized(lock) {
+                    CaptureManager.interrupterList[0] += " ok. ALIVE: " + runThread.isAlive() + " ISINTERRUPTED: " + runThread.isInterrupted();
+                }
                 return;
             }
             try {Thread.sleep(500);} catch (InterruptedException e){};
         }
+        if (runThread != null) {
+    		System.out.println(new Date() + " WARNING: CaptureManager main thread problem.");
+    		System.out.println(new Date() + " ALIVE: " + runThread.isAlive() + " STATE: " + runThread.getState() + " ISINTERRUPTED: " + runThread.isInterrupted());
+        } else {
+        	System.out.println(new Date() + " ERROR: runThread was null."); // We do not expect this to ever happen
+        }
         StringBuffer buf = new StringBuffer(new Date() + " WARNING: CaptureManager main thread was running for more than 10 seconds after an interrupt request came in.  We will still run an interrupt, but weird things might happen.\n");
-        for (String s: CaptureManager.interrupterList){
-            if (s != null && s.length() > 0) buf.append("\t" + s + "\n");
+        synchronized(lock) {
+            for (String s: CaptureManager.interrupterList){
+                if (s != null && s.length() > 0) buf.append("\t" + s + "\n");
+            }
         }
         System.out.println(buf.toString());
         System.err.println(buf.toString());
@@ -1215,7 +1232,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         System.out.println(new Date() + " Setting sun.java2d.3d3 to false.");
         System.setProperty("sun.java2d.d3d", "false"); 
         
-        new SplashScreenCloser(2); // starts itself waits 2 seconds and closes the splash window
+        // DRS 20250110 - Moved 1 down and added to it TrayIconManager - Issue #56
+        //new SplashScreenCloser(2); // starts itself waits 2 seconds and closes the splash window
         
         // DRS 20210306 - Move this to the ServiceLauncher
         //CaptureManager.webServer = new TinyWebServer(WEB_SERVER_PORT); 
@@ -1230,6 +1248,9 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     	// also create the instance of TunerManager.  If there
     	// is no device on the network, simulate mode is set.
         CaptureManager cm = CaptureManager.getInstance(cwepgPathFinal, hdhrPathFinal, dataPathFinal); // runs tunerManager.countTuners() here, which runs LineupHdhr.scan()
+        // DRS 20250110 - Moved 1 here instead of above. Splash shows when trayIcon is started or in this line if no trayIcon configured - Issue #56
+        if (!CaptureManager.trayIcon) new SplashScreenCloser(2); // starts itself waits 2 seconds and closes the splash window
+
         TunerManager tm = TunerManager.getInstance();
         
         // We need to get the channel list loaded.  The default

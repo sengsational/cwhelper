@@ -12,5 +12,6 @@
 11,Clear lock key,hdhomerun_config FFFFFFFF key <nnnn> set /tuner<n>/lockkey none,"releaseLock = {tuner.id, 'key', this.lockKey, 'set', '/tuner' + tuner.number + '/lockkey', 'none'};",n/a (part of Stream Video)
 12,Force clear lock key,hdhomerun_config FFFFFFFF set /tuner<n>/lockkey force,"clearLock = {id, 'set', '/tuner' + number +'/lockkey', 'force'};",n/a (part of Stream Video)
 13,Get scan output,hdhomerun_config FFFFFFFF scan <signalType>:1 <fileName>,"getScanData = {tuner.id, 'scan', signalType + ':1', outputFile);",<devID>.local/lineup.post?scan=start[&source=<Antenna|Cable>]
-14,Start Video Stream,"n/a {http replaces 3–5, 7, 8, & 10-12}",,<devIP>:5004/<auto|tunerN>/<vVC|chRF-PID>[?duration=seconds] {RF = <ch#|frequency in Hz>}
+14,Start Video Stream,"n/a {http replaces 3â€“5, 7, 8, & 10-12}",,<devIP>:5004/<auto|tunerN>/<vVC|chRF-PID>[?duration=seconds] {RF = <ch#|frequency in Hz>}
 15,Get device log,n/a,,<devID>.local/log.html
+16,Get device channel list,n/a,n/a,"<devID>.local/lineup.xml?tuning {opt. tuning parameter adds RF, protocol, and other data to list}"
