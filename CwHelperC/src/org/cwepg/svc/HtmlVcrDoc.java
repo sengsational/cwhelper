@@ -74,7 +74,7 @@ public class HtmlVcrDoc {
         buf.append("var dt = makeLocalDT(vID(\"startdt\"));\n");
         buf.append("setCaptures(\"capture?\" + cID + \"&datetime=\" +\n");
         buf.append("dt.substr(5,2) + \"/\" + dt.substr(8,2) + \"/\" + dt.substr(0,4) + \"%20\" + dt.substr(11,5) +\n");
-        buf.append("\"&durationminutes=\" + vID(\"durationminutes\") + \"&filename=\" + vID(\"filename\") +\n");
+        buf.append("\"&durationminutes=\" + vID(\"durationminutes\") + \"&filename=\" + encodeURI(vID(\"filename\")) +\n");
         buf.append("\"&tuner=\" + tuner.value + \"&title=\" + title)\n");
         buf.append("}\n");
         buf.append("\n");
@@ -197,7 +197,7 @@ public class HtmlVcrDoc {
         buf.append("'<td>' + y[i].getAttribute(\"alphaDescription\") + '</td>' +\n");
         buf.append("'<td>' + y[i].getAttribute(\"tuner\") + '</td>' +\n");
         buf.append("'<td>' + y[i].getAttribute(\"title\") + '</td>';\n");
-        buf.append("if (detailOn) text += '<td><small>' + y[i].getAttribute(\"fileName\") + '</small></td>';\n");
+        buf.append("if (detailOn) text += '<td><small>' + decodeURI(y[i].getAttribute(\"fileName\")) + '</small></td>';\n");
         buf.append("text += '</tr>'\n");
         buf.append("}\n");
         buf.append("text += '<tr></tr></table></form>To delete an item, select it and then <input type=\"button\" value=\"click here\" onclick=\"checkItem();\"><br>';\n");
