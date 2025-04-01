@@ -48,7 +48,7 @@ public class BuildExeFromClassFiles {
      * 
      */
     //public static final String USER = "C:\\Users\\tmpet\\";
-    //public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";
+    //public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";  // TMP 20250401 - I'm renaming my repo path so that this is unnecessary
 	public static final String USER = "C:\\Users\\Owner\\";
     public static final String PROJECT_DIRECTORY = USER + "github\\cwhelper\\CwHelperC\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
@@ -57,7 +57,7 @@ public class BuildExeFromClassFiles {
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    //public static final String JRE_PATH = "C:\\Program Files\\Eclipse Adoptium\\jdk-11.0.15.10-hotspot\\";
+    //public static final String JRE_PATH = "C:\\Program Files\\Java\\latest";  // TMP 20250401 = Wouldn't this path work for both repos?
     public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
