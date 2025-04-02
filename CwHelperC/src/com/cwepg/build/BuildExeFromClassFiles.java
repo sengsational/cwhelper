@@ -30,6 +30,11 @@ import java.util.zip.ZipException;
 
 public class BuildExeFromClassFiles {
     /**
+     *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     * NB:  The following instructions seem to be left over from the 2-step process.  Do they still apply ???
+     *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     * 
+     * 
      * Before running this class, 
      *      Commit the changes to source control (the version number is used later), then 
      *      Run the main method here, ending in "...CwHelper.jar ERROR: FILE NOT FOUND", then
@@ -47,9 +52,9 @@ public class BuildExeFromClassFiles {
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
      */
-    //public static final String USER = "C:\\Users\\tmpet\\";
-    //public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";  // TMP 20250401 - I'm renaming my repo path so that this is unnecessary
-	public static final String USER = "C:\\Users\\Owner\\";
+    public static final String USER = "C:\\Users\\tmpet\\";
+    //public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";  // TMP 20250401 - I've renamed my repo path so that this is unnecessary
+//	public static final String USER = "C:\\Users\\Owner\\";
     public static final String PROJECT_DIRECTORY = USER + "github\\cwhelper\\CwHelperC\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
@@ -57,8 +62,8 @@ public class BuildExeFromClassFiles {
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    //public static final String JRE_PATH = "C:\\Program Files\\Java\\latest";  // TMP 20250401 = Wouldn't this path work for both repos?
-    public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
+    public static final String JRE_PATH = "C:\\Program Files\\Java\\latest";  // TMP 20250401 = Wouldn't this path work for both repos?
+//    public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
     public static final String DOT_VERSION = "5.4.0.";
