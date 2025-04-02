@@ -30,31 +30,21 @@ import java.util.zip.ZipException;
 
 public class BuildExeFromClassFiles {
     /**
-     *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     * NB:  The following instructions seem to be left over from the 2-step process.  Do they still apply ???
-     *  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     * 
-     * 
-     * Before running this class, 
-     *      Commit the changes to source control (the version number is used later), then 
-     *      Run the main method here, ending in "...CwHelper.jar ERROR: FILE NOT FOUND", then
-     *      Use Eclipse IDE "Make runnable jar" process (the version number will be aligned by this second run).
      * 
      * This class  
-     *          1) pulls the version from the source control system
-     *          2) writes the version into the CwHelper_lib folder as "version.txt"
-     *          3) updates the "version.txt" file inside of "cw_icons.jar" resource file
-     *          4) packages the class files as an EXE file using Jar2Exe, creating CwHelper.exe
-     *          5) zips the EXE file into CwHelper(version).zip (so it can be managed on a Google drive, that doesn't allow EXE files)
-     *          6) renames the (already created) runnable jar file to include the version in the file name
-     *          7) optionally signs the jar file (use 'doJarSigning' boolean)
+     * 1) Defines a revision number (hard coded, or from existing files)
+     * 2) writes the version into the CwHelper_lib folder as "version.txt" 
+     * 3) updates the "version.txt" file inside of "cw_icons.jar" resource file
+     * 4) packages the class files as an EXE file using Jar2Exe, creating CwHelper.exe
+     * 5) zips the EXE file into CwHelper(version).zip (so it can be managed on a Google drive, that doesn't allow EXE files)
+     * 6) creates runnable jar file to include the version in the file name
+     * 7) optionally signs the jar file (use 'doJarSigning' boolean)
      *          
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
      */
-    public static final String USER = "C:\\Users\\tmpet\\";
-    //public static final String PROJECT_DIRECTORY = USER + "git\\cwhelper\\CwHelperC\\";  // TMP 20250401 - I've renamed my repo path so that this is unnecessary
-//	public static final String USER = "C:\\Users\\Owner\\";
+    public static final String USER = "C:\\Users\\tmpet\\";  // Terry's repo
+//	public static final String USER = "C:\\Users\\Owner\\";  // Dale's repo
     public static final String PROJECT_DIRECTORY = USER + "github\\cwhelper\\CwHelperC\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
@@ -62,7 +52,7 @@ public class BuildExeFromClassFiles {
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    public static final String JRE_PATH = "C:\\Program Files\\Java\\latest";  // TMP 20250401 = Wouldn't this path work for both repos?
+    public static final String JRE_PATH = "C:\\Program Files\\Java\\latest";  // TMP 20250401 - Wouldn't this path work for both repos?
 //    public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
