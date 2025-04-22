@@ -100,7 +100,7 @@ class TinyConnection implements Runnable {
             String action = (String)request.get("action");
             if (action == null || !action.startsWith("/")) throw new Exception(new Date() + " The action was null or did not start with /.");
             boolean isTextFileOperation = (action.endsWith(".html") || action.endsWith(".js")|| action.endsWith(".json")) && action.startsWith("/");
-            boolean isBinaryFileOperation = action.endsWith(".png") && action.startsWith("/");
+            boolean isBinaryFileOperation = (action.endsWith(".png") || action.endsWith(".ico")) && action.startsWith("/"); //TMP 20250419 - Added .ico possibility and put favicon.ico in cw_icons.jar
 
             if (action.equals("/ping")){ // ************* PING ***************
                 out.print(HEAD + "<h2>Version: " + CaptureManager.version + "</h2><br>" + FOOT);
@@ -663,6 +663,7 @@ class TinyConnection implements Runnable {
                 } // end synchronized
             } else if (action.equals("/captures")){ // ************* CAPTURES ***************
                 synchronized (locker){
+                //	String decodedCaptures = tunerManager.getWebCapturesList(false); // URLDecoder.decode(tunerManager.getWebCapturesList(false), StandardCharsets.UTF_8);
                     out.print(HEAD + tunerManager.getWebCapturesList(false) + FOOT);
                 }
             } else if (action.equals("/decapture")){ // ************* DECAPTURE ***************
