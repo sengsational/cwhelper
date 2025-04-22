@@ -149,10 +149,10 @@ public class TrayIconManager implements Runnable {
             imageFromIcon = image;
         }
 
-        final String[][] menuAndActions = {{"Capture Editor", "vcr"}, {"Open Configuration Page", "configure"}, {"Shutdown", "checkedshutdown"}};
+        final String[][] menuAndActions = {{"Open Configuration Page", "configure"}, {"Shutdown", "checkedshutdown"}}; // DRS20250422 - Removed access to VCR page
         
         ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
-        for(int i = 0; i <= menuAndActions[0].length; i++) {
+        for(int i = 0; i < menuAndActions.length; i++) {
             //System.out.println("menu: " + menuAndActions[i][0] + " " + menuAndActions[i][1]);
             final MenuItem item = new MenuItem(menuAndActions[i][0]);
             menuItems.add(item);
@@ -168,7 +168,7 @@ public class TrayIconManager implements Runnable {
                 System.out.flush();
 
                 String webPage = "";
-                for(int i = 0; i <= menuAndActions[0].length; i++) {
+                for(int i = 0; i < menuAndActions.length; i++) {
                     //System.out.println("menu: " + menuAndActions[i][0] + " " + menuAndActions[i][1]);
                     if (actionCommand.equals(menuAndActions[i][0])) {
                         webPage = menuAndActions[i][1];
