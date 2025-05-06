@@ -152,11 +152,11 @@ public class CaptureHdhr extends Capture implements Runnable {
                 report("getStreamInfo", cl, false);
                 String streamInfoReport = report(cl);
                 if (streamInfoReport!= null && streamInfoReport.indexOf("ERROR:") > -1) errorWasReturned = true;
-                if (streamInfoReport.length() != 0) break; //only retry if the report is empty
+                if (streamInfoReport.length() != 0 && streamInfoReport.indexOf("none") == -1) break; //TMP 20250506 -- retry if the report is not empty or "none" 
             	streamInfoTries--;
             } while (streamInfoTries > 0);
     
-            // No stream info (should be "none")... do we have a device?
+            // No stream info (should NOT be "none")... do we have a device?
             if (cl.getOutput().trim().length() == 0 || errorWasReturned){
                 errorWasReturned = false;
                 System.out.println(new Date() + " WARNING: Could not configure HDHR device.  Waiting " + waitTime + " seconds. " + tries + " tries remaining.");
