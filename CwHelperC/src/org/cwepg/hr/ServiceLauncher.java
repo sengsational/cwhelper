@@ -62,16 +62,6 @@ public class ServiceLauncher {
         }
         
 
-        try {
-            // overwrite previous path if registry value available
-            String registryFolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\Silicondust\\HDHomeRun", "InstallDir");
-            if (registryFolder != null){
-                hdhrPath = registryFolder;
-                hdhrPathSource = "the path found in registry HKEY_LOCAL_MACHINE\\SOFTWARE\\Silicondust\\HDHomeRun\\InstallDir";
-            }
-        } catch (Throwable e1) {
-            // stays empty if there is an error accessing the registry
-        }
 
         //DRS 20241108 - Added try/catch - overwrite the data path if "ProgramData" is populated in the Windows environment
         try {
@@ -83,6 +73,20 @@ public class ServiceLauncher {
             }
         } catch (Throwable e1) {
             // stays empty if there is an error accessing the environment variable
+        }
+        //TMP 20250510 - Move below dataPath definition to use it as fallback when Registry read fails Issue #70
+        try {
+            // overwrite previous path if registry value available
+            String registryFolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\Silicondust\\HDHomeRun", "InstallDir");
+            if (registryFolder != null){
+                hdhrPath = registryFolder;
+                hdhrPathSource = "the path found in registry HKEY_LOCAL_MACHINE\\SOFTWARE\\Silicondust\\HDHomeRun\\InstallDir";
+            } else {
+            	hdhrPath = dataPath;
+                hdhrPathSource = "the path used for dataPath since the HDHR Registry read failed";
+            }
+        } catch (Throwable e1) {
+            // stays empty if there is an error accessing the registry
         }
         // DRS 2024115 - Move below dataPath definition and use dataPath
         try {
