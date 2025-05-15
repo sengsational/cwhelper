@@ -141,11 +141,11 @@ public class CaptureHdhr extends Capture implements Runnable {
             
             
             //DRS 20250102 - Existing code in new "do/while" and new streamInfoTries varibale (to retry for streaminfo if it's empty string per Terry)
-            int streamInfoTries = 2;
+            int streamInfoTries = 4;  //TMP 20250515 - bumped retries.  I seem to have at least one tuner that sometimes needs more delay.
             do {
                 // Silicon Dust Command Line Data: 103AEA6C key 8851 get /tuner0/streaminfo
                 String[] getStreamInfo = {tuner.id, "key", this.lockKey, "get", "/tuner" + tuner.number +"/streaminfo"};  
-                cl = new HdhrCommandLine(getStreamInfo, 5, false);
+                cl = new HdhrCommandLine(getStreamInfo, 8, false);
                 try {Thread.sleep(1000);} catch (InterruptedException e) {};
                 goodResult = cl.runProcess();
                 if (!goodResult) throw new Exception("failed to handle " + cl.getCommands());
@@ -153,7 +153,7 @@ public class CaptureHdhr extends Capture implements Runnable {
                 String streamInfoReport = report(cl);
                 if (streamInfoReport!= null && streamInfoReport.indexOf("ERROR:") > -1) errorWasReturned = true;
                 if (streamInfoReport.length() != 0 && streamInfoReport.indexOf("none") == -1) break; //TMP 20250506 -- retry if the report is not empty or "none" 
-            	streamInfoTries--;
+                streamInfoTries--;
             } while (streamInfoTries > 0);
     
             // No stream info (should NOT be "none")... do we have a device?
