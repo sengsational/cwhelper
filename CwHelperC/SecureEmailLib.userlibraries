@@ -2,8 +2,6 @@
 <eclipse-userlibraries version="2">
     <library name="SecureEmailLib" systemlibrary="false">
         <archive path="/cwhelper/CwHelperC/Oauth_lib/checker-qual-3.12.0.jar"/>
-        <archive path="/cwhelper/CwHelperC/Oauth_lib/commons-codec-1.11.jar"/>
-        <archive path="/cwhelper/CwHelperC/Oauth_lib/commons-logging-1.2.jar"/>
         <archive path="/cwhelper/CwHelperC/Oauth_lib/error_prone_annotations-2.11.0.jar"/>
         <archive path="/cwhelper/CwHelperC/Oauth_lib/failureaccess-1.0.1.jar"/>
         <archive path="/cwhelper/CwHelperC/Oauth_lib/google-api-client-2.0.0.jar"/>
