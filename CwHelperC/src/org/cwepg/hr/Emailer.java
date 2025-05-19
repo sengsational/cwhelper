@@ -44,7 +44,7 @@ public class Emailer extends TimedEvent {
     
     static Emailer emailer;
     
-    private Emailer(){
+    public Emailer(){
         super();
     }
     
@@ -66,6 +66,11 @@ public class Emailer extends TimedEvent {
                 emailer = Emailer.getInstance();
                 emailer.initialize(l);
                 message = new Date() + " Emailer initialized from data file.";
+            }
+            if (Emailer.logonPassword.equalsIgnoreCase("oauth2")) {
+            	emailer = EmailerOauth.getInstance();
+            	emailer.initialize(l);
+            	message = new Date() + " EmailerOauth initialized from data file. Object type should be EmailerOauth: " + emailer.getClass().getName();
             }
             in.close();
         } catch (Exception e) {
@@ -144,7 +149,7 @@ public class Emailer extends TimedEvent {
             System.out.println(new Date() + " Error removing EmailerData.txt " + e.getMessage());
         }
     }
-    
+
     public void sendWarningEmail(String tunerName, String channelKey, String targetFile, String tsmiss, int nonDotCount, int strengthValue, boolean fileExists) {
         System.out.println(new Date() + " Sending quality problem email to " + Emailer.sendUsers);
         try {
@@ -252,7 +257,7 @@ public class Emailer extends TimedEvent {
         return session;
     }
     
-    private InternetAddress[] getToAddresses(){
+    protected InternetAddress[] getToAddresses(){
         InternetAddress[] toAddresses = new InternetAddress[0];
         String lastToken = "";
         try {

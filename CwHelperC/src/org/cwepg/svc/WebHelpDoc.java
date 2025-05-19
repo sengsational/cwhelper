@@ -61,7 +61,7 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>datetime</td><td>ie 01/31/08 22:30</td><td>Start date/time in MM/DD HH:mm</td></tr>\n");
         buf.append("<tr><td>-</td><td>durationminutes</td><td>ie 60</td><td>Use this -or- datetimeend</td></tr>\n");
         buf.append("<tr><td>-</td><td>datetimeend</td><td>ie 01/31/08 23:30</td><td>End date/time in MM/DD HH:mm.  Use this or durationminutes.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>tuner</td><td>ie 1010CC54-0 or myhd</td><td>You use whatever the discover command replies with or \\\"myhd\\\". If this parameter is specified as an asterisk with an HDHR tuner, multiple back-to-back recordings will be scheduled for that channel on every device.  If this parameter is specified as a two  asterisks with an HDHR tuner, multiple back-to-back recordings will be scheduled for that channel on every tuner on every device.  The purpose of this is to test reception for people who have antennas connected to their HDHR units.</td></tr>\n");
+        buf.append("<tr><td>-</td><td>tuner</td><td>ie 1010CC54-0 or myhd</td><td>You use whatever the discover command replies with or \"myhd\".</td></tr>\n");
         buf.append("<tr><td>-</td><td>filename</td><td>ie c:\\mypath\\MyShow.tp or MyShow</td><td>For HDHR and MyHD, the name of the path and file name where your show will be saved. For Fusion, just the file name (no path, no extension  -- theFusion defaults will be used).  For all types, you must escape any ampersands.</td></tr>\n");
         buf.append("<tr><td>-</td><td>protocol</td><td>ie qam256, 8vsb</td><td>Needed if the channel does not appear in /channels output</td></tr>\n");
         buf.append("<tr><td>-</td><td>title</td><td>ie My Show Title</td><td>Anything you want here.  For your use.</td></tr>\n");
@@ -94,9 +94,9 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>hourtosend</td><td>ie 16</td><td>To send at 4:30 PM (defaults to 5PM)</td></tr>\n");
         buf.append("<tr><td>-</td><td>minutetosend</td><td>ie 30</td><td>To send at 4:30 PM (defaults to 5PM)</td></tr>\n");
         buf.append("<tr><td>-</td><td>smtpservername</td><td>ie smtp.mycompany.com</td><td>Get from your email client config.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>smtpserverport</td><td>ie 25</td><td>Get from your email client config.</td></tr>\n");
+        buf.append("<tr><td>-</td><td>smtpserverport</td><td>ie 25 or 587</td><td>Get from your email client config.</td></tr>\n");
         buf.append("<tr><td>-</td><td>logonuser</td><td>ie joedokes</td><td>Get from your email client config.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>logonpassword</td><td>ie se#creT</td><td>Get from your email client config.</td></tr>\n");
+        buf.append("<tr><td>-</td><td>logonpassword</td><td>ie se#creT or oauth2</td><td>Get from your email client config. Set to 'oauth2' to authenticate with Oauth token (only Google gmail supported).</td></tr>\n");
         buf.append("<tr><td>-</td><td>savetodisk</td><td>ie true</td><td>This will save all of these parameters to disk (including your password).  If this is true, the emailer will become active upon cwhelper restarts, otherwise emails will not be generated after a restart without running this command again.</td></tr>\n");
         buf.append("<tr><td>-</td><td>sendusers</td><td>ie joedokes@myisp.com;janedocs@myisp.com</td><td>Semicolon separated list of people to send to.</td></tr>\n");
         buf.append("<tr><td>-</td><td>lowdiskpercent</td><td>ie 5</td><td>(optional) Will send report if less than 5% remains on default recording paths.</td></tr>\n");
@@ -104,6 +104,7 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>sendrecorded</td><td>ie true</td><td>(optional) Will send items recorded in the last 24 hours.</td></tr>\n");
         buf.append("<tr><td>/emailer</td><td>sendtestemail</td><td>ie true</td><td>Will send a test email to a previously configured emailer.</td></tr>\n");
         buf.append("<tr><td>/emailer</td><td>removeemailer</td><td>ie true</td><td>Will remove the active emailer and remove the persistence file, if it exists.</td></tr>\n");
+        buf.append("<tr><td>/emailer</td><td>removeoauth</td><td>ie true</td><td>Will remove oauth token and cause re-authentication</td></tr>\n");
         buf.append("<tr><td>/myhdpass</td><td>command</td><td>get</td><td>Will get a list of MyHD 'pass' items from the registry.</td></tr>\n");
         buf.append("<tr><td>/myhdpass</td><td>command</td><td>removeall</td><td>Will remove all MyHD 'pass' items from the registry.</td></tr>\n");
         buf.append("<tr><td>/wakeupevent</td><td>-</td><td>-</td><td>Wakes up a machine at a specified time and keeps it awake for duration minutes.  Optionally runs cwepg with parameters.</td></tr>\n");
