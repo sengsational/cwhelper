@@ -608,6 +608,11 @@ public class LineUpHdhr extends LineUp {
                     TunerManager.getInstance().removeHdhrByUrl(url);
                     break;
                 }
+                // DRS 20250523 - added 'if' - eliminate non-responding tuner Issue #76
+                if (url.contains("discover.json") && e.getMessage().contains("Connection timed out")) {
+                    TunerManager.getInstance().removeHdhrByUrl(url);
+                    break;
+                }
                 if (e.getMessage().contains("Not Found")) {
                     break;
                 }
