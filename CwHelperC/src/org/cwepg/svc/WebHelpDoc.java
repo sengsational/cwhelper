@@ -113,7 +113,6 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>parameters</td><td>-</td><td>Parameters to put on the cwepg command line after 'cwepg.exe'.</td></tr>\n");
         buf.append("<tr><td>/vcr</td><td>-</td><td>-</td><td>Go to a page which allows the manual creation of captures.</td></tr>\n");
         buf.append("<tr><td>/clock</td><td>-</td><td>-</td><td>Get a report of how far off the system clock is from us.pool.ntp.org.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>clockoffset</td><td>ie 0</td><td>Request that the PC clock be set to clockoffset seconds from the ntp server.  Use zero to align the PC clock with ntp.  To set the clock slower than actual, use negative seconds.</td></tr>\n");
         buf.append("<tr><td>/help</td><td>-</td><td>-</td><td>This page.</td></tr>\n");
         // End from xls sheet
         
