@@ -574,6 +574,12 @@ public class TunerManager {
                         } catch (Throwable t) {
                             System.out.println(new Date() + " ERROR: Unable to find tuner count value in json response " + discoverJson);
                         }
+                    } else if (discoverJson.contains("discoverTimeout")) { //DRS 20250524 - Added "else if" 2X - Issue #76
+                    	System.out.println(new Date() +  discoverJson);
+                    	tunerCount = -2; // arbitrary negative so the registry process won't default to 2
+                    } else if (discoverJson.contains("ERROR:")) { 
+                    	System.out.println(new Date() +  discoverJson);
+                    	tunerCount = -3; // arbitrary negative so the registry process won't default to 2
                     } else {
                         System.out.println(new Date() + " ERROR: Unable to find tuner count heading in json response " + discoverJson);
                     }
@@ -582,7 +588,7 @@ public class TunerManager {
             }
         } 
         
-        if (tunerCount == -1) {
+        if (tunerCount < 0) {
             int progress = -1;
             try {
                 for (int i = 0; i < 6; i++){
@@ -1173,7 +1179,6 @@ public class TunerManager {
                                 t = tok.nextToken();
                                 if (t.equals("at") && tok.hasMoreTokens()) {
                                     String ipAddress = tok.nextToken();
-                                    //DRS 20250523 - Added if/else around existing code - Issue #75
                                     if (TunerManager.ipv4Pattern.matcher(ipAddress).matches()){
                                         result.put(deviceId, ipAddress);
                                         //System.out.println("DEBUG: putting " + deviceId + " with " + ipAddress);

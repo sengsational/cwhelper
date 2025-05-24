@@ -581,6 +581,7 @@ public class LineUpHdhr extends LineUp {
     }
 
     static String getPage(String url, int maxSeconds, boolean quiet, boolean isPost, int maxTries) {
+    	String errorResponse = "ERROR: (initialized)"; //DRS 20250524 - Added bad response as decision variable - Issue #76
         long startedAtMs = new Date().getTime();
         for (int i = 0; i < maxTries; i++) {
             HttpClient httpclient = new DefaultHttpClient();
@@ -606,14 +607,17 @@ public class LineUpHdhr extends LineUp {
                 System.out.println(new Date() + " Failed to get http page. " + url + " " + e.getMessage());
                 if (e.getMessage().contains("refused")) {
                     TunerManager.getInstance().removeHdhrByUrl(url);
+                    errorResponse = "ERROR: refused";
                     break;
                 }
                 // DRS 20250523 - added 'if' - eliminate non-responding tuner Issue #76
                 if (url.contains("discover.json") && e.getMessage().contains("Connection timed out")) {
                     TunerManager.getInstance().removeHdhrByUrl(url);
+                    errorResponse = "ERROR: discoverTimeout";
                     break;
                 }
                 if (e.getMessage().contains("Not Found")) {
+                	errorResponse = "ERROR: notFound";
                     break;
                 }
             } finally {
@@ -622,10 +626,10 @@ public class LineUpHdhr extends LineUp {
             try {Thread.sleep(500);} catch (InterruptedException ee){}
             if (((new Date().getTime() - startedAtMs)/1000) > maxSeconds) {
                 System.out.println(new Date() + " Timeout on page. " + url );
-                return "";
+                errorResponse = "ERROR: timeout";
             }
         }
-        System.out.println(new Date() + " Tried " + maxTries + "time(s) for " + url + " without success.");
-        return "";
+        System.out.println(new Date() + " Tried " + maxTries + " time(s) for " + url + " without success.  Returning " + errorResponse);
+        return errorResponse;
     }
 }
