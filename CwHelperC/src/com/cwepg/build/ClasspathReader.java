@@ -16,6 +16,7 @@ public class ClasspathReader {
 
 	private String fileNameString;
 	private ArrayList<String> fileLines = new ArrayList<>();
+	private ArrayList<String> settingsLines = new ArrayList<>();
 	private String projectPath;
 
 	public ClasspathReader(String classpathConfigFile, String projectPath) {
@@ -45,6 +46,26 @@ public class ClasspathReader {
 		return success;
 	}
 
+	private boolean loadEclipsePrefs(String workspaceDirectoryName) {
+		boolean success = false;
+		try {
+			File settingsDirectory = new File(workspaceDirectoryName + ".metadata\\.plugins\\org.eclipse.core.runtime\\.settings");
+			System.out.println("settingsDirectory " + settingsDirectory.getAbsolutePath());
+			BufferedReader in = new BufferedReader(new FileReader(settingsDirectory.getAbsoluteFile() + "\\org.eclipse.jdt.core.prefs"));
+			String l = "";
+			while ((l = in.readLine()) != null) {
+				settingsLines.add(l); 
+			}
+			in.close();
+			success = true;
+			System.out.println(settingsLines.size() + " lines saved from settings file.");
+		} catch (Exception e) {
+			System.out.println("Something bad happened trying to read the Eclipse settings file. "  + e.getMessage());
+		}
+		return success;
+	}
+	
+	
 	public String getClassFilesDirectory() {
 		String classFilesDirectory = "";
 		for (String l : fileLines) {
@@ -74,26 +95,127 @@ public class ClasspathReader {
 				}
 			}
 		}
+		System.out.println(libraryEntries.size() + " lines read from classpath file.");
 		return libraryEntries.toArray(new String[0]);
 	}
 
+	public String[] getUserLibraryEntries(String prependPath, String workspaceDirectory) {
+		ArrayList<String> userLibraryNames = new ArrayList<>();
+		for (String l : fileLines) {
+			int userLibraryPos = l.indexOf("USER_LIBRARY/");
+			if (userLibraryPos > -1) {
+				int endQuotePos = l.indexOf("\"",userLibraryPos);
+				if (endQuotePos > -1 && endQuotePos > (userLibraryPos + 13)) {
+					String userLibraryName = l.substring(userLibraryPos + 13, endQuotePos);
+					System.out.println("userLibrary found [" + userLibraryName + "]");
+					userLibraryNames.add(userLibraryName);
+				}
+			}
+		}
+		ArrayList<String> libraryEntries = new ArrayList<>();
+		if (loadEclipsePrefs(workspaceDirectory)) {
+			for (String libraryName : userLibraryNames) {
+				for (String l : settingsLines) {
+					int userLibraryPos = l.indexOf("userLibrary." + libraryName);
+					if (userLibraryPos > -1) {
+						System.out.println("jar file list found for " + libraryName + ".");
+						String[] splitJarLine = l.split("path\\\\=");
+						for (int i = 1; i < splitJarLine.length; i++) {
+							//System.out.println("splitJarLine [" + splitJarLine[i] + "] " + i);
+							int lastQuotePos = splitJarLine[i].lastIndexOf("\"");
+							String jarFileName = splitJarLine[i].substring(2, lastQuotePos).replaceAll("/", "\\\\");
+							jarFileName = combine(prependPath, jarFileName);
+							//System.out.println("jarFileName [" + jarFileName + "]");
+							libraryEntries.add(jarFileName);
+						}
+					}
+				}
+				
+			}
+		}
+		return libraryEntries.toArray(new String[0]);
+	}
+
+	public String[] getMavenLibraryEntries(String projectDirectory, String workspaceDirectory) {
+		File mavenDependencyDirectory = new File(projectDirectory + "\\target\\dependency");
+		System.out.println("mavenDependencyDirectory " + mavenDependencyDirectory.getAbsolutePath());
+		if (mavenDependencyDirectory.exists()) {
+			String[] mavenDependencyList = mavenDependencyDirectory.list();
+			System.out.println("there were " + mavenDependencyList.length + " jar files found.");
+			String[] fullPathJarList = new String[mavenDependencyList.length];
+			for (int i = 0; i < mavenDependencyList.length; i++) {
+				fullPathJarList[i] = mavenDependencyDirectory.getAbsolutePath() + "\\" + mavenDependencyList[i];
+			}
+			return fullPathJarList;
+		} else {
+			System.out.println("did not find [" + projectDirectory + "\\target\\dependency" + "]");
+			return new String[0];
+		}
+	}
+
+	
 	public int getLineCount() {
 		return this.fileLines.size();
 	}
 
+	public static String combine(String str1, String str2) {
+        if (str1 == null || str2 == null) return (str1 == null) ? str2 : str1;
+        int overlap = findOverlap(str1, str2);
+        if (overlap == 0) return str1 + str2;
+        else return str1 + str2.substring(overlap);
+    }
+
+    private static int findOverlap(String str1, String str2) {
+        int len1 = str1.length();
+        int len2 = str2.length();
+        int maxOverlap = 0;
+
+        for (int i = 1; i <= Math.min(len1, len2); i++) {
+            if (str1.substring(len1 - i).equals(str2.substring(0, i))) {
+                maxOverlap = i;
+            }
+        }
+
+        return maxOverlap;
+    }
+
 	public static void main(String[] args) {
-		ClasspathReader reader = new ClasspathReader("",""); //Testing just the parsing (not reading the file).
-		String outputEntry = "    <classpathentry kind=\"output\" path=\"CwHelperC/classes\"/>";
-		reader.fileLines.add(outputEntry);
-		System.out.println("getClassFilesDirectory() [" + reader.getClassFilesDirectory() + "]");
+		boolean testMavenDirectory = true;
+		if (testMavenDirectory) {
+			ClasspathReader reader = new ClasspathReader(".classpath","C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\");
+			String[] files = reader.getMavenLibraryEntries("C:\\Users\\Owner\\eclipse-workspace\\OauthSmtp", "C:\\Users\\Owner\\eclipse-workspace\\");
+			for (String string : files) {
+				System.out.println(string);
+			}
+		}
 		
-		reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/commons-codec-1.15.jar\"/>");
-		reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/cw_icons.jar\"/>");
-		reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/jna-platform-5.7.0.jar\"/>");
 		
-		String[] libraryEntries = reader.getLibraryEntries("PrependPath/");
-		for (String string : libraryEntries) {
-			System.out.println("library entry [" + string + "]");
+		boolean testSettings = false;
+		if (testSettings) {
+			ClasspathReader reader = new ClasspathReader(".classpath","C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\");
+			reader.load();
+			reader.getLibraryEntries("C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\");
+			reader.getUserLibraryEntries("C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\", "C:\\Users\\Owner\\eclipse-workspace\\");
+		}
+		
+		boolean testReader = false;
+		if (testReader) {
+			ClasspathReader reader = new ClasspathReader("",""); //Testing just the parsing (not reading the file).
+			String outputEntry = "    <classpathentry kind=\"output\" path=\"CwHelperC/classes\"/>";
+			reader.fileLines.add(outputEntry);
+			System.out.println("getClassFilesDirectory() [" + reader.getClassFilesDirectory() + "]");
+			
+			reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/commons-codec-1.15.jar\"/>");
+			reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/cw_icons.jar\"/>");
+			reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/jna-platform-5.7.0.jar\"/>");
+			
+			String[] libraryEntries = reader.getLibraryEntries("PrependPath/");
+			for (String string : libraryEntries) {
+				System.out.println("library entry [" + string + "]");
+			}
+			
 		}
 	}
+
+
 }

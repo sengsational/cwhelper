@@ -46,6 +46,7 @@ public class BuildExeFromClassFiles {
     public static final String USER = "C:\\Users\\tmpet\\";  // Terry's repo
 //	public static final String USER = "C:\\Users\\Owner\\";  // Dale's repo
     public static final String PROJECT_DIRECTORY = USER + "github\\cwhelper\\CwHelperC\\";
+    public static final String WORKSPACE_DIRECTORY = USER + "eclipse-workspace\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
     public static final String KEYSTORE = "C:\\Users\\Owner\\AndroidStudioProjects\\KnurderKeyStore.jks";
     public static final String LIBRARY_DIRECTORY = PROJECT_DIRECTORY + "CwHelper_lib\\";
@@ -53,11 +54,13 @@ public class BuildExeFromClassFiles {
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
     public static final String JRE_PATH = "C:\\Program Files\\Java\\latest";  // TMP 20250401 - Wouldn't this path work for both repos?
-//    public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
+//  public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
     public static final String DOT_VERSION = "5.4.0.";
     public static final String CLASSPATH_CONFIG_FILE = ".classpath";
+	private static ArrayList<String> jarFileList;
+
 
     public static void main(String[] args) throws Exception {
     	
@@ -66,7 +69,7 @@ public class BuildExeFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1038";
+            revision = "1077";
         } else {
         	String fullVersion = ""; 
         	try {
@@ -87,7 +90,7 @@ public class BuildExeFromClassFiles {
         writeVersionToLibDirectory(COMMA_VERSION, revision, LIBRARY_DIRECTORY + VERSION_FILE_NAME);
         writeVersionToJarFile(LIBRARY_DIRECTORY + VERSION_FILE_NAME, LIBRARY_DIRECTORY + "cw_icons.jar");
         
-        String[] j2ewizBuildCwHelperParms = {
+        String[] j2ewizBuildCwHelperParms1 = {
                         J2E_WIZ,
                         "/jar ", PROJECT_DIRECTORY + "classes",
                         "/o", PROJECT_DIRECTORY + "CwHelper.exe",
@@ -95,24 +98,12 @@ public class BuildExeFromClassFiles {
                         "/type","windows",
                         "/minjre","1.6",
                         "/platform","windows",
-                        "/checksum",
-                        "/embed", LIBRARY_DIRECTORY + "commons-codec-1.15.jar",            //
-                        "/embed", LIBRARY_DIRECTORY + "commons-lang3-3.8.1.jar",              //commons-lang3-3.8.1.jar//commons-lang-2.6.jar
-                        "/embed", LIBRARY_DIRECTORY + "commons-logging-1.2.jar",         //commons-logging-1.2.jar//commons-logging-1.1.3.jar
-                        "/embed", LIBRARY_DIRECTORY + "cw_icons.jar",                      //
-                        "/embed", LIBRARY_DIRECTORY + "hsqldb-2.5.0.jar",                        //hsqldb-2.5.0.jar//hsqldb.jar
-                        "/embed", LIBRARY_DIRECTORY + "httpasyncclient-4.1.5.jar",         //
-                        "/embed", LIBRARY_DIRECTORY + "httpasyncclient-cache-4.1.5.jar",   //
-                        "/embed", LIBRARY_DIRECTORY + "httpclient-4.5.13.jar",             //
-                        "/embed", LIBRARY_DIRECTORY + "httpcore-4.4.15.jar",               //
-                        "/embed", LIBRARY_DIRECTORY + "httpcore-nio-4.4.15.jar",           //
-                        "/embed", LIBRARY_DIRECTORY + "jackcess-3.0.1.jar",               //jackcess-3.0.1.jar//jackcess-2.1.11.jar
-                        "/embed", LIBRARY_DIRECTORY + "jna-5.7.0.jar",                     //
-                        "/embed", LIBRARY_DIRECTORY + "jna-platform-5.7.0.jar",            //
-                        "/embed", LIBRARY_DIRECTORY + "mailapi.jar",                       //
-                        "/embed", LIBRARY_DIRECTORY + "smtp.jar",                          //
-                        "/embed", LIBRARY_DIRECTORY + "ucanaccess-5.0.1.jar",              //ucanaccess-5.0.1.jar//ucanaccess-4.0.4.jar
-                        //"/embed", wDir + "CwHelper.p12",                         // keystore for secure web server
+                        "/checksum"};
+
+        jarFileList = getJarFileListFromConfiguration();
+        String[] j2ewizBuildCwHelperParms2 = getEmbedParametersFromConfiguration(jarFileList);
+                        
+        String[] j2ewizBuildCwHelperParms3 = {
                         "/icon", "#" + PROJECT_DIRECTORY + "cw_logo16.ico, 0#",
                         "/pv", COMMA_VERSION + "0",
                         "/fv",  COMMA_VERSION + revision,
@@ -135,6 +126,7 @@ public class BuildExeFromClassFiles {
         //    System.out.println("[" + parms[i] + "]");
         //}
         
+        String[] j2ewizBuildCwHelperParms = combineStringArrays(j2ewizBuildCwHelperParms1, j2ewizBuildCwHelperParms2, j2ewizBuildCwHelperParms3);
         
         if (runOsProcess(j2ewizBuildCwHelperParms, "successfully", null)) {
             String zipDestinationFileNameString = "CwHelper_" + BASE_VERSION + revision + ".zip";
@@ -164,6 +156,73 @@ public class BuildExeFromClassFiles {
     }
 
 
+    private static String[] combineStringArrays(String[]... arrays) {
+        int totalLength = 0;
+        for (String[] arr : arrays) {
+            totalLength += arr.length;
+        }
+
+        String[] result = new String[totalLength];
+        int currentIndex = 0;
+        for (String[] arr : arrays) {
+            System.arraycopy(arr, 0, result, currentIndex, arr.length);
+            currentIndex += arr.length;
+        }
+        return result;
+    }
+
+    
+	private static String[] getEmbedParametersFromConfiguration(ArrayList<String> jarFileList) throws Exception {
+        String[] parameters = new String[jarFileList.size() * 2];
+        int i = 0;
+        for (String jarFileName : jarFileList) {
+			parameters[i++] = "/embed";
+			parameters[i++] = jarFileName;
+		}
+        return parameters;
+	}
+
+
+	private static ArrayList<String> getJarFileListFromConfiguration() throws Exception {
+        // Read the build information from the project and make some definitions
+		String projectParent = new File(PROJECT_DIRECTORY).getParent();
+    	ClasspathReader reader = new ClasspathReader(CLASSPATH_CONFIG_FILE, PROJECT_DIRECTORY);
+    	
+    	if (!reader.load()) throw new Exception("Unable to load " + CLASSPATH_CONFIG_FILE);
+    	
+    	/* 1 : Regular classpath jars */
+    	String[] jarFileNames = reader.getLibraryEntries(PROJECT_DIRECTORY);
+    	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
+
+    	/* 2 : User library jars */
+    	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY);
+    	System.out.println("There were " + userLibraryJarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE + " USER LIBRARY entries.");
+
+    	/* 3 : Maven jars */
+        // NOTE: If Maven dependencies changed, you need to open a terminal window, 
+    	//       change to the project directory (where the POM.XML is) and 
+    	//       type "mvn dependency:copy-dependencies"
+        //       This should create (project directory)\target\dependency folder with all the jar files.
+    	String[] mavenJarFileNames = reader.getMavenLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY);
+    	System.out.println("There were " + mavenJarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + "target\\dependency MAVEN LIBRARY entries.");
+    	
+    	ArrayList<String> jarFileList = new ArrayList<>();
+    	for (String fileName : jarFileNames) {
+			//System.out.println("jarFile [" + fileName + "]");
+			jarFileList.add(fileName);
+		}
+    	for (String fileName : userLibraryJarFileNames) {
+			//System.out.println("userLibraryJarFile [" + fileName + "]");
+			jarFileList.add(fileName);
+		}
+    	for (String fileName : mavenJarFileNames) {
+			//System.out.println("mavenJarFile [" + fileName + "]");
+			jarFileList.add(fileName);
+		}
+    	return jarFileList;
+	}
+
+
 	private static void makeJarFromProject(String revision, boolean doJarSigning) throws Exception {
         String outputJar = PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar";
         File runnableJarFileNewName = new File(outputJar);
@@ -188,17 +247,12 @@ public class BuildExeFromClassFiles {
     	
     	String classFilesDirectory = reader.getClassFilesDirectory();
 
-    	String[] jarFileNames = reader.getLibraryEntries(PROJECT_DIRECTORY);
-    	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
-    	
-        // Take all the jars in "jarFileNames" and merge them into "outputJar"
+        // Take all the jars in "jarFileList" and merge them into "outputJar"
     	ArrayList<CheckEntry> checkEntryList = new ArrayList<>(); // To post analyze the duplication between jar files
         try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(outputJar), manifest)) {
-            for (int i = 0; i < jarFileNames.length; i++) {
-                String inputJar = jarFileNames[i];
-                //System.out.println("Processing [" + inputJar + "]");
+            for (String inputJar : jarFileList) {
                 mergeJar(jos, inputJar, checkEntryList);
-            }
+    		}
         } catch (IOException e) {
             e.printStackTrace();
         }
