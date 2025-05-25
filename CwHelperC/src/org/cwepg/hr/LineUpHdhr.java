@@ -576,7 +576,7 @@ public class LineUpHdhr extends LineUp {
     }
     
     static String getPage(String url, int maxSeconds, boolean quiet, boolean isPost) {
-        int maxTries = 10;
+        int maxTries = 5;
         return getPage(url, maxSeconds, quiet, isPost, maxTries);
     }
 
