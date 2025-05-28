@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import org.cwepg.reg.FusionRegistryEntry;
 import org.cwepg.reg.Registry;
@@ -54,6 +55,7 @@ public class TunerManager {
     private static final int OUTLOOK_DAYS = 15;
     public static boolean skipFusionInit = false;
     public static boolean skipRegistryForTesting = false;
+    public static final Pattern ipv4Pattern = Pattern.compile("^(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$");
     
     
 	private TunerManager(){
@@ -572,6 +574,12 @@ public class TunerManager {
                         } catch (Throwable t) {
                             System.out.println(new Date() + " ERROR: Unable to find tuner count value in json response " + discoverJson);
                         }
+                    } else if (discoverJson.contains("discoverTimeout")) { //DRS 20250524 - Added "else if" 2X - Issue #76
+                    	System.out.println(new Date() +  discoverJson);
+                    	tunerCount = -2; // arbitrary negative so the registry process won't default to 2
+                    } else if (discoverJson.contains("ERROR:")) { 
+                    	System.out.println(new Date() +  discoverJson);
+                    	tunerCount = -3; // arbitrary negative so the registry process won't default to 2
                     } else {
                         System.out.println(new Date() + " ERROR: Unable to find tuner count heading in json response " + discoverJson);
                     }
@@ -580,7 +588,7 @@ public class TunerManager {
             }
         } 
         
-        if (tunerCount == -1) {
+        if (tunerCount < 0) {
             int progress = -1;
             try {
                 for (int i = 0; i < 6; i++){
@@ -1104,8 +1112,9 @@ public class TunerManager {
     }
     
     // returns a list of String like [1076C3A7, 1075D4B1, 1080F19F] 
-    private ArrayList<String> findTunerDevicesFromText(String output, boolean writeToFile) {
+    private static ArrayList<String> findTunerDevicesFromText(String output, boolean writeToFile) {
         // output looks like this [hdhomerun device 1076C3A7 found at 169.254.246.92]
+    	// output might also look like [hdhomerun device 1075D4B1 found at fe80::218:ddff:fe07:5d4b%7]
     	TreeSet<String> result = new TreeSet<String>();
     	try {
 			BufferedReader in = new BufferedReader(new StringReader(output));
@@ -1170,7 +1179,12 @@ public class TunerManager {
                                 t = tok.nextToken();
                                 if (t.equals("at") && tok.hasMoreTokens()) {
                                     String ipAddress = tok.nextToken();
-                                    result.put(deviceId, ipAddress);
+                                    if (TunerManager.ipv4Pattern.matcher(ipAddress).matches()){
+                                        result.put(deviceId, ipAddress);
+                                        //System.out.println("DEBUG: putting " + deviceId + " with " + ipAddress);
+                                    } else {
+                                    	//System.out.println("DEBUG: rejected " + ipAddress);
+                                    }
                                 }
                             }
                         }
@@ -2567,6 +2581,29 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
     }
     
     public static void main(String[] args) throws Exception {
+    	boolean testIpv6 = true;
+    	if (testIpv6) {
+    		String liveDiscoverText = "hdhomerun device 1075D4B1 found at 192.168.1.16\n\r" + 
+    				"hdhomerun device 1075D4B1 found at fe80::218:ddff:fe07:5d4b%7\n\r" +
+    				"hdhomerun device 1076C3A7 found at 192.168.1.22\n\r" +
+    				"+hdhomerun device 1076C3A7 found at fe80::218:ddff:fe07:6c3a%7\n\r" +
+    				"hdhomerun device 1080F19F found at 192.168.1.18\n\r" +
+    				"hdhomerun device 1080F19F found at fe80::218:ddff:fe08:f19%7\n\r";
+    		ArrayList<String> list = findTunerDevicesFromText(liveDiscoverText, false);
+    		System.out.println("testing ip v6 response.");
+    		for (String string : list) {
+				System.out.println("list item [" + string + "]");
+			}
+    		
+    		HashMap<String, String> result = getIpMap("", liveDiscoverText);
+    		Set keys = result.keySet();
+    		for (Object key : keys) {
+				System.out.println("key [" + key + "] value [" + result.get(key) + "]");
+			}
+
+    	}
+    	
+    	
         boolean testReplacement = false;
         if (testReplacement) {
             CaptureManager.dataPath = "c:\\my\\dev\\eclipsewrk\\CwHelper\\";
@@ -2605,7 +2642,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             System.out.println("TunerManager.main() replacementCapture2: " + replacementCapture2);
         }
         
-        boolean testIpMap = true;
+        boolean testIpMap = false;
         if (testIpMap) {
             String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.181.254\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
             //String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.3.188\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
