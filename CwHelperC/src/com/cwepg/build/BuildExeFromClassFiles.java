@@ -53,7 +53,7 @@ public class BuildExeFromClassFiles {
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    public static final String JRE_PATH = "C:\\Program Files\\Java\\latest";  // TMP 20250401 - Wouldn't this path work for both repos?
+    public static final String JRE_PATH = "C:\\Users\\tmpet\\.p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_23.0.1.v20241024-1700\\jre\\";  // TMP 20250401 - Wouldn't this path work for both repos?
 //  public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
@@ -69,7 +69,7 @@ public class BuildExeFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1077";
+            revision = "1079";
         } else {
         	String fullVersion = ""; 
         	try {
