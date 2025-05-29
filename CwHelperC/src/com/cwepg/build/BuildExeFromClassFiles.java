@@ -69,7 +69,7 @@ public class BuildExeFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1078";
+            revision = "1079";
         } else {
         	String fullVersion = ""; 
         	try {

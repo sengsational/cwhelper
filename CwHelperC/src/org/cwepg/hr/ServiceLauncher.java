@@ -86,10 +86,10 @@ public class ServiceLauncher {
                 hdhrPathSource = "the path used for dataPath since the HDHR Registry read failed";
                 //DRS 20250528 - Added try/catch - Issue #70 - Utilize new file supplied by CW_EPG if Java can't get to the registry.
                 try {
-                    BufferedReader in = new BufferedReader(new FileReader(dataPath + "hdhr_install_target.txt"));
+                    BufferedReader in = new BufferedReader(new FileReader(dataPath + "\\hdhr_install_target.txt"));
                     String pathFromFile = in.readLine();
                     hdhrPath = pathFromFile;
-                    hdhrPathSource   = "the path found in file: " + new File(dataPath + "hdhr_install_target.txt").getPath() + " since the HDHR Registry read failed";
+                    hdhrPathSource   = "the path found in file: " + new File(dataPath + "\\hdhr_install_target.txt").getPath() + " since the HDHR Registry read failed";
                     in.close();
                 } catch (Throwable e) {
                     // stays equal to the dataPath if the file is not found
