@@ -150,7 +150,7 @@ public class EmailerOauth extends Emailer {
 
             if (content.length() > 0){
             	Message message = integration.sendHtmlEmail(logonUser, getToAddresses(), logonUser, subject, new String(content));
-        	    System.out.println("Message Sent.  Trying to trash the sent copy.");
+        	    System.out.println("Message Sent.  Trying to trash the sent copy [" + message.getId() + "]");
         	    Thread.sleep(1000);
         	    System.out.println("Trashing sent message by ID.");
         	    integration.trashMessage(service, logonUser, message.getId());
@@ -192,5 +192,11 @@ public class EmailerOauth extends Emailer {
         } catch (Exception e) {
         	System.out.println("Failed to send test message oauth " + e.getClass() + " " + e.getMessage());
         }
+	}
+	
+	public static void main(String[] args) {
+		Emailer emailer = EmailerOauth.getInstance();
+		emailer.initialize("20","32","smtp.googlemail.com","587","sendingemail@somedomain.com","oauth2","true","receivingemail@somedomain.com","90","true","true");
+		emailer.sendTestMessage();
 	}
 }
