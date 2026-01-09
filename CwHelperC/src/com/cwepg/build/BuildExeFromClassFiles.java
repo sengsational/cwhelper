@@ -70,7 +70,7 @@ public class BuildExeFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "2073";
+            revision = "2078";
         } else {
         	String fullVersion = ""; 
         	try {
@@ -119,8 +119,8 @@ public class BuildExeFromClassFiles {
                         //"/embed", wDir + "CwHelper.p12",                         // keystore for secure web server
                         
                         "/embed", EMAIL_LIBRARY_DIRECTORY + "checker-qual-3.12.0.jar",
-                        "/embed", EMAIL_LIBRARY_DIRECTORY + "commons-codec-1.11.jar",
-                        "/embed", EMAIL_LIBRARY_DIRECTORY + "commons-logging-1.2.jar",
+                        //"/embed", EMAIL_LIBRARY_DIRECTORY + "commons-codec-1.11.jar",
+                        //"/embed", EMAIL_LIBRARY_DIRECTORY + "commons-logging-1.2.jar",
                         "/embed", EMAIL_LIBRARY_DIRECTORY + "error_prone_annotations-2.11.0.jar",
                         "/embed", EMAIL_LIBRARY_DIRECTORY + "failureaccess-1.0.1.jar",
                         "/embed", EMAIL_LIBRARY_DIRECTORY + "google-api-client-2.0.0.jar",
