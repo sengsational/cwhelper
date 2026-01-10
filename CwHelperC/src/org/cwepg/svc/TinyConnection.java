@@ -27,6 +27,7 @@ import java.util.StringTokenizer;
 import org.cwepg.hr.Capture;
 import org.cwepg.hr.CaptureManager;
 import org.cwepg.hr.Emailer;
+import org.cwepg.hr.EmailerOauth;
 import org.cwepg.hr.ShutdownHookThread;
 import org.cwepg.hr.Slot;
 import org.cwepg.hr.Target;
@@ -789,6 +790,7 @@ class TinyConnection implements Runnable {
             } else if (action.equals("/emailer")){ // ************* EMAILER ***************
                 String sendTestEmail = (String)request.get("sendtestemail");
                 String removeEmailer = (String)request.get("removeemailer");
+                String removeOauth = (String)request.get("removeoauth");
                 String message = "";
                 if (sendTestEmail != null){
                     Emailer emailer = CaptureManager.getEmailer();
@@ -812,6 +814,17 @@ class TinyConnection implements Runnable {
                         out.print(HEAD + "Emailer data has been removed." + FOOT);
                     } else {
                         out.print(HEAD + "No emailer was available for removal." + FOOT);
+                    }
+                } else if (removeOauth != null) {
+                    Emailer emailer = CaptureManager.getEmailer();
+                    if (emailer != null && (emailer instanceof EmailerOauth)){
+                        if (((EmailerOauth)emailer).removeOauthCredentials()) {
+                        	out.print(HEAD + "Emailer oauth credentials have been removed." + FOOT);
+                        } else {
+                        	out.print(HEAD + "Emailer oauth credentials not removed." + FOOT);
+                        }
+                    } else {
+                        out.print(HEAD + "No oauth credentials were available for removal." + FOOT);
                     }
                 } else if (null != (String)request.get("smtpservername")){
                     String hourToSend = (String)request.get("hourtosend");
