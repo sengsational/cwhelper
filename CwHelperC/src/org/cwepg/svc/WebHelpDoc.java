@@ -94,9 +94,9 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>hourtosend</td><td>ie 16</td><td>To send at 4:30 PM (defaults to 5PM)</td></tr>\n");
         buf.append("<tr><td>-</td><td>minutetosend</td><td>ie 30</td><td>To send at 4:30 PM (defaults to 5PM)</td></tr>\n");
         buf.append("<tr><td>-</td><td>smtpservername</td><td>ie smtp.mycompany.com</td><td>Get from your email client config.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>smtpserverport</td><td>ie 25</td><td>Get from your email client config.</td></tr>\n");
+        buf.append("<tr><td>-</td><td>smtpserverport</td><td>ie 25 or 587</td><td>Get from your email client config.</td></tr>\n");
         buf.append("<tr><td>-</td><td>logonuser</td><td>ie joedokes</td><td>Get from your email client config.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>logonpassword</td><td>ie se#creT</td><td>Get from your email client config.</td></tr>\n");
+        buf.append("<tr><td>-</td><td>logonpassword</td><td>ie se#creT or oauth2</td><td>Get from your email client config. Set to 'oauth2' to authenticate with Oauth token (only Google gmail supported).</td></tr>\n");
         buf.append("<tr><td>-</td><td>savetodisk</td><td>ie true</td><td>This will save all of these parameters to disk (including your password).  If this is true, the emailer will become active upon cwhelper restarts, otherwise emails will not be generated after a restart without running this command again.</td></tr>\n");
         buf.append("<tr><td>-</td><td>sendusers</td><td>ie joedokes@myisp.com;janedocs@myisp.com</td><td>Semicolon separated list of people to send to.</td></tr>\n");
         buf.append("<tr><td>-</td><td>lowdiskpercent</td><td>ie 5</td><td>(optional) Will send report if less than 5% remains on default recording paths.</td></tr>\n");
@@ -104,6 +104,7 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>sendrecorded</td><td>ie true</td><td>(optional) Will send items recorded in the last 24 hours.</td></tr>\n");
         buf.append("<tr><td>/emailer</td><td>sendtestemail</td><td>ie true</td><td>Will send a test email to a previously configured emailer.</td></tr>\n");
         buf.append("<tr><td>/emailer</td><td>removeemailer</td><td>ie true</td><td>Will remove the active emailer and remove the persistence file, if it exists.</td></tr>\n");
+        buf.append("<tr><td>/emailer</td><td>removeoauth</td><td>ie true</td><td>Will remove oauth token and cause re-authentication</td></tr>\n");
         buf.append("<tr><td>/myhdpass</td><td>command</td><td>get</td><td>Will get a list of MyHD 'pass' items from the registry.</td></tr>\n");
         buf.append("<tr><td>/myhdpass</td><td>command</td><td>removeall</td><td>Will remove all MyHD 'pass' items from the registry.</td></tr>\n");
         buf.append("<tr><td>/wakeupevent</td><td>-</td><td>-</td><td>Wakes up a machine at a specified time and keeps it awake for duration minutes.  Optionally runs cwepg with parameters.</td></tr>\n");
