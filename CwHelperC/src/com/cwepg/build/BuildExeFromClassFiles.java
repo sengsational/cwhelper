@@ -26,6 +26,8 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipException;
 
+import org.cwepg.hr.DFile;
+
 // import org.cwepg.hr.CaptureManager;
 
 public class BuildExeFromClassFiles {
@@ -43,8 +45,8 @@ public class BuildExeFromClassFiles {
      * Changes made here now must be copied to the alternative source control project (use WinMerge on c:\my\dev\eclipsewrk\CwHelper and C:\my\dev\gitrepo\CwHelperC).         
      * 
      */
-    public static final String USER = "C:\\Users\\tmpet\\";  // Terry's repo
-//	public static final String USER = "C:\\Users\\Owner\\";  // Dale's repo
+//    public static final String USER = "C:\\Users\\tmpet\\";  // Terry's repo
+	public static final String USER = "C:\\Users\\Owner\\";  // Dale's repo
     public static final String PROJECT_DIRECTORY = USER + "github\\cwhelper\\CwHelperC\\";
     public static final String WORKSPACE_DIRECTORY = USER + "eclipse-workspace\\";
     public static final String J2E_WIZ = "C:\\Program Files (x86)\\Jar2Exe Wizard\\j2ewiz.exe";
@@ -53,8 +55,8 @@ public class BuildExeFromClassFiles {
     public static final String VERSION_FILE_NAME = "version.txt";
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
-    public static final String JRE_PATH = "C:\\Users\\tmpet\\.p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_23.0.1.v20241024-1700\\jre\\";  // TMP 20250401 - Wouldn't this path work for both repos?
-//  public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
+//  public static final String JRE_PATH = "C:\\Users\\tmpet\\.p2\\pool\\plugins\\org.eclipse.justj.openjdk.hotspot.jre.full.win32.x86_64_23.0.1.v20241024-1700\\jre\\";  // TMP 20250401 - Wouldn't this path work for both repos?
+    public static final String JRE_PATH = "C:\\Program Files\\Java\\jdk-18.0.2.1\\";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
     public static final String DOT_VERSION = "5.4.0.";
@@ -69,7 +71,7 @@ public class BuildExeFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1079";
+            revision = "1080";
         } else {
         	String fullVersion = ""; 
         	try {
@@ -146,6 +148,7 @@ public class BuildExeFromClassFiles {
             	} else {
             		System.out.println("Creating runnable jar from project " + PROJECT_DIRECTORY);
             		makeJarFromProject(revision, doJarSigning);
+                    new DFile(PROJECT_DIRECTORY + "CwHelper_" + BASE_VERSION + revision + ".jar").copyTo(new File("CwHelper_Staged.jar")); // DRS 20250512 - Make a jar file to stage for local testing
             	}
             } else {
                 System.out.println("ERROR: Exe not zipped into compressed file.");
@@ -248,11 +251,24 @@ public class BuildExeFromClassFiles {
     	String classFilesDirectory = reader.getClassFilesDirectory();
 
         // Take all the jars in "jarFileList" and merge them into "outputJar"
+    	String[] jarFileNames = reader.getLibraryEntries(PROJECT_DIRECTORY);
+    	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
+    	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY);
+    	System.out.println("There were " + userLibraryJarFileNames.length + " lib entries in " + WORKSPACE_DIRECTORY + ".metadata ... org.eclipse.jdt.core.prefs");
+    	
+        // Take all the jars in "jarFileNames" and "userLibraryJarFilename" and merge them into "outputJar"
     	ArrayList<CheckEntry> checkEntryList = new ArrayList<>(); // To post analyze the duplication between jar files
         try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(outputJar), manifest)) {
-            for (String inputJar : jarFileList) {
+            for (int i = 0; i < jarFileNames.length; i++) {
+                String inputJar = jarFileNames[i];
+                //System.out.println("Processing [" + inputJar + "]");
                 mergeJar(jos, inputJar, checkEntryList);
     		}
+            for (int i = 0; i < userLibraryJarFileNames.length; i++) {
+                String inputJar = userLibraryJarFileNames[i];
+                //System.out.println("Processing [" + inputJar + "]");
+                mergeJar(jos, inputJar, checkEntryList);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
