@@ -47,6 +47,8 @@ public class WakeupEvent extends TimedEvent implements Runnable {
     
     int currentCommand;
     CwEpgCommandLine cl = null;
+
+	private String previousPeristanceData;
     static AutorunFile arf;
     static boolean activeAutorun = false;
     
@@ -259,6 +261,26 @@ public class WakeupEvent extends TimedEvent implements Runnable {
     public static boolean hasCommand() {
         return osParameters != null && !osParameters.equals("") && !osParameters.equals("null");
     }
+
+    public long nextRunMinutes() {
+		return super.nextRunMinutes();
+	}
+
+    public void setOverrideHourMinute(int hour, int minute, String previousPersistanceData) {
+    	super.setOverrideHourMinute(hour, minute);
+    	this.previousPeristanceData = previousPersistanceData;
+	}
+    
+	public boolean isOverride() {
+		return this.previousPeristanceData != null;
+	}
+	
+	public void restoreSavedPersistanceDataIfExists() {
+		if (this.previousPeristanceData != null) {
+			this.initialize(this.previousPeristanceData);
+			this.previousPeristanceData = null;
+		}
+	}
 
     public String getHtml() {
         isValid();

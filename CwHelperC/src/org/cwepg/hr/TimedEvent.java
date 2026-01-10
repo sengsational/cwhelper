@@ -46,6 +46,17 @@ public class TimedEvent {
         return nextSendTimeCalendar;
     }
 
+    public long nextRunMinutes() {
+		Calendar nextTriggerTime = getNextTriggerTimeCalendar();
+		long differenceInMillis = nextTriggerTime.getTimeInMillis() - Calendar.getInstance().getTimeInMillis();
+		return differenceInMillis / 60000L;
+	}
+
+    public void setOverrideHourMinute(int hour, int minute) {
+    	this.hourToTrigger = "" + hour;
+    	this.minuteToTrigger = "" + minute;
+    }
+
     private Calendar getTodaysTriggerTimeCalendar() {
         Calendar todaysSendTimeCalendar = Calendar.getInstance();
         todaysSendTimeCalendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(hourToTrigger));
