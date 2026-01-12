@@ -2373,7 +2373,7 @@ public class TunerManager {
             String ipAddressXml = "";
             if (tuner instanceof TunerHdhr) {
             	ipAddressTable = ((TunerHdhr)tuner).ipAddressTuner + "</td><td>"; 
-            	ipAddressXml = ((TunerHdhr)tuner).ipAddressTuner + "\" ipAddress=\""; 
+            	ipAddressXml =  "\" ipAddress=\"" + ((TunerHdhr)tuner).ipAddressTuner; 
             }
             buf.append("<tr><td>" 
                     + tuner.getFullName() + "</td><td>" 
@@ -2382,8 +2382,9 @@ public class TunerManager {
                     + tuner.getRecordPath() + "</td><td>"
                     + tuner.getLiveDevice() + "</td><td>" 
                     + tuner.getAnalogFileExtension() + "</td><td>"
-                    + ipAddressTable
-                    + tuner.getLowSpaceComment(lowGbValue) + "</td></tr>\n");
+                    + tuner.getLowSpaceComment(lowGbValue) 
+                    + ipAddressTable +
+                    "</td></tr>\n");
             xmlBuf.append("  <tuner name=\"" 
                     + tuner.getFullName() + "\" deviceId=\"" 
                     + tuner.getDeviceId() + "\" tunerType=\"" 
@@ -2391,8 +2392,9 @@ public class TunerManager {
                     + tuner.getRecordPath() + "\" liveDevice=\"" 
                     + tuner.getLiveDevice() + "\" analogFileExtension=\"" 
                     + tuner.getAnalogFileExtension() + "\" spaceAvailableGb=\""
+                    + tuner.getRemainingGb()
                     + ipAddressXml
-                    + tuner.getRemainingGb() + "\"/>\n" );
+                    + "\"/>\n" );
         }
         buf.append("</table>\n");
         xmlBuf.append("</xml>\n");
