@@ -17,6 +17,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -68,18 +69,21 @@ public class JarUpdater {
      * @throws IOException
      */
     public static void updateZipFileWithFilesOnDisk(File zipFile, File[] fileList, boolean usePath, String baseDirectory) throws IOException {
-               // get a temp file
+        // get a temp file
         File tempFile = File.createTempFile(zipFile.getName(), null);
-               // delete it, otherwise you cannot rename your existing zip to it.
+        // delete it, otherwise you cannot rename your existing zip to it.
         tempFile.delete();
 
-        boolean renameOk=zipFile.renameTo(tempFile);
-        if (!renameOk) {
-            throw new RuntimeException("could not rename the file "+zipFile.getAbsolutePath()+" to "+tempFile.getAbsolutePath());
-        }
+        //boolean renameOk=zipFile.renameTo(tempFile);
+        //if (!renameOk) {
+        //    throw new RuntimeException("could not rename the file "+zipFile.getAbsolutePath()+" to "+tempFile.getAbsolutePath());
+        //}
+        
+        FileMover.moveFile(zipFile.getAbsolutePath(), tempFile.getAbsolutePath());
+        
         byte[] buf = new byte[1024];
 
-        //System.out.println("tempFile [" + tempFile + "]");
+        System.out.println("tempFile [" + tempFile + "]");
         System.out.println("zipFile [" + zipFile + "]");
         ZipInputStream zin = new ZipInputStream(new FileInputStream(tempFile));
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile));
@@ -111,7 +115,7 @@ public class JarUpdater {
         zin.close();
         // Compress the files
         for (int i = 0; i < fileList.length; i++) {
-            //System.out.println("trying to find and use [" + fileList[i] + "]");
+            System.out.println("trying to find and use [" + fileList[i] + "]");
             InputStream in = new FileInputStream(fileList[i]);
             // Add ZIP entry to output stream.
             // DRS 202041116 - Added 'if/else', existing content in else - enhance to allow other than files into root directory
@@ -120,7 +124,12 @@ public class JarUpdater {
             	if (baseDirectory != null && baseDirectory.length() > 0 && absoluteFileNameString.length() > (baseDirectory.length() + 1) ) {
             		absoluteFileNameString = absoluteFileNameString.substring(baseDirectory.length() + 1);
             	}
-                out.putNextEntry(new ZipEntry(absoluteFileNameString));
+            	try  {
+                    out.putNextEntry(new ZipEntry(absoluteFileNameString));
+            	} catch (ZipException z) {
+            		System.out.println("WARNING: " + absoluteFileNameString + " was NOT placed in the jar file. " + z.getLocalizedMessage());
+            		continue;
+            	}
             } else {
                 out.putNextEntry(new ZipEntry(fileList[i].getName()));
             }

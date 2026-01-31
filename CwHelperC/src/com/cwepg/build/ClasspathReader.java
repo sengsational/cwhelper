@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Owner
@@ -31,7 +32,7 @@ public class ClasspathReader {
 			File projectDirectory = new File(projectPath);
 			System.out.println("projectDirectory " + projectDirectory.getAbsolutePath() +  " from " + projectPath);
 			File projectParent = projectDirectory.getParentFile();
-			BufferedReader in = new BufferedReader(new FileReader(projectParent.getAbsoluteFile() + "\\" + fileNameString));
+			BufferedReader in = new BufferedReader(new FileReader(projectParent.getAbsoluteFile() + "/" + fileNameString));
 			String l = "";
 			while ((l = in.readLine()) != null) {
 	    		progressBuf.append("read line from " + fileNameString + ".").append("\n");
@@ -49,9 +50,9 @@ public class ClasspathReader {
 	private boolean loadEclipsePrefs(String workspaceDirectoryName) {
 		boolean success = false;
 		try {
-			File settingsDirectory = new File(workspaceDirectoryName + ".metadata\\.plugins\\org.eclipse.core.runtime\\.settings");
+			File settingsDirectory = new File(workspaceDirectoryName + ".metadata/.plugins/org.eclipse.core.runtime/.settings");
 			System.out.println("settingsDirectory " + settingsDirectory.getAbsolutePath());
-			BufferedReader in = new BufferedReader(new FileReader(settingsDirectory.getAbsoluteFile() + "\\org.eclipse.jdt.core.prefs"));
+			BufferedReader in = new BufferedReader(new FileReader(settingsDirectory.getAbsoluteFile() + "/org.eclipse.jdt.core.prefs"));
 			String l = "";
 			while ((l = in.readLine()) != null) {
 				settingsLines.add(l); 
@@ -64,21 +65,27 @@ public class ClasspathReader {
 		}
 		return success;
 	}
-	
-	
+	// [                               |                    |
+	// [ <classpathentry kind="output" path="target/classes"/>]
 	public String getClassFilesDirectory() {
 		String classFilesDirectory = "";
+		if (fileLines.size() == 0) load();
 		for (String l : fileLines) {
 			if (l.contains("kind=\"output\"")) {
 				int pathPos = l.indexOf("path=");
-				int subDirectoryPos = l.indexOf("/", pathPos + 6) + 1;
+				int subDirectoryPos = l.indexOf("\"", pathPos + 5) + 1;
 				int endPos = l.indexOf("/>");
+				//System.out.println("pathPos " + pathPos + " subDirectoryPos " + subDirectoryPos + " endPos " + endPos);
 				if (subDirectoryPos > 0 && endPos > 0 && endPos > subDirectoryPos) {
+					System.out.println("using [" + l + "] to find the class files to include.");
 					classFilesDirectory = l.substring(subDirectoryPos, endPos - 1);
 					break;
 				}
+			} else {
+				//System.out.println("not used [" + l + "]");
 			}
 		}
+		if (classFilesDirectory.length() == 0) System.err.println("class files binary location NOT FOUND!");
 		return classFilesDirectory;
 	}
 
@@ -123,7 +130,7 @@ public class ClasspathReader {
 						for (int i = 1; i < splitJarLine.length; i++) {
 							//System.out.println("splitJarLine [" + splitJarLine[i] + "] " + i);
 							int lastQuotePos = splitJarLine[i].lastIndexOf("\"");
-							String jarFileName = splitJarLine[i].substring(2, lastQuotePos).replaceAll("/", "\\\\");
+							String jarFileName = splitJarLine[i].substring(2, lastQuotePos);
 							jarFileName = combine(prependPath, jarFileName);
 							//System.out.println("jarFileName [" + jarFileName + "]");
 							libraryEntries.add(jarFileName);
@@ -137,18 +144,18 @@ public class ClasspathReader {
 	}
 
 	public String[] getMavenLibraryEntries(String projectDirectory, String workspaceDirectory) {
-		File mavenDependencyDirectory = new File(projectDirectory + "\\target\\dependency");
+		File mavenDependencyDirectory = new File(projectDirectory + "/target/dependency");
 		System.out.println("mavenDependencyDirectory " + mavenDependencyDirectory.getAbsolutePath());
 		if (mavenDependencyDirectory.exists()) {
 			String[] mavenDependencyList = mavenDependencyDirectory.list();
 			System.out.println("there were " + mavenDependencyList.length + " jar files found.");
 			String[] fullPathJarList = new String[mavenDependencyList.length];
 			for (int i = 0; i < mavenDependencyList.length; i++) {
-				fullPathJarList[i] = mavenDependencyDirectory.getAbsolutePath() + "\\" + mavenDependencyList[i];
+				fullPathJarList[i] = mavenDependencyDirectory.getAbsolutePath() + "/" + mavenDependencyList[i];
 			}
 			return fullPathJarList;
 		} else {
-			System.out.println("did not find [" + projectDirectory + "\\target\\dependency" + "]");
+			System.out.println("did not find [" + projectDirectory + "/target/dependency" + "]");
 			return new String[0];
 		}
 	}
@@ -179,8 +186,31 @@ public class ClasspathReader {
         return maxOverlap;
     }
 
-	public static void main(String[] args) {
-		boolean testMavenDirectory = true;
+	public static void main(String[] args) throws Exception {
+		boolean testReadingClassesDirectory = true;
+		if (testReadingClassesDirectory) {
+			//final variables for testing only
+			String USER = "/home/owner/"; 
+		    String PROJECT_DIRECTORY = USER + "eclipse-workspace/EmailCodesOauth/";
+		    String PROJECT_DIRECTORY_BINARIES = PROJECT_DIRECTORY + "target/";
+		    String CLASSPATH_CONFIG_FILE = ".classpath";
+			
+			ClasspathReader reader = new ClasspathReader(CLASSPATH_CONFIG_FILE, PROJECT_DIRECTORY_BINARIES);
+	    	String classFilesDirectory = reader.getClassFilesDirectory();
+	    	System.out.println("classFilesDirectory from config file [" + classFilesDirectory + "]");
+
+	        System.out.println("Looking in [" + PROJECT_DIRECTORY + classFilesDirectory + "] for class files.");
+			List<String> classesFileList = BuildExeFromClassFiles.getAbsoluteFileNames(PROJECT_DIRECTORY + classFilesDirectory + "/");
+			System.out.println("There were " + classesFileList.size() + " class files.");
+			for (String aFileName : classesFileList) {
+				System.out.println("aFileName [" + aFileName + "]");
+			}
+
+		}
+		
+		
+		
+		boolean testMavenDirectory = false;
 		if (testMavenDirectory) {
 			ClasspathReader reader = new ClasspathReader(".classpath","C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\");
 			String[] files = reader.getMavenLibraryEntries("C:\\Users\\Owner\\eclipse-workspace\\OauthSmtp", "C:\\Users\\Owner\\eclipse-workspace\\");
