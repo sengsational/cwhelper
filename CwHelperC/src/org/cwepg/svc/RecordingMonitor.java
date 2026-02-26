@@ -150,6 +150,8 @@ public class RecordingMonitor extends Thread implements Runnable {
                                 CaptureManager.scheduleCapture(replacementCapture, true);
                                 System.out.println(new Date() + " Replacement scheduled ok. Calling interrupt.");
                                 CaptureManager.requestInterrupt("RecordingMonitor.run"); // need to interrupt so it reads new schedule
+                                // Turn recording monitor off for this capture
+                                break OUT;
                             } catch (Exception e) {
                                 System.out.println(new Date() + " Could not schedule replacement capture! " + e.getMessage());
                                 System.err.println(new Date() + " Could not schedule replacement capture! " + e.getMessage());
@@ -157,8 +159,8 @@ public class RecordingMonitor extends Thread implements Runnable {
                             }
                         } else {
                             System.out.println(new Date() + " Unable to create replacement for  [" + capture + "] in RecordingMonitor");
+                            TunerManager.getInstance().getLastReason(); // Clears last reason
                         }
-
                     }
                 }
             } catch (Throwable t) {
