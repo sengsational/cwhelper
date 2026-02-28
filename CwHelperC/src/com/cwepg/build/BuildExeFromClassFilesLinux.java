@@ -127,7 +127,7 @@ public class BuildExeFromClassFilesLinux {
     	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
 
     	/* 2 : User library jars */
-    	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY);
+    	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY, false);
     	System.out.println("There were " + userLibraryJarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE + " USER LIBRARY entries.");
 
     	/* 3 : Maven jars */

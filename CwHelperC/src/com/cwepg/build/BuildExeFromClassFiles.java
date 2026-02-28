@@ -62,6 +62,7 @@ public class BuildExeFromClassFiles {
     public static final String DOT_VERSION = "5.4.0.";
     public static final String CLASSPATH_CONFIG_FILE = ".classpath";
 	private static ArrayList<String> jarFileList;
+	public static final boolean IS_WINDOWS = true;
 
 
     public static void main(String[] args) throws Exception {
@@ -198,7 +199,7 @@ public class BuildExeFromClassFiles {
     	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
 
     	/* 2 : User library jars */
-    	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY);
+    	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY, IS_WINDOWS);
     	System.out.println("There were " + userLibraryJarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE + " USER LIBRARY entries.");
 
     	/* 3 : Maven jars */
@@ -253,7 +254,7 @@ public class BuildExeFromClassFiles {
         // Take all the jars in "jarFileList" and merge them into "outputJar"
     	String[] jarFileNames = reader.getLibraryEntries(PROJECT_DIRECTORY);
     	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
-    	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY);
+    	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY, IS_WINDOWS);
     	System.out.println("There were " + userLibraryJarFileNames.length + " lib entries in " + WORKSPACE_DIRECTORY + ".metadata ... org.eclipse.jdt.core.prefs");
     	
         // Take all the jars in "jarFileNames" and "userLibraryJarFilename" and merge them into "outputJar"

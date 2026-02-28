@@ -106,7 +106,7 @@ public class ClasspathReader {
 		return libraryEntries.toArray(new String[0]);
 	}
 
-	public String[] getUserLibraryEntries(String prependPath, String workspaceDirectory) {
+	public String[] getUserLibraryEntries(String prependPath, String workspaceDirectory, boolean isWindows) {
 		ArrayList<String> userLibraryNames = new ArrayList<>();
 		for (String l : fileLines) {
 			int userLibraryPos = l.indexOf("USER_LIBRARY/");
@@ -131,6 +131,7 @@ public class ClasspathReader {
 							//System.out.println("splitJarLine [" + splitJarLine[i] + "] " + i);
 							int lastQuotePos = splitJarLine[i].lastIndexOf("\"");
 							String jarFileName = splitJarLine[i].substring(2, lastQuotePos);
+							if (isWindows) jarFileName = jarFileName.replaceAll("/", "\\\\");
 							jarFileName = combine(prependPath, jarFileName);
 							//System.out.println("jarFileName [" + jarFileName + "]");
 							libraryEntries.add(jarFileName);
@@ -187,7 +188,7 @@ public class ClasspathReader {
     }
 
 	public static void main(String[] args) throws Exception {
-		boolean testReadingClassesDirectory = true;
+		boolean testReadingClassesDirectory = false;
 		if (testReadingClassesDirectory) {
 			//final variables for testing only
 			String USER = "/home/owner/"; 
@@ -220,12 +221,13 @@ public class ClasspathReader {
 		}
 		
 		
-		boolean testSettings = false;
+		boolean testSettings = true;
 		if (testSettings) {
 			ClasspathReader reader = new ClasspathReader(".classpath","C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\");
 			reader.load();
 			reader.getLibraryEntries("C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\");
-			reader.getUserLibraryEntries("C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\", "C:\\Users\\Owner\\eclipse-workspace\\");
+			boolean isWindows = true;
+			reader.getUserLibraryEntries("C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\", "C:\\Users\\Owner\\eclipse-workspace\\", isWindows);
 		}
 		
 		boolean testReader = false;
