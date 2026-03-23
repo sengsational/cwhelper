@@ -796,6 +796,7 @@ class TinyConnection implements Runnable {
                     Emailer emailer = CaptureManager.getEmailer();
                     if (emailer != null){
                         if (emailer.isValid()){
+                        	System.out.println(new Date() + " emailer of type " + emailer.getClass().getSimpleName() + " is valid.");
                             emailer.sendTestMessage();
                             message = "Test message attempt at " + new Date() + "<BR><BR>";
                         } else {
@@ -840,12 +841,18 @@ class TinyConnection implements Runnable {
                     String sendRecorded = (String)request.get("sendrecorded");
                     Emailer emailer = CaptureManager.getEmailer();
                     if (emailer == null){
-                        emailer = Emailer.getInstance(); 
+                    	if (logonPassword != null && logonPassword.equalsIgnoreCase("oauth2")) { //DRS 20260320 - Added 'if' - Fix bug where non-oauth Emailer created when oauth password specified
+                    		System.out.println(new Date() + " Creating type EmailerOauth");
+                    		emailer = EmailerOauth.getInstance();
+                    	} else {
+                    		System.out.println(new Date() + " Creating type Emailer");
+                            emailer = Emailer.getInstance(); 
+                    	}
                         emailer.initialize(hourToSend, minuteToSend, smtpServerName, smtpServerPort, logonUser, logonPassword, saveToDisk, sendUsers, lowDiskGb, sendScheduled, sendRecorded);
                     }
                     if (emailer.isValid()){
                         CaptureManager.setEmailer(emailer);
-                        message = "Emailer has been defined.<BR><BR>";
+                        message = "Emailer " + emailer.getClass().getSimpleName() + " has been defined.<BR><BR>";
                     } else {
                         message = "Emailer definition attempt failed.  Supplied Emailer data is not sufficient.<BR><BR>";
                     }

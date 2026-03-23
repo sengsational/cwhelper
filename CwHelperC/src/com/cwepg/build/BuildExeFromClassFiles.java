@@ -61,7 +61,9 @@ public class BuildExeFromClassFiles {
     public static final String COMMA_VERSION = "5,4,0,";
     public static final String DOT_VERSION = "5.4.0.";
     public static final String CLASSPATH_CONFIG_FILE = ".classpath";
-	private static ArrayList<String> jarFileList;
+    public static final String NATIVE_IMAGE_META_FILENAME = "reachability-metadata.json";
+
+    private static ArrayList<String> jarFileList;
 	public static final boolean IS_WINDOWS = true;
 
 
@@ -120,7 +122,7 @@ public class BuildExeFromClassFiles {
                         "/ve", "#Comments=Background Job for CW_EPG#",
                         "/ve", "#CompanyName=CW_EPG Team# /ve #InternalName=" + COMMA_VERSION + "0#",
                         "/ve", "#LegalTrademarks=CW_EPG Team#",
-                        "/splash", PROJECT_DIRECTORY + "CW_Logo.jpg",
+                        //"/splash", PROJECT_DIRECTORY + "CW_Logo.jpg",
                         "/closeonwindow:false",
                         "/splashtitle", "#Please wait ...#"
                     };
@@ -243,6 +245,7 @@ public class BuildExeFromClassFiles {
         attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
         attributes.put(Attributes.Name.CLASS_PATH, ".");
         attributes.put(Attributes.Name.MAIN_CLASS, "org.cwepg.hr.ServiceLauncher");
+        attributes.put(new Attributes.Name("SplashScreen-Image"), "CW_Logo.jpg");
         
         // Read the build information from the project and make some definitions
     	ClasspathReader reader = new ClasspathReader(CLASSPATH_CONFIG_FILE, PROJECT_DIRECTORY);
@@ -270,6 +273,27 @@ public class BuildExeFromClassFiles {
                 //System.out.println("Processing [" + inputJar + "]");
                 mergeJar(jos, inputJar, checkEntryList);
             }
+            
+    		
+    		File metadataFile = new File(LIBRARY_DIRECTORY + NATIVE_IMAGE_META_FILENAME);
+    		String jarFileLocation = "META-INF/native-image/reachability-metadata.json";
+    		if (metadataFile.exists()) {
+    			try (FileInputStream fis = new FileInputStream(metadataFile)) {
+    				JarEntry entry = new JarEntry(jarFileLocation);
+    				jos.putNextEntry(entry);
+    	            byte[] buffer = new byte[1024];
+    	            int bytesRead;
+    	            while ((bytesRead = fis.read(buffer)) != -1) {
+    	                jos.write(buffer, 0, bytesRead);
+    	            }
+    	            jos.closeEntry();
+    	            System.out.println("Added " + LIBRARY_DIRECTORY + NATIVE_IMAGE_META_FILENAME + " to jar file as " + jarFileLocation);
+    			}
+    		} else {
+    			System.out.println("Metadata file not found: " + LIBRARY_DIRECTORY + NATIVE_IMAGE_META_FILENAME);
+    		}
+    		
+    		
         } catch (IOException e) {
             e.printStackTrace();
         }

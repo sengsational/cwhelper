@@ -4,9 +4,14 @@
  */
 package org.cwepg.hr;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -23,7 +28,8 @@ import java.util.List;
 import java.util.TreeMap;
 
 import net.ucanaccess.jdbc.UcanaccessDriver;
-import net.ucanaccess.jdbc.UcanaccessSQLException;
+import net.ucanaccess.exception.UcanaccessSQLException;
+
 
 public class CaptureDataManager {
 
@@ -38,6 +44,13 @@ public class CaptureDataManager {
     public static CaptureDataManager getInstance() {
         if (captureDataManager == null){
             captureDataManager = new CaptureDataManager();
+            try {
+                // Explicitly load the HSQLDB JDBC driver
+                Class.forName("org.hsqldb.jdbc.JDBCDriver");
+                System.out.println("HSQLDB Driver Loaded Successfully");
+            } catch (ClassNotFoundException e) {
+                System.err.println("ERROR: HSQLDB JDBC Driver not found in classpath.");
+            }
             File dbFile = new File(CaptureManager.dataPath + CaptureDataManager.mdbFileName);
             if (!dbFile.exists()) {
                 System.out.println(new Date() + " ERROR: No CW_EPG database file found: " + CaptureManager.dataPath + CaptureDataManager.mdbFileName + ".");

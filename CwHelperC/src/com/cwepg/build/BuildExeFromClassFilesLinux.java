@@ -46,6 +46,7 @@ public class BuildExeFromClassFilesLinux {
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
     public static final String DOT_VERSION = "5.4.0.";
+    public static final String NATIVE_IMAGE_META_FILENAME = "reachability-metadata.json";
 	private static ArrayList<String> jarFileList;
 
     public static void main(String[] args) throws Exception {
@@ -55,7 +56,7 @@ public class BuildExeFromClassFilesLinux {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1083";
+            revision = "1092";
         } else {
         	String fullVersion = ""; 
         	try {
@@ -171,6 +172,7 @@ public class BuildExeFromClassFilesLinux {
         attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
         attributes.put(Attributes.Name.CLASS_PATH, ".");
         attributes.put(Attributes.Name.MAIN_CLASS, "org.cwepg.hr.ServiceLauncher");
+        attributes.put(new Attributes.Name("SplashScreen-Image"), "CW_Logo.jpg");
         
         // Read the build information from the project and make some definitions
     	ClasspathReader reader = new ClasspathReader(CLASSPATH_CONFIG_FILE, PROJECT_DIRECTORY);
@@ -203,6 +205,26 @@ public class BuildExeFromClassFilesLinux {
                 mergeJar(jos, inputJar, checkEntryList);
             }
             */
+    		
+    		File metadataFile = new File(LIBRARY_DIRECTORY + NATIVE_IMAGE_META_FILENAME);
+    		String jarFileLocation = "META-INF/native-image/reachability-metadata.json";
+    		if (metadataFile.exists()) {
+    			try (FileInputStream fis = new FileInputStream(metadataFile)) {
+    				JarEntry entry = new JarEntry(jarFileLocation);
+    				jos.putNextEntry(entry);
+    	            byte[] buffer = new byte[1024];
+    	            int bytesRead;
+    	            while ((bytesRead = fis.read(buffer)) != -1) {
+    	                jos.write(buffer, 0, bytesRead);
+    	            }
+    	            jos.closeEntry();
+    	            System.out.println("Added " + LIBRARY_DIRECTORY + NATIVE_IMAGE_META_FILENAME + " to jar file as " + jarFileLocation);
+    			}
+    		} else {
+    			System.out.println("Metadata file not found: " + LIBRARY_DIRECTORY + NATIVE_IMAGE_META_FILENAME);
+    		}
+    		
+    		
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -240,7 +262,7 @@ public class BuildExeFromClassFilesLinux {
 		}
         boolean usePath = true;
         JarUpdater.updateZipFileWithFilesOnDisk(new File(outputJar), classesFileList, usePath, PROJECT_ROOT + classFilesDirectory);
-
+        
         if (doJarSigning) {
             String[] signTheJarFile = {JRE_PATH + "bin/" + "jarsigner","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,outputJar, "knurderkeyalias"};
             if (runOsProcess(signTheJarFile, "jar signed.", null)) {

@@ -35,6 +35,7 @@ public class EmailerOauth extends Emailer {
 
     private EmailerOauth(){
         super();
+        System.out.println(new Date() + " Loaded EmailerOauth to support oauth-based emailer");
     }
 
     public static Emailer getInstance(){
@@ -98,7 +99,7 @@ public class EmailerOauth extends Emailer {
     
     @Override
 	public void sendTestMessage() {
-        System.out.println(new Date() + " Sending TEST email to " + Emailer.sendUsers);
+        System.out.println(new Date() + " EmailerOauth Sending TEST email to " + Emailer.sendUsers);
         try {
             Credential credential = getCredential();
     	    final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
