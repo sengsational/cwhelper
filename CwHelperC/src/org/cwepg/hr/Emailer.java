@@ -183,7 +183,8 @@ public class Emailer extends TimedEvent {
     }
 
     public void sendTestMessage() {
-        System.out.println(new Date() + " Sending TEST email to " + Emailer.sendUsers);
+        System.out.println(new Date() + " Emailer Sending TEST email to " + Emailer.sendUsers);
+        
         try {
             Session session = getSession();
             MimeMessage msg = new MimeMessage(session);
@@ -249,11 +250,15 @@ public class Emailer extends TimedEvent {
 
     private Session getSession() {
         Properties props = new Properties();
+        System.out.println("Setting smtp host to [" + Emailer.smtpServerName + "]");
         props.put("mail.smtp.host", Emailer.smtpServerName);
+        System.out.println("Setting smtp port to [" + Emailer.smtpServerPort + "]");
         props.put("mail.smtp.port", Emailer.smtpServerPort);
         props.put("mail.smtp.auth","true");
         props.put("mail.smtp.starttls.enable", "true");
-        Session session = Session.getDefaultInstance(props, new SmtpAuthenticator());
+        props.put("mail.smtp.connectiontimeout", "5000"); // 5 seconds
+        props.put("mail.smtp.timeout", "5000");           // 5 seconds
+        Session session = Session.getInstance(props, new SmtpAuthenticator());
         return session;
     }
     
@@ -347,7 +352,8 @@ public class Emailer extends TimedEvent {
     public static void main(String[] args) {
         Emailer emailer = Emailer.getInstance();
         //emailer.initialize("22","58","smtp.everyone.net","2525", "dale@sengsational.com","","true","dale@sengsational.com","90","true","true");
-        emailer.initialize("20","32","smtp.googlemail.com","587", "DRS2.Usenet@sengsational.com","aqP7LXB4","true","dale@sengsational.com","90","true","true");
+        //emailer.initialize("20","32","smtp.googlemail.com","587", "DRS2.Usenet@sengsational.com","(not defined)","true","dale@sengsational.com","90","true","true");
+        emailer.initialize("17","0","mail.sonic.net","465", "cw_epg_alerts@sonic.net","(not defined)","true","dale@sengsational.com","90","true","true");
 
         /*
         System.out.println(emailer.getHtml());
