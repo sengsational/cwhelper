@@ -42,7 +42,7 @@ public class BuildExeFromClassFilesLinux {
     public static final String KEYPASS = "Hnds#1111";
     public static final String LIBRARY_DIRECTORY = PROJECT_DIRECTORY + "CwHelper_lib/";
     public static final String VERSION_FILE_NAME = "version.txt";
-    public static final String JRE_PATH = "/home/owner/Eclipse/plugins/org.eclipse.justj.openjdk.hotspot.jre.full.linux.x86_64_21.0.9.v20251105-0741/jre/";
+    //public static final String JRE_PATH = "/home/owner/Eclipse/plugins/org.eclipse.justj.openjdk.hotspot.jre.full.linux.x86_64_21.0.9.v20251105-0741/jre/";
     public static final String BASE_VERSION = "5-4-0-";
     public static final String COMMA_VERSION = "5,4,0,";
     public static final String DOT_VERSION = "5.4.0.";
@@ -56,7 +56,7 @@ public class BuildExeFromClassFilesLinux {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1092";
+            revision = "1093";
         } else {
         	String fullVersion = ""; 
         	try {
@@ -264,9 +264,9 @@ public class BuildExeFromClassFilesLinux {
         JarUpdater.updateZipFileWithFilesOnDisk(new File(outputJar), classesFileList, usePath, PROJECT_ROOT + classFilesDirectory);
         
         if (doJarSigning) {
-            String[] signTheJarFile = {JRE_PATH + "bin/" + "jarsigner","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,outputJar, "knurderkeyalias"};
+            String[] signTheJarFile = {JreFinder.getDynamicJrePath() + "bin/" + "jarsigner","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,outputJar, "knurderkeyalias"};
             if (runOsProcess(signTheJarFile, "jar signed.", null)) {
-                String[] verifyTheJarFile = {JRE_PATH +"bin/" + "jarsigner", "-verify", outputJar};
+                String[] verifyTheJarFile = {JreFinder.getDynamicJrePath() +"bin/" + "jarsigner", "-verify", outputJar};
                 if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
                     System.out.println("SUCCESSFULLY SIGNED " + outputJar);
                 } else {
@@ -457,9 +457,9 @@ public class BuildExeFromClassFilesLinux {
             if (contentsOfVersionFile.trim().equals(COMMA_VERSION + revision)) {
                 System.out.println("version.txt is aligned");
                 if (doJarSigning) {
-                    String[] signTheJarFile = {JRE_PATH + "bin/" + "jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
+                    String[] signTheJarFile = {JreFinder.getDynamicJrePath() + "bin/" + "jarsigner.exe","-tsa","http://timestamp.digicert.com","-tsacert","alias","-keystore", KEYSTORE,"-storepass",STOREPASS,"-keypass",KEYPASS,"CwHelper_" + BASE_VERSION + revision + ".jar", "knurderkeyalias"};
                     if (runOsProcess(signTheJarFile, "jar signed.", null)) {
-                        String[] verifyTheJarFile = {JRE_PATH +"bin/" + "jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
+                        String[] verifyTheJarFile = {JreFinder.getDynamicJrePath() +"bin/" + "jarsigner.exe", "-verify","CwHelper_" + BASE_VERSION + revision + ".jar"};
                         if (runOsProcess(verifyTheJarFile, "jar verified.", null)) {
                             System.out.println("SUCCESSFULLY SIGNED CwHelper_" + BASE_VERSION + revision + ".jar");
                         } else {
