@@ -243,6 +243,8 @@ public class BuildExeFromClassFiles {
         attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
         attributes.put(Attributes.Name.CLASS_PATH, ".");
         attributes.put(Attributes.Name.MAIN_CLASS, "org.cwepg.hr.ServiceLauncher");
+        attributes.put(new Attributes.Name("SplashScreen-Image"), "CW_Logo.jpg");
+        attributes.put(new Attributes.Name("Add-Opens"), "java.prefs/java.util.prefs java.base/java.lang");
         
         // Read the build information from the project and make some definitions
     	ClasspathReader reader = new ClasspathReader(CLASSPATH_CONFIG_FILE, PROJECT_DIRECTORY);

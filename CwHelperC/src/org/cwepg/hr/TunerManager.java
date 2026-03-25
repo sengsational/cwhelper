@@ -73,7 +73,10 @@ public class TunerManager {
 		return tunerManager;
 	}
     
-	public int countTuners(){
+	public int countTuners(boolean deleteExistingTuners) {
+		if (deleteExistingTuners) {
+			TunerManager.tuners.clear(); // Called after all traditional hdhr change
+		}
 	    mCountingTuners = true;
         // First, read tuners from machine (no alteration of our current list of tuners)
         ArrayList<Tuner> refreshedTuners = new ArrayList<Tuner>();
@@ -193,7 +196,6 @@ public class TunerManager {
         //    this.tuners.remove(tuner.getFullName());
         //    tuner.removeAllCaptures(true); //before deleting a tuner, delete it's captures
         //}
-        
     }
 
     
@@ -2007,7 +2009,7 @@ public class TunerManager {
         ArrayList<Capture> captures = new ArrayList<Capture>();
         if (this.noTuners()){
             System.out.println("TunerManager.getCaptures() counting tuners.");
-            this.countTuners();
+            this.countTuners(false);
         }
         for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
             Tuner tuner = iter.next();
@@ -2621,7 +2623,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             CaptureManager.useHdhrCommandLine = true; // for traditional testing;
             //CaptureManager.useHdhrCommandLine = false; // for vchannel testing;
             TunerManager tunerManager = TunerManager.getInstance();
-            tunerManager.countTuners();
+            tunerManager.countTuners(false);
             Collection<?> channels = tunerManager.getAllChannels(false);
             System.out.println("there were " + channels.size() + " channels.");
             for (Object channel : channels) {

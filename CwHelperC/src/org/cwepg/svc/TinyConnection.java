@@ -186,13 +186,23 @@ class TinyConnection implements Runnable {
                     out.print(HEAD + "allTraditionalHdhr unavailable for current configuration." + FOOT);
                 } else if (setItem != null ) {
                     goodSettingCount++;
-                    if (setItem.equals("true")){
-                        CaptureManager.setAllTraditionalHdhr(true);
-                        out.print(HEAD + "allTraditionalHdhr=true" + FOOT);
-                    } else if (setItem.equals("false")){
-                        CaptureManager.setAllTraditionalHdhr(false);
-                        out.print(HEAD + "allTraditionalHdhr=false" + FOOT);
-                    }
+                	boolean setItemBoolean = setItem.equals("true");
+                	if (CaptureManager.allTraditionalHdhr !=  setItemBoolean) {
+                        if (setItemBoolean){
+                            CaptureManager.setAllTraditionalHdhr(true);
+                            out.print(HEAD + "allTraditionalHdhr=true" + FOOT);
+                        } else {
+                            CaptureManager.setAllTraditionalHdhr(false);
+                            out.print(HEAD + "allTraditionalHdhr=false" + FOOT);
+                        }
+                        // DRS 20260324 - Added the equivalent of /discover here so all ttraditional changes the channels list
+                        boolean deleteExistingTuners = true;
+                        tunerManager.countTuners(deleteExistingTuners);
+                        tunerManager.addAltChannels(CaptureManager.alternateChannels); // DRS 20200225 - Added Line - This was key for backup recordings because doing only 'countTuners()' left the lineup without alternates.
+                        CaptureManager.requestInterrupt("TinyConnection.run (/discover)"); // need to interrupt in case new tuner had new captures
+                	} else {
+                        out.print(HEAD + "allTraditionalHdhr was already " + setItemBoolean +". Nothing done." + FOOT);
+                	}
                 }
                 
                 setItem = (String)request.get("unlockwithforce");
@@ -406,7 +416,7 @@ class TinyConnection implements Runnable {
                 out.print(HEAD + tunerManager.getWebTunerList() + FOOT);
             } else if (action.equals("/discover")){ // ************* DISCOVER ***************
                 //if (tunerManager.hasHdhrTuner()) {
-                    tunerManager.countTuners();
+                    tunerManager.countTuners(false);
                     tunerManager.addAltChannels(CaptureManager.alternateChannels); // DRS 20200225 - Added Line - This was key for backup recordings because doing only 'countTuners()' left the lineup without alternates.
                     CaptureManager.requestInterrupt("TinyConnection.run (/discover)"); // need to interrupt in case new tuner had new captures
                 //}
@@ -433,7 +443,7 @@ class TinyConnection implements Runnable {
                     String message = tunerManager.scanRefreshLineUpTm(useExistingFile, tuner, signalType, maxSeconds);
                     // DRS20200908 - Added 'if' 
                     if (message != null && message.toUpperCase().indexOf("USE DISCOVER") > -1){
-                        tunerManager.countTuners();
+                        tunerManager.countTuners(false);
                         tunerManager.scanRefreshLineUpTm(useExistingFile, tuner, signalType, maxSeconds);
                     }
                     tunerManager.addAltChannels(CaptureManager.alternateChannels); // DRS 20200305 - Added line - Should have been added 20200225
@@ -442,7 +452,7 @@ class TinyConnection implements Runnable {
             } else if (action.equals("/channels") || action.equals("/channels2")){ // ************* CHANNELS and CHANNELS2 ***************
                 String message = tunerManager.scanRefreshLineupTm();
                 if (message != null && message.toUpperCase().indexOf("USE DISCOVER") > -1){
-                    tunerManager.countTuners();
+                    tunerManager.countTuners(false);
                     tunerManager.scanRefreshLineupTm();
                 }
                 tunerManager.addAltChannels(CaptureManager.alternateChannels); // DRS 20200305 - Added line - Should have been added 20200225

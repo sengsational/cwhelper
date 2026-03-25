@@ -150,7 +150,7 @@ public class CaptureHdhrHttp extends CaptureHdhr implements Runnable {
             boolean tunerOn = true;
             Tuner tuner0 = null;
             if (tunerOn){
-                tunMan.countTuners();
+                tunMan.countTuners(false);
                 tuner0 = tunMan.getTuner("10A369BB-1");
             } else {
                 tuner0 = new TunerHdhr("10A369BB", 1, true); 

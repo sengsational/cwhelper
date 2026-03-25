@@ -102,7 +102,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             captureDataManager = CaptureDataManager.getInstance();
             captureManager = new CaptureManager(); // settings are loaded here
             tunerManager = TunerManager.getInstance();
-            if (tunerManager.noTuners()) tunerManager.countTuners(); // THIS IS WHERE WE RUN COUNT TUNERS FOR THE FIRST TIME. 
+            if (tunerManager.noTuners()) tunerManager.countTuners(false); // THIS IS WHERE WE RUN COUNT TUNERS FOR THE FIRST TIME. 
             emailer = Emailer.getInstanceFromDisk();
             wakeupEvent = WakeupEvent.getInstanceFromDisk();
         } 
