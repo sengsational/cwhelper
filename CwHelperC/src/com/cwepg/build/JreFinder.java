@@ -27,18 +27,27 @@ public class JreFinder {
             if (matches != null && matches.length > 0) {
                 // Sort to get the latest version if multiple exist
                 Arrays.sort(matches);
-                File latestJreDir = matches[matches.length - 1];
 
+                File latestJreDir = null;
+                for (File file : matches) {
+                    if (file.isDirectory()) {
+                    	latestJreDir = file;
+                    	break;
+                    }
+				}
+                
                 // Construct the path to the internal /jre folder
                 return new File(latestJreDir, "jre").getAbsolutePath() + File.separator;
             }
         }
-        throw new Exception("ERROR: Looked in [" + pluginsDir + "] for [org.eclipse.justj.openjdk.hotspot.jre.full ] but did not find it.");
+        return null; // Fallback or handle error
     }
 
     public static void main(String[] args) throws Exception {
         String JRE_PATH = getDynamicJrePath();
-        System.out.println("Detected JRE: " + JRE_PATH);
+        System.out.println("Detected JRE [" + JRE_PATH +"]");
+        //Detected JRE [/home/owner/Eclipse/plugins/org.eclipse.justj.openjdk.hotspot.jre.full.linux.x86_64_21.0.10.v20260205-0638/jre/]
+        //Detected JRE [/home/owner/Eclipse/plugins/org.eclipse.justj.openjdk.hotspot.jre.full_21.0.10.v20260205-0638.jar/jre/] << Do not detect jar files
         //Detected JRE [/home/owner/Eclipse/plugins/org.eclipse.justj.openjdk.hotspot.jre.full.linux.x86_64_21.0.10.v20260205-0638/jre/]
     }
 }
