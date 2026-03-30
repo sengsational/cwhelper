@@ -18,6 +18,9 @@ import org.cwepg.hr.Channel;
 import org.cwepg.hr.ChannelAnalog;
 import org.cwepg.hr.Tuner;
 
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
+
 public class RegistryHelperFusion {
 
     public static final String topKey = "HKEY_CURRENT_USER";
@@ -31,8 +34,8 @@ public class RegistryHelperFusion {
     public static String getInstalledLocation() {
         String result = null;
         try {
-            result = Registry.getStringValue(topKey, fusionBranch, "SetupDir");
-        } catch (UnsupportedEncodingException e) {
+            result = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, fusionBranch, "SetupDir");
+        } catch (Throwable e) {
             System.out.println(new Date() + " ERROR: No installed location for Fusion");
         }
         return result;
@@ -44,7 +47,7 @@ public class RegistryHelperFusion {
         //ArrayList<String> activeTopKeys = new ArrayList<String>();
         byte[] data = null;
         try {
-            Map map = Registry.getValues(topKey, fusionBranch);
+        	Map map = Advapi32Util.registryGetValues(WinReg.HKEY_CURRENT_USER, fusionBranch);
             Set aSet = map.keySet();
             for (Iterator iter = aSet.iterator(); iter.hasNext();) {
                 String regKey = (String) iter.next();
@@ -136,21 +139,21 @@ public class RegistryHelperFusion {
     public static Map getFusionRegistryEntries(String controlSetName) {
         Map<String, FusionRegistryEntry> fusionRegistryEntries = new TreeMap<String, FusionRegistryEntry>();
         try {
-            String[] services = Registry.getSubKeys("HKEY_LOCAL_MACHINE", "System\\" + controlSetName + "\\Services");
+            String[] services = Advapi32Util.registryGetKeys(WinReg.HKEY_LOCAL_MACHINE, "System\\" + controlSetName + "\\Services");
             for (int i = 0; i < services.length; i++){
-                String displayNameEntry = Registry.getStringValue("HKEY_LOCAL_MACHINE", "System\\" + controlSetName + "\\Services\\" + services[i], "DisplayName");
+                String displayNameEntry = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "System\\" + controlSetName + "\\Services\\" + services[i], "DisplayName");
                 if (displayNameEntry != null && displayNameEntry.indexOf("FusionHDTV") > -1){
-                    int countEntry = Registry.getIntValue("HKEY_LOCAL_MACHINE", "System\\" + controlSetName + "\\Services\\" + services[i] + "\\Enum", "Count");
+                    int countEntry = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, "System\\" + controlSetName + "\\Services\\" + services[i] + "\\Enum", "Count");
                     if (debug > 0) System.out.println("System\\" + controlSetName + "\\Services\\" + services[i] + "\\Enum\\Count=" + countEntry);
                     for (int currentCount = 0; currentCount < countEntry; currentCount++){
-                        String currentCountEntry = Registry.getStringValue("HKEY_LOCAL_MACHINE", "System\\" + controlSetName + "\\Services\\" + services[i] + "\\Enum", "" + currentCount);
+                        String currentCountEntry = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "System\\" + controlSetName + "\\Services\\" + services[i] + "\\Enum", "" + currentCount);
                         if (debug > 0) System.out.println("System\\" + controlSetName + "\\Services\\" + services[i] + "\\Enum\\" + currentCount + "=" + currentCountEntry);
-                        String driverEntry = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SYSTEM\\" + controlSetName + "\\Enum\\" + currentCountEntry, "Driver");
+                        String driverEntry = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "SYSTEM\\" + controlSetName + "\\Enum\\" + currentCountEntry, "Driver");
                         if (debug > 0) System.out.println("SYSTEM\\" + controlSetName + "\\Enum\\" + currentCountEntry +  "\\Driver=" + driverEntry);
-                        String deviceDescEntry = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SYSTEM\\" + controlSetName + "\\Enum\\" + currentCountEntry, "DeviceDesc");
+                        String deviceDescEntry = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "SYSTEM\\" + controlSetName + "\\Enum\\" + currentCountEntry, "DeviceDesc");
                         if (debug > 0) System.out.println("SYSTEM\\" + controlSetName + "\\Enum\\" + currentCountEntry +  "\\DeviceDesc=" + deviceDescEntry);
-                        if (Registry.valueExists("HKEY_LOCAL_MACHINE", "SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData", "ZuluUINumber")){
-                            int aZuluNumber = Registry.getIntValue("HKEY_LOCAL_MACHINE", "SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData", "ZuluUINumber");
+                        if (Advapi32Util.registryValueExists(WinReg.HKEY_LOCAL_MACHINE, "SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData", "ZuluUINumber")){
+                            int aZuluNumber = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, "SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData", "ZuluUINumber");
                             if (debug > 0) System.out.println("SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData\\ZuluUINumber=" + aZuluNumber);
                             FusionRegistryEntry aFusionRegistryEntry = fusionRegistryEntries.get("" + aZuluNumber);
                             if ( aFusionRegistryEntry == null){
@@ -161,8 +164,8 @@ public class RegistryHelperFusion {
                         } else {
                             if (debug > 0) System.out.println("SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData\\ZuluUINumber=(not available)");
                         }
-                        if (Registry.valueExists("HKEY_LOCAL_MACHINE", "SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData", "ZuluUINumber2")){
-                            int aZuluNumber = Registry.getIntValue("HKEY_LOCAL_MACHINE", "SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData", "ZuluUINumber2");
+                        if (Advapi32Util.registryValueExists(WinReg.HKEY_LOCAL_MACHINE, "SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData", "ZuluUINumber2")){
+                            int aZuluNumber = Advapi32Util.registryGetIntValue(WinReg.HKEY_LOCAL_MACHINE, "SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData", "ZuluUINumber2");
                             if (debug > 0) System.out.println("SYSTEM\\" + controlSetName + "\\Control\\Class\\" + driverEntry + "\\DriverData\\ZuluUINumber2=" + aZuluNumber);
                             FusionRegistryEntry aFusionRegistryEntry = fusionRegistryEntries.get("" + aZuluNumber);
                             if ( aFusionRegistryEntry == null){
@@ -189,7 +192,7 @@ public class RegistryHelperFusion {
                 }
             } catch (Throwable t){}
 
-        } catch (UnsupportedEncodingException e) {
+        } catch (Throwable e) {
             System.out.println(new Date() + " ERROR: getFusionRegistryEntries " + e.getMessage());
             System.err.println(new Date() + " ERROR: getFusionRegistryEntries " + e.getMessage());
             e.printStackTrace();

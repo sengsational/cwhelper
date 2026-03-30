@@ -35,10 +35,12 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import org.cwepg.reg.FusionRegistryEntry;
-import org.cwepg.reg.Registry;
 import org.cwepg.reg.RegistryHelperFusion;
 import org.cwepg.svc.HdhrCommandLine;
 import org.cwepg.svc.NetworkDetails;
+
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
 
 public class TunerManager {
 	
@@ -237,7 +239,8 @@ public class TunerManager {
         if (test) controlSetName = "ControlSet0002";
         Map<String, FusionRegistryEntry> entries = RegistryHelperFusion.getFusionRegistryEntries(controlSetName);
         try {
-            int analogFileExtensionNumber = Registry.getIntValue("HKEY_CURRENT_USER", "Software\\Dvico\\ZuluHDTV\\Data", "AnalogRecProfile");
+            //int analogFileExtensionNumber = Registry.getIntValue("HKEY_CURRENT_USER", "Software\\Dvico\\ZuluHDTV\\Data", "AnalogRecProfile");
+            int analogFileExtensionNumber = Advapi32Util.registryGetIntValue(WinReg.HKEY_CURRENT_USER, "Software\\Dvico\\ZuluHDTV\\Data\\", "AnalogRecProfile");
             
             Map<String, Map> lookupTables = TunerManager.getLookupTables();
             if (lookupTables == null) return tunerList;  // DRS 20210114 - Added 1 - If we get an null here, return empty list and stop any more attempts...all hope is lost.
@@ -271,10 +274,10 @@ public class TunerManager {
         try {
             // record path for single device registry
             String[] registryBranchSingle = {"HKEY_CURRENT_USER", "Software\\Dvico\\ZuluHDTV\\Data", ""};
-            if (Registry.valueExists(registryBranchSingle[0],registryBranchSingle[1],"DeviceMainUID")){
-                String recordPathEntry = Registry.getStringValue(registryBranchSingle[0], registryBranchSingle[1], "RecordPath");
-                String deviceMainUidEntry = "" + Registry.getIntValue(registryBranchSingle[0], registryBranchSingle[1], "DeviceMainUID");
-                String modelNameEntry = Registry.getStringValue(registryBranchSingle[0], registryBranchSingle[1], "ModelName");
+            if (Advapi32Util.registryValueExists(WinReg.HKEY_CURRENT_USER, registryBranchSingle[1],"DeviceMainUID")){
+                String recordPathEntry = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, registryBranchSingle[1], "RecordPath");
+                String deviceMainUidEntry = "" + Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, registryBranchSingle[1], "DeviceMainUID");
+                String modelNameEntry = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, registryBranchSingle[1], "ModelName");
                 System.out.println(registryBranchSingle[1] +  "\\RecordPath=" + recordPathEntry);
                 System.out.println(registryBranchSingle[1] +  "\\DeviceMainUID=" + deviceMainUidEntry);
                 System.out.println(registryBranchSingle[1] +  "\\ModelName=" + modelNameEntry);
@@ -285,10 +288,10 @@ public class TunerManager {
             // record paths and names for multiple device registry
             for (int i = 1; i < 5; i++){
                 String[] registryBranch = {"HKEY_CURRENT_USER", "Software\\Dvico\\ZuluHDTV\\Data\\Device" + i,""};
-                if (Registry.valueExists(registryBranch[0],registryBranch[1],"UINumber")){
-                    String recordPathEntry = Registry.getStringValue(registryBranch[0], registryBranch[1], "RecordPath");
-                    String modelNameEntry = Registry.getStringValue(registryBranch[0], registryBranch[1], "ModelName");
-                    String uiNumberEntry = "" + Registry.getIntValue(registryBranch[0],registryBranch[1],"UINumber");
+                if (Advapi32Util.registryValueExists(WinReg.HKEY_CURRENT_USER,registryBranch[1],"UINumber")){
+                    String recordPathEntry = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, registryBranch[1], "RecordPath");
+                    String modelNameEntry = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, registryBranch[1], "ModelName");
+                    String uiNumberEntry = "" + Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER,registryBranch[1],"UINumber");
                     System.out.println(registryBranch[1] +  "\\RecordPath=" + recordPathEntry);
                     System.out.println(registryBranch[1] +  "\\UINumber=" + uiNumberEntry);
                     System.out.println(registryBranch[1] +  "\\ModelName=" + modelNameEntry);
@@ -299,7 +302,7 @@ public class TunerManager {
                     break;
                 }
             }
-        } catch (UnsupportedEncodingException e1) {
+        } catch (Throwable e1) {
             System.out.println(new Date() + " ERROR: Failed to get data from DeviceN branch:" + e1.getMessage());
             System.err.println(new Date() + " ERROR: Failed to get data from DeviceN branch:" + e1.getMessage());
             e1.printStackTrace();
@@ -369,11 +372,11 @@ public class TunerManager {
         String recordPath = null;
         try {
             if (TunerManager.skipRegistryForTesting) return tunerList;
-            recordPath = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\MyHD", "HD_DIR_NAME_FOR_RESCAP");
+            recordPath = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\MyHD", "HD_DIR_NAME_FOR_RESCAP");
             int i = 0;
             while (recordPath == null && i < 12){
                 try {Thread.sleep(250);} catch (Exception e){};
-                recordPath = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\MyHD", "HD_DIR_NAME_FOR_RESCAP");
+                recordPath = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\MyHD", "HD_DIR_NAME_FOR_RESCAP");
                 i++;
             }
             if (recordPath != null){
@@ -597,7 +600,7 @@ public class TunerManager {
                     progress = i;
                     String location = "SOFTWARE\\Silicondust\\HDHomeRun\\Tuners\\" + device + "-" + i;
                     boolean itemExists = false;
-                    if (!TunerManager.skipRegistryForTesting) itemExists = Registry.valueExists("HKEY_LOCAL_MACHINE", location, "Source");
+                    if (!TunerManager.skipRegistryForTesting) itemExists = Advapi32Util.registryValueExists(WinReg.HKEY_LOCAL_MACHINE,  location, "Source");
                     if (itemExists){
                         int proposedCount = i + 1;
                         if (proposedCount > tunerCount) tunerCount = proposedCount;

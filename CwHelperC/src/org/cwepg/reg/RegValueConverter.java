@@ -60,7 +60,7 @@ public class RegValueConverter {
         boolean testIntFromBinary = false;
         /*********************************/
         if (testIntFromBinary){
-            Map map = Registry.getValues(topKey, myhdBranch);
+            Map map = null;//Registry.getValues(topKey, myhdBranch);
             byte[] buf = (byte[])map.get("RESERVATION_INFO_VCH_016");
             int size = 4;
             for (int i = 0; i < 16; i++){
@@ -72,9 +72,9 @@ public class RegValueConverter {
         boolean testIntFromDword = true;
         /*********************************/
         if (testIntFromDword){
-            Map map = Registry.getValues(topKey, myhdBranch);
+            Map map = null; //Registry.getValues(topKey, myhdBranch);
             int aRegIntValue = ((Integer)map.get("INPUT1_CH Tail_VCH")).intValue();
-            int sameIntValue = Registry.getIntValue(topKey, myhdBranch, "INPUT1_CH Tail_VCH");
+            int sameIntValue = 0;//Registry.getIntValue(topKey, myhdBranch, "INPUT1_CH Tail_VCH");
             System.out.println(aRegIntValue + "=" + sameIntValue);
         }
 
@@ -82,9 +82,9 @@ public class RegValueConverter {
         boolean testIntSizesFromBinary = false;
         /*********************************/
         if (testIntSizesFromBinary){
-            int count = Registry.getIntValue("HKEY_LOCAL_MACHINE","SOFTWARE\\MyHD", "INPUT1_CH Tail_VCH");
+            int count = 0; //Registry.getIntValue("HKEY_LOCAL_MACHINE","SOFTWARE\\MyHD", "INPUT1_CH Tail_VCH");
             System.out.println("There were " + count + " channels on input 1");
-            Map map = Registry.getValues(topKey, myhdBranch);
+            Map map = null; //Registry.getValues(topKey, myhdBranch);
             byte[] buf = (byte[])map.get("INPUT1_CH_DATA_VCH_QAM");
             for(int i = 0; i < count; i++){
                 int j = i * 40;
@@ -103,7 +103,7 @@ public class RegValueConverter {
         /*********************************/
         if (testStringFromBinary){
             int stringOffset = 64; 
-            Map map = Registry.getValues(topKey, myhdBranch);
+            Map map = null; //Registry.getValues(topKey, myhdBranch);
             byte[] buf = (byte[])map.get("RESERVATION_INFO_VCH_016");
             String aRegStringValue = RegValueConverter.getStringFromBinary(buf, stringOffset);
             System.out.println("String value at " + stringOffset + " was " + aRegStringValue);
@@ -115,7 +115,7 @@ public class RegValueConverter {
             int stringOffset = 64;
             String valueToSet = "c:\\test\\testdata.tp";
             int maxStringSize = 259;
-            Map map = Registry.getValues(topKey, myhdBranch);
+            Map map = null; //Registry.getValues(topKey, myhdBranch);
             byte[] buf = (byte[])map.get("RESERVATION_INFO_VCH_016");
             byte[] updatedBuf = RegValueConverter.setStringIntoBinary(valueToSet, buf, stringOffset, maxStringSize);
             System.out.println(valueToSet + "=" + RegValueConverter.getStringFromBinary(updatedBuf, stringOffset));
@@ -127,7 +127,7 @@ public class RegValueConverter {
             int intOffset = 8;
             int valueToSet = 42;
             int size = 4;
-            Map map = Registry.getValues(topKey, myhdBranch);
+            Map map = null;// Registry.getValues(topKey, myhdBranch);
             byte[] buf = (byte[])map.get("RESERVATION_INFO_VCH_016");
             byte[] updatedBuf = RegValueConverter.setIntIntoBinary(valueToSet, buf, intOffset);
             System.out.println(valueToSet + "=" + RegValueConverter.getIntFromBinary(updatedBuf, intOffset, size));

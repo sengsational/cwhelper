@@ -11,8 +11,10 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.cwepg.reg.Registry;
 import org.cwepg.svc.TinyWebServer;
+
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
 
 public class ServiceLauncher {
 
@@ -37,7 +39,8 @@ public class ServiceLauncher {
         
         try {
             // overwrite previous path if registry value available
-            String cwepgfolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\CW_EPG", "cwepgfolder");
+            //String cwepgfolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\CW_EPG", "cwepgfolder");
+        	String cwepgfolder = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\CW_EPG", "cwepgfolder");
             if (cwepgfolder != null){
                 cwepgExecutablePath         = cwepgfolder;
                 hdhrPath                    = cwepgfolder;
@@ -52,7 +55,8 @@ public class ServiceLauncher {
         
         try {
             // overwrite previous path if registry value available
-            String cwepgdatafolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\CW_EPG", "cwepgdatafolder");
+            //String cwepgdatafolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\CW_EPG", "cwepgdatafolder");
+            String cwepgdatafolder = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\CW_EPG", "cwepgdatafolder");
             if (cwepgdatafolder != null){
                 dataPath                    = cwepgdatafolder;
                 dataPathSource              = "the path found in registry HKEY_LOCAL_MACHINE\\SOFTWARE\\CW_EPG\\cwepgdatafolder";
@@ -77,7 +81,8 @@ public class ServiceLauncher {
         //TMP 20250510 - Move below dataPath definition to use it as fallback when Registry read fails Issue #70
         try {
             // overwrite previous path if registry value available
-            String registryFolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\Silicondust\\HDHomeRun", "InstallDir");
+            //String registryFolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", "SOFTWARE\\Silicondust\\HDHomeRun", "InstallDir");
+            String registryFolder = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Silicondust\\HDHomeRun", "InstallDir");
             if (registryFolder != null){
                 hdhrPath = registryFolder;
                 hdhrPathSource = "the path found in registry HKEY_LOCAL_MACHINE\\SOFTWARE\\Silicondust\\HDHomeRun\\InstallDir";

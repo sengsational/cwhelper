@@ -26,6 +26,9 @@ import org.cwepg.hr.Tuner;
 import org.cwepg.hr.TunerManager;
 import org.cwepg.hr.TunerMyhd;
 
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
+
 
 public class RegistryHelperMyhd {
 
@@ -72,7 +75,7 @@ public class RegistryHelperMyhd {
     private static ArrayList getChannelsMyhd(Tuner tuner){
         ArrayList<Channel> list = new ArrayList<Channel>();
         try {
-            Map map = Registry.getValues(topKey, myhdBranch);
+        	Map map = Advapi32Util.registryGetValues(WinReg.HKEY_LOCAL_MACHINE, myhdBranch);
 
             int input1Count = ((Integer)map.get("INPUT1_CH Tail_VCH")).intValue();
             int input2Count = ((Integer)map.get("INPUT2_CH Tail_VCH")).intValue();
@@ -174,7 +177,7 @@ public class RegistryHelperMyhd {
         threeDigit.setMinimumIntegerDigits(3);
         String reservationName = null;
         try {
-            Map map = Registry.getValues(topKey, myhdBranch);
+        	Map map = Advapi32Util.registryGetValues(WinReg.HKEY_LOCAL_MACHINE, myhdBranch);
             for(int i = 0; i < 50; i++){
                 reservationName = "RESERVATION_INFO_VCH_" + threeDigit.format(i);
                 byte[] buf = (byte[])map.get(reservationName);
@@ -193,7 +196,7 @@ public class RegistryHelperMyhd {
         threeDigit.setMinimumIntegerDigits(3);
         String reservationName = null;
         try {
-            Map map = Registry.getValues(topKey, myhdBranch);
+        	Map map = Advapi32Util.registryGetValues(WinReg.HKEY_LOCAL_MACHINE, myhdBranch);
             byte[] buf = null;
             for(int i = 0; i < 50; i++){
                 reservationName = "RESERVATION_INFO_VCH_" + threeDigit.format(i);
@@ -210,7 +213,7 @@ public class RegistryHelperMyhd {
     }
 
     public static void createReservation(CaptureMyhd capture, String reservationName) throws Exception {
-        Map map = Registry.getValues(topKey, myhdBranch);
+    	Map map = Advapi32Util.registryGetValues(WinReg.HKEY_LOCAL_MACHINE, myhdBranch);
 
         // first check for conflicting reservation
         String conflictingReservation = getReservationNameForSlot(map, capture.getSlot(), true);
@@ -274,7 +277,8 @@ public class RegistryHelperMyhd {
         }
         
         // Write the updated record to the registry
-        Registry.setBinaryValue(topKey, myhdBranch, reservationName, dataBytes);
+    	Advapi32Util.registrySetBinaryValue(WinReg.HKEY_LOCAL_MACHINE, myhdBranch, reservationName, dataBytes);
+
 
         if (debug > -1) System.out.println(new Date() + " Saved " + reservationName + " in the registry.");
     }
@@ -283,8 +287,8 @@ public class RegistryHelperMyhd {
         //System.out.println(new Date() + " getReservationNameForSlot " + slot);
         Map map;
         try {
-            map = Registry.getValues(topKey, myhdBranch);
-        } catch (UnsupportedEncodingException e) {
+        	map = Advapi32Util.registryGetValues(WinReg.HKEY_LOCAL_MACHINE, myhdBranch);
+        } catch (Throwable e) {
             throw new CaptureScheduleException(e.getMessage());
         }
         return getReservationNameForSlot(map, slot, warn);
@@ -393,14 +397,14 @@ public class RegistryHelperMyhd {
     }
     
     public static void deleteFromSchedule(Slot slot) throws Exception {
-        Map map = Registry.getValues(topKey, myhdBranch);
+        Map	map = Advapi32Util.registryGetValues(WinReg.HKEY_LOCAL_MACHINE, myhdBranch);
         String scheduleToDelete = getReservationNameForSlot(map, slot, true);
         if (scheduleToDelete == null) throw new Exception("There is no matching reservation for " + slot);
         deleteReservation(scheduleToDelete, map);
     }
     
     public static void deleteFromSchedule(String fileName, String title) throws Exception {
-        Map map = Registry.getValues(topKey, myhdBranch);
+        Map 	map = Advapi32Util.registryGetValues(WinReg.HKEY_LOCAL_MACHINE, myhdBranch);
         String scheduleToDelete = getReservationNameForFileName(map, fileName, true, title);
         String errorMessage = "file name " + fileName;
         boolean isWatch = fileName.contains(":\\WATCH");
@@ -422,7 +426,8 @@ public class RegistryHelperMyhd {
                 }
             } else {
                 // once found, just shift data from each element up to the previous position
-                Registry.setBinaryValue(topKey, myhdBranch, previousElement, (byte[])map.get(regElement));
+            	Advapi32Util.registrySetBinaryValue(WinReg.HKEY_LOCAL_MACHINE, myhdBranch, previousElement, (byte[])map.get(regElement));
+
             }
             previousElement = regElement;
         }

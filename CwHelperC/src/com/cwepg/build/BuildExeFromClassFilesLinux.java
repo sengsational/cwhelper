@@ -56,7 +56,7 @@ public class BuildExeFromClassFilesLinux {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1096";
+            revision = "1097";
         } else {
         	String fullVersion = ""; 
         	try {

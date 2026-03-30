@@ -5,7 +5,9 @@ import java.util.Date;
 import org.cwepg.hr.CaptureManager;
 import org.cwepg.hr.Tuner;
 import org.cwepg.hr.TunerHdhr;
-import org.cwepg.reg.Registry;
+
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
 
 public class VlcCommandLine extends CommandLine {
 	
@@ -29,7 +31,7 @@ public class VlcCommandLine extends CommandLine {
         String vlcFolder = null;
         try {
             String location = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\vlc.exe\\";
-            vlcFolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", location,"Path");
+            vlcFolder = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, location,"Path");
             if (vlcFolder == null) throw new Exception("Could not find 'Path' at HKLM " + location);
         } catch (Exception e) {
             System.out.println(new Date() + " ERROR: Could not read registry for VLC. " + e.getMessage());

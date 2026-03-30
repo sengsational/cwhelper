@@ -18,8 +18,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.cwepg.reg.Registry;
 import org.cwepg.svc.HdhrCommandLine;
+
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
 
 public class LineUpHdhr extends LineUp {
     
@@ -300,7 +302,7 @@ public class LineUpHdhr extends LineUp {
         if (TunerManager.skipRegistryForTesting || !CaptureManager.useHdhrCommandLine) return xmlFileName;  //DRS 20220707 - no registry if command line unavailable.
         try {
             String location = "SOFTWARE\\Silicondust\\HDHomeRun\\Tuners\\" + tuner.getFullName();
-            xmlFileName = Registry.getStringValue("HKEY_LOCAL_MACHINE", location, "Source");
+            xmlFileName = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, location, "Source");
             if (xmlFileName == null) throw new Exception("Could not find 'Source' at HKLM " + location);
         } catch (Exception e) {
             System.out.println(new Date() + " ERROR: Could not read registry for HDHomeRun. " + e.getMessage());
@@ -315,7 +317,7 @@ public class LineUpHdhr extends LineUp {
         if (TunerManager.skipRegistryForTesting || !CaptureManager.useHdhrCommandLine) return "air"; //DRS 20220707 - no registry if command line unavailable.
         try {
             String location = "SOFTWARE\\Silicondust\\HDHomeRun\\Tuners\\" + tuner.getFullName();
-            airCatSource = Registry.getStringValue("HKEY_LOCAL_MACHINE", location, "SourceType");
+            airCatSource = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, location, "SourceType");
             if (airCatSource == null) throw new Exception("Could not find 'SourceType' at HKLM " + location);
         } catch (Exception e) {
             System.out.println(new Date() + " ERROR: Could not read registry for HDHomeRun. " + e.getMessage());
@@ -333,7 +335,7 @@ public class LineUpHdhr extends LineUp {
         }
         try {
             String location = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders\\";
-            commonAppFolder = Registry.getStringValue("HKEY_LOCAL_MACHINE", location,"Common AppData");
+            commonAppFolder = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE, location,"Common AppData");
             if (commonAppFolder == null) throw new Exception("Could not find 'Common AppData' at HKLM " + location);
         } catch (Exception e) {
             System.out.println(new Date() + " ERROR: Could not read registry for HDHomeRun. " + e.getMessage());

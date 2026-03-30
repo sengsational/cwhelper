@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.StringTokenizer;
 
-import org.cwepg.reg.Registry;
 import org.cwepg.svc.AutorunFile;
 import org.cwepg.svc.CwEpgCommandLine;
 
