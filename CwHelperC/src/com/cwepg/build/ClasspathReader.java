@@ -96,6 +96,23 @@ public class ClasspathReader {
 			if (l.contains("kind=\"lib\"")) {
 				int pathPos = l.indexOf("path=");
 				int subDirectoryPos = l.indexOf("/", pathPos + 6) + 1;
+				int endPos = l.indexOf(">");
+				if (subDirectoryPos > 0 && endPos > 0 && endPos > subDirectoryPos) {
+					libraryEntries.add(prependPath + l.substring(subDirectoryPos, endPos - 1));
+				}
+			}
+		}
+		System.out.println(libraryEntries.size() + " lines read from classpath file.");
+		return libraryEntries.toArray(new String[0]);
+	}
+
+	public String[] getModuleEntries(String prependPath) {
+		if (!prependPath.endsWith("/") && !prependPath.endsWith("\\")) System.err.println("ClasspathReader.getLibraryEntries(prependPath) ... prependPath should end with a slash or backslash!!");
+		ArrayList<String> libraryEntries = new ArrayList<>();
+		for (String l : fileLines) {
+			if (l.contains("kind=\"lib\"")) {
+				int pathPos = l.indexOf("path=");
+				int subDirectoryPos = l.indexOf("/", pathPos + 6) + 1;
 				int endPos = l.indexOf("/>");
 				if (subDirectoryPos > 0 && endPos > 0 && endPos > subDirectoryPos) {
 					libraryEntries.add(prependPath + l.substring(subDirectoryPos, endPos - 1));
@@ -221,7 +238,7 @@ public class ClasspathReader {
 		}
 		
 		
-		boolean testSettings = true;
+		boolean testSettings = false;
 		if (testSettings) {
 			ClasspathReader reader = new ClasspathReader(".classpath","C:\\Users\\Owner\\github\\cwhelper\\CwHelperC\\");
 			reader.load();
@@ -232,6 +249,23 @@ public class ClasspathReader {
 		
 		boolean testReader = false;
 		if (testReader) {
+			ClasspathReader reader = new ClasspathReader("",""); //Testing just the parsing (not reading the file).
+			String outputEntry = "    <classpathentry kind=\"output\" path=\"CwHelperC/classes\"/>";
+			reader.fileLines.add(outputEntry);
+			System.out.println("getClassFilesDirectory() [" + reader.getClassFilesDirectory() + "]");
+			
+			reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/commons-codec-1.15.jar\"/>");
+			reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/cw_icons.jar\"/>");
+			reader.fileLines.add("    <classpathentry kind=\"lib\" path=\"CwHelperC/CwHelper_lib/jna-platform-5.7.0.jar\"/>");
+			
+			String[] libraryEntries = reader.getLibraryEntries("PrependPath/");
+			for (String string : libraryEntries) {
+				System.out.println("library entry [" + string + "]");
+			}
+			
+		}
+		boolean testModuleReader = true;
+		if (testModuleReader) {
 			ClasspathReader reader = new ClasspathReader("",""); //Testing just the parsing (not reading the file).
 			String outputEntry = "    <classpathentry kind=\"output\" path=\"CwHelperC/classes\"/>";
 			reader.fileLines.add(outputEntry);

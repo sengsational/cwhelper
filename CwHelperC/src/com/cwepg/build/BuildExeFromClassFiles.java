@@ -72,7 +72,7 @@ public class BuildExeFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1082";
+            revision = "1096";
         } else {
         	String fullVersion = ""; 
         	try {
@@ -197,6 +197,10 @@ public class BuildExeFromClassFiles {
     	/* 1 : Regular classpath jars */
     	String[] jarFileNames = reader.getLibraryEntries(PROJECT_DIRECTORY);
     	System.out.println("There were " + jarFileNames.length + " lib entries in " + PROJECT_DIRECTORY + CLASSPATH_CONFIG_FILE);
+
+    	if (jarFileNames.length == 0) {
+    		System.err.println("WARNING: No classpath jars were found!!");
+    	}
 
     	/* 2 : User library jars */
     	String[] userLibraryJarFileNames = reader.getUserLibraryEntries(PROJECT_DIRECTORY, WORKSPACE_DIRECTORY, IS_WINDOWS);
