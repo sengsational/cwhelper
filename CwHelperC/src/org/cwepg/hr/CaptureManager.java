@@ -96,11 +96,12 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
 
     }
     
+    // Called from getInstance(path,path,path)
     public static CaptureManager getInstance(){
         if (captureManager == null){
             version = getVersionFromResource();
             captureDataManager = CaptureDataManager.getInstance();
-            captureManager = new CaptureManager(); // settings are loaded here
+            captureManager = new CaptureManager(); // settings are loaded here. RestartManager thread starts here.
             tunerManager = TunerManager.getInstance();
             if (tunerManager.noTuners()) tunerManager.countTuners(false); // THIS IS WHERE WE RUN COUNT TUNERS FOR THE FIRST TIME. 
             emailer = Emailer.getInstanceFromDisk();
@@ -109,6 +110,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         return captureManager;
     }
     
+    // First one called from main
     public static CaptureManager getInstance(String cwepgPath, String hdhrPath, String dataPath){
         if (dataPath != null && dataPath.endsWith("\\\\")) dataPath = dataPath.substring(0,dataPath.length()-1);
         if (hdhrPath != null && hdhrPath.endsWith("\\\\")) hdhrPath = hdhrPath.substring(0,hdhrPath.length()-1);

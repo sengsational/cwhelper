@@ -22,9 +22,25 @@ public class ServiceLauncher {
     public static final String WEB_SERVER_PORT = "8181";
     public static final int WEB_SERVER_SECURE_PORT = 8443;
     public static final String[] PROTOCOLS = {"TLSv1", "TLSv1.1", "TLSv1.2", "SSLv3"};
-    public static final StringBuffer printBuffer = new StringBuffer();
+    public static StringBuffer printBuffer = null;
     
     public static void main(String[] args) throws Throwable {
+    	
+    	synchronized (printBuffer) {
+        	if (printBuffer == null) {
+            	printBuffer = new StringBuffer();
+        		bufferedPrintln(new Date() + " ServiceLauncher.main() called.");
+        	} else {
+        		bufferedPrintln(new Date() + " ServiceLauncher.main() called a second time. This should never happen.");
+        	}
+    	}
+    	
+        //========================================================================START WEB SEVER (QUIT IF ALREADY RUNNING)
+        TinyWebServer webServer = TinyWebServer.getInstance(WEB_SERVER_PORT); 
+        if (!webServer.start()) {
+            bufferedPrintln("The web server port was taken, so we presume a copy of CwHelper is already running.  We will quit.");
+            System.exit(0);
+        }
         
         //===========================================================================================SET DIRECTORIES==============================
         String cwepgExecutablePathSource    = "the current runtime directory";
@@ -159,13 +175,6 @@ public class ServiceLauncher {
             bufferedPrintln(new Date() + " WARNING: Captures will only work on tuners with the http interface.");
         }
         
-        //========================================================================START WEB SEVER (QUIT IF ALREADY RUNNING)
-        TinyWebServer webServer = TinyWebServer.getInstance(WEB_SERVER_PORT); 
-        if (!webServer.start()) {
-            bufferedPrintln("The web server port was taken, so we presume a copy of CwHelper is already running.  We will quit.");
-            System.exit(0);
-        }
-
         PrintStream out = null;
         PrintStream err = null;
         if (logFileIsValid) {

@@ -55,9 +55,9 @@ public class BuildJarFromClassFiles {
     public static final String STOREPASS = "Hnds#1111";
     public static final String KEYPASS = "Hnds#1111";
     public static final String VERSION_FILE_NAME = "version.txt";
-    public static final String BASE_VERSION = "5-4-0-";
-    public static final String COMMA_VERSION = "5,4,0,";
-    public static final String DOT_VERSION = "5.4.0.";
+    public static final String BASE_VERSION = "5-6-0-";
+    public static final String COMMA_VERSION = "5,6,0,";
+    public static final String DOT_VERSION = "5.6.0.";
     public static final String NATIVE_IMAGE_META_FILENAME = "reachability-metadata.json";
     public static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
 	private static ArrayList<String> jarFileList;
@@ -69,7 +69,7 @@ public class BuildJarFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1097";
+            revision = "1098";
         } else {
         	String fullVersion = "";
         	try {

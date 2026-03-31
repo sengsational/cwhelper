@@ -3,6 +3,7 @@ package org.cwepg.svc;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
@@ -37,17 +38,21 @@ public class TinyWebServer implements Runnable {
         try {
             int servPort = Integer.parseInt(port);
             listen_socket = new ServerSocket(servPort);
+        } catch (BindException b) {
+            System.err.println(new Date() + " TinyWebServer.start() failure " + b.getMessage());
+            System.out.println(new Date() + " TinyWebServer.start() failure " + b.getMessage());
+            runFlag = false;
         } catch (IOException e) {
-            System.err.println(new Date() + " Error in TinyWebServer constructor " + e.getMessage());
-            System.out.println(new Date() + " Error in TinyWebServer constructor " + e.getMessage());
+            System.err.println(new Date() + " TinyWebServer.start() failure " + e.getMessage());
+            System.out.println(new Date() + " TinyWebServer.start() failure " + e.getMessage());
+            runFlag = false;
         }
         if (listen_socket != null){
             runningThread = new Thread(this, "Thread-TinyWebServer");
             if (debug > 2) System.out.println(SDF.format(new Date()) + " TinyWebServer Start.");
             runningThread.start();
-        } else {
-            runFlag = false;
-        }
+            runFlag = true;
+        } 
 	    return runFlag;
 	}
 
