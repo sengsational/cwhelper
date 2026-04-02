@@ -849,20 +849,33 @@ class TinyConnection implements Runnable {
                     String lowDiskGb = (String)request.get("lowdiskgb");
                     String sendScheduled = (String)request.get("sendscheduled");
                     String sendRecorded = (String)request.get("sendrecorded");
+                    String forceUpdate = (String)request.get("forceupdate");
                     Emailer emailer = CaptureManager.getEmailer();
-                    if (emailer == null){
+                    boolean initialized = false;
+                    if (emailer == null || "true".equals(forceUpdate)){
+                    	if (emailer != null) { //forceUpdate requires removal of the existing emailer.
+                            emailer.removeEmailerDataFile();
+                            emailer.removeHardwareWakeupEvent("TinyConnection removeEmailer");
+                            CaptureManager.setEmailer(null);
+                    	}
                     	if (logonPassword != null && logonPassword.equalsIgnoreCase("oauth2")) { //DRS 20260320 - Added 'if' - Fix bug where non-oauth Emailer created when oauth password specified
                     		System.out.println(new Date() + " Creating type EmailerOauth");
                     		emailer = EmailerOauth.getInstance();
                     	} else {
                     		System.out.println(new Date() + " Creating type Emailer");
-                        emailer = Emailer.getInstance(); 
+                    		emailer = Emailer.getInstance(); 
                     	}
                         emailer.initialize(hourToSend, minuteToSend, smtpServerName, smtpServerPort, logonUser, logonPassword, saveToDisk, sendUsers, lowDiskGb, sendScheduled, sendRecorded);
+                        initialized = true;
                     }
                     if (emailer.isValid()){
                         CaptureManager.setEmailer(emailer);
-                        message = "Emailer " + emailer.getClass().getSimpleName() + " has been defined.<BR><BR>";
+                        if (!initialized) {
+                            message = "Emailer " + emailer.getClass().getSimpleName() + " already defined.  Redefinition requires /emailer?removeemailer or an additional paramter forceupdate=true.<BR><BR>";
+                        } else {
+                            message = "Emailer " + emailer.getClass().getSimpleName() + " has been defined.<BR><BR>";
+                            CaptureManager.requestInterrupt("TinyConnection.run (/emailer)"); // need to interrupt so it runs if it's the first thing scheduled
+                        }
                     } else {
                         message = "Emailer definition attempt failed.  Supplied Emailer data is not sufficient.<BR><BR>";
                     }

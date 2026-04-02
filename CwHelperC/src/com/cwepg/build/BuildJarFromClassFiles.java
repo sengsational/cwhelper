@@ -69,7 +69,7 @@ public class BuildJarFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1098";
+            revision = "1099";
         } else {
         	String fullVersion = "";
         	try {
@@ -339,6 +339,10 @@ public class BuildJarFromClassFiles {
         try (JarInputStream jis = new JarInputStream(new FileInputStream(inputJar))) {
             JarEntry entry;
             while ((entry = jis.getNextJarEntry()) != null) {
+            	if (entry.getName().contains("module-info")) {
+            		System.out.println("inputJar " + inputJar + " had module.info.class removed. " + entry.getName());
+            	}
+            		
             	CheckEntry checkEntry = new CheckEntry(entry, inputJarFileName);
                 try {
                 	if (!checkEntry.isDirectory()) checkEntryList.add(checkEntry);

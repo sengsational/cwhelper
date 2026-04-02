@@ -31,7 +31,11 @@ import com.sun.mail.smtp.SMTPTransport;
 public class Emailer extends TimedEvent {
 
     static String smtpServerName;
-    static String smtpServerPort = "25";
+    static String smtpServerPort = "587"; //465
+    static String startTlsEnable = "true"; //false
+    static String sslEnable = "false"; //true
+    static String smtpAuth = "true"; //true
+    static String sslProtocols = ""; //TLSv1.2
     static String logonUser;
     static String logonPassword;
     static String saveToDisk;
@@ -83,7 +87,10 @@ public class Emailer extends TimedEvent {
     public void initialize(String hourToSend, String minuteToSend, String smtpServerName, String smtpServerPort, String logonUser, String logonPassword, String saveToDisk, String sendUsers, String lowDiskGb, String sendScheduled, String sendRecorded) {
         if (hourToSend != null) this.hourToTrigger = hourToSend;
         if (minuteToSend != null) this.minuteToTrigger = minuteToSend;
-        if (smtpServerPort != null) Emailer.smtpServerPort = smtpServerPort;
+        if (smtpServerPort != null) {
+        	Emailer.smtpServerPort = smtpServerPort;
+        	alignSettings();
+        }
         Emailer.smtpServerName = smtpServerName;
         Emailer.logonUser = logonUser;
         Emailer.logonPassword = logonPassword;
@@ -93,17 +100,42 @@ public class Emailer extends TimedEvent {
         if (sendScheduled != null) Emailer.sendScheduled = sendScheduled;
         if (sendRecorded != null) Emailer.sendRecorded = sendRecorded;
         if (isValid()){
-            this.setWakeup("Emailer initialize()");
+        	try {
+                this.setWakeup("Emailer initialize()");
+        	} catch (UnsatisfiedLinkError e) {
+        		System.out.println(new Date() + " WARNING: Unable to set a wake-up even to send email at the scheduled time.");
+        	}
             if (Emailer.saveToDisk.toUpperCase().equals("TRUE")) writeEmailerData();
         }
     }
     
-    public void initialize(String persistenceData){
+    private void alignSettings() {
+    	if ("587".equals(smtpServerPort)) {
+            startTlsEnable = "true"; 
+            sslEnable = "false";
+            smtpAuth = "true";
+            sslProtocols = "TLSv1.2";
+    	} else if ("465".equals(smtpServerPort)) {
+            startTlsEnable = "false";
+            sslEnable = "true";
+            smtpAuth = "true"; 
+    	} else if ("25".equals(smtpServerPort)) {
+            startTlsEnable = "false";
+            sslEnable = "false";
+            smtpAuth = "false";
+    	} else {
+    		System.out.println(new Date() + " ERROR: port " + smtpServerPort + " can not be configured.");
+    	}
+	}
+
+	public void initialize(String persistenceData){
         StringTokenizer tok = new StringTokenizer(persistenceData, "|");
         hourToTrigger = tok.nextToken();
         minuteToTrigger = tok.nextToken();
         smtpServerName = tok.nextToken();
-        smtpServerPort = tok.nextToken();
+        smtpServerPort = tok.nextToken(); {
+        	alignSettings();
+        }
         logonUser = tok.nextToken();
         logonPassword = tok.nextToken();
         saveToDisk = tok.nextToken();
@@ -254,11 +286,19 @@ public class Emailer extends TimedEvent {
         props.put("mail.smtp.host", Emailer.smtpServerName);
         System.out.println("Setting smtp port to [" + Emailer.smtpServerPort + "]");
         props.put("mail.smtp.port", Emailer.smtpServerPort);
-        props.put("mail.smtp.auth","true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.connectiontimeout", "5000"); // 5 seconds
-        props.put("mail.smtp.timeout", "5000");           // 5 seconds
+        props.put("mail.smtp.auth", Emailer.smtpAuth);
+        props.put("mail.smtp.starttls.enable", Emailer.startTlsEnable);
+        props.put("mail.smtp.ssl.enable", Emailer.sslEnable);
+
+        //               mail.smtp.ssl.protocols
+        props.put("mail.smtp.ssl.protocols", Emailer.sslProtocols);
+        //props.put("mail.smtp.ssl.trust", "*"); // TODO: Remove this line after debugging
+        
+        props.put("mail.smtp.connectiontimeout", "10000"); // 5 seconds
+        props.put("mail.smtp.timeout", "10000");           // 5 seconds
         Session session = Session.getInstance(props, new SmtpAuthenticator());
+        session.setDebug(true);
+        System.out.println("session properties:\n" + props);
         return session;
     }
     
@@ -353,7 +393,11 @@ public class Emailer extends TimedEvent {
         Emailer emailer = Emailer.getInstance();
         //emailer.initialize("22","58","smtp.everyone.net","2525", "dale@sengsational.com","","true","dale@sengsational.com","90","true","true");
         //emailer.initialize("20","32","smtp.googlemail.com","587", "DRS2.Usenet@sengsational.com","(not defined)","true","dale@sengsational.com","90","true","true");
-        emailer.initialize("17","0","mail.sonic.net","465", "cw_epg_alerts@sonic.net","(not defined)","true","dale@sengsational.com","90","true","true");
+        //emailer.initialize("17","0","mail.sonic.net","465", "cw_epg_alerts@sonic.net","(not defined)","true","dale@sengsational.com","90","true","true");
+        //http://192.168.3.99:8181/emailer?hourtosend=13&minutetosend=2&smtpservername=mail.sonic.net&smtpserverport=465&logonuser=cw_epg_alerts@sonic.netlogonpassword=cw_epg&savetodisk=true&sendusers=dale@sengsational.com&forceupdate=true
+        
+        emailer.initialize("20","32","smtp.googlemail.com","587", "DRS2.Usenet@sengsational.com","aqP7LXB4","true","dale@sengsational.com","90","true","true");
+
 
         /*
         System.out.println(emailer.getHtml());
@@ -368,5 +412,10 @@ public class Emailer extends TimedEvent {
         System.out.println("Is Valid:" + emailer.isValid());
         emailer.sendTestMessage();
     }
+
+	public void sendHtmlTest() {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

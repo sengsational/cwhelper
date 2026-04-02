@@ -237,8 +237,8 @@ public class TunerManager {
         if (TunerManager.skipFusionInit) return tunerList;
         String controlSetName = "CurrentControlSet";
         if (test) controlSetName = "ControlSet0002";
-        Map<String, FusionRegistryEntry> entries = RegistryHelperFusion.getFusionRegistryEntries(controlSetName);
         try {
+            Map<String, FusionRegistryEntry> entries = RegistryHelperFusion.getFusionRegistryEntries(controlSetName);
             //int analogFileExtensionNumber = Registry.getIntValue("HKEY_CURRENT_USER", "Software\\Dvico\\ZuluHDTV\\Data", "AnalogRecProfile");
             int analogFileExtensionNumber = Advapi32Util.registryGetIntValue(WinReg.HKEY_CURRENT_USER, "Software\\Dvico\\ZuluHDTV\\Data\\", "AnalogRecProfile");
             
@@ -259,8 +259,8 @@ public class TunerManager {
             }
         } catch (Exception e) {
             System.out.println(new Date() + " ERROR: Problem with countTunersFusion: " + e.getMessage());
-            System.err.println(new Date() + " ERROR: Problem with countTunersFusion: " + e.getMessage());
-            e.printStackTrace();
+            //System.err.println(new Date() + " ERROR: Problem with countTunersFusion: " + e.getMessage());
+            //e.printStackTrace();
         }
         return tunerList;
     }

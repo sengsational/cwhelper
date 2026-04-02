@@ -149,12 +149,13 @@ public class TrayIconManager implements Runnable {
             imageFromIcon = image;
         }
 
-        final String[][] menuAndActions = {{"Open Configuration Page", "configure"}, {"Shutdown", "checkedshutdown"}}; // DRS20250422 - Removed access to VCR page
+        final String[][] menuAndActions = {{" ","Open Configuration Page"," ","configure"," "}, {" ","Shutdown"," ","checkedshutdown"," "}}; // DRS20250422 - Removed access to VCR page
         
         ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
         for(int i = 0; i < menuAndActions.length; i++) {
             //System.out.println("menu: " + menuAndActions[i][0] + " " + menuAndActions[i][1]);
             final MenuItem item = new MenuItem(menuAndActions[i][0]);
+            if (menuAndActions[i][0].equals(" ")) item.setEnabled(false); // DRS 20260331 - Added spacers
             menuItems.add(item);
         }
         

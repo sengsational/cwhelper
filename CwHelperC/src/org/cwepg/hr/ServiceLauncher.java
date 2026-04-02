@@ -23,10 +23,11 @@ public class ServiceLauncher {
     public static final int WEB_SERVER_SECURE_PORT = 8443;
     public static final String[] PROTOCOLS = {"TLSv1", "TLSv1.1", "TLSv1.2", "SSLv3"};
     public static StringBuffer printBuffer = null;
+    public static final String LOCK = "lock";
     
     public static void main(String[] args) throws Throwable {
     	
-    	synchronized (printBuffer) {
+    	synchronized (LOCK) {
         	if (printBuffer == null) {
             	printBuffer = new StringBuffer();
         		bufferedPrintln(new Date() + " ServiceLauncher.main() called.");

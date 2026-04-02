@@ -122,6 +122,32 @@ public class EmailerOauth extends Emailer {
         	System.out.println("Failed to send test message oauth " + e.getClass() + " " + e.getMessage());
         }
 	}
+    @Override
+	public void sendHtmlTest() {
+        System.out.println(new Date() + " EmailerOauth Sending TEST email to " + Emailer.sendUsers);
+        try {
+            Credential credential = getCredential();
+    	    final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+    	    Gmail service = new Gmail.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+    	        .setApplicationName(APPLICATION_NAME)
+    	        .build();
+    	    EmailIntegration integration = new EmailIntegration(service);
+    	    System.out.println("integration defined.");
+    	    String from = logonUser;
+    	    String subject = "testing cwhelper";
+    	    String bodyText = "<html><body>The email test was successful.</body></html>";
+    	    
+    	    
+    	    Message message = integration.sendHtmlEmail(logonUser,  getToAddresses(), from,  subject,  bodyText);
+    	    System.out.println("Message Sent.  Trying to trash the sent copy.");
+    	    Thread.sleep(1000);
+    	    System.out.println("Trashing sent message by ID.");
+    	    integration.trashMessage(service, logonUser, message.getId());
+            
+        } catch (Exception e) {
+        	System.out.println("Failed to send test message oauth " + e.getClass() + " " + e.getMessage());
+        }
+	}
 
     
 	@Override
@@ -193,5 +219,11 @@ public class EmailerOauth extends Emailer {
         } catch (Exception e) {
         	System.out.println("Failed to send test message oauth " + e.getClass() + " " + e.getMessage());
         }
+	}
+	
+	public static void main(String[] args) {
+		Emailer emailer = EmailerOauth.getInstance();
+        emailer.initialize("20","32","smtp.googlemail.com","587", "dale@sengsational.com","aqP7LXB4","true","dale@sengsational.com","90","true","true");
+        emailer.sendTestMessage();
 	}
 }

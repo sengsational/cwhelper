@@ -27,8 +27,7 @@ public class EmailIntegration {
 	}
 
 	// Method to create and send an email directly without using JavaMail api
-	public Message sendEmail(String userId, InternetAddress[] toAddresses, String from, String subject, String bodyText)
-			throws Exception {
+	public Message sendEmail(String userId, InternetAddress[] toAddresses, String from, String subject, String bodyText) throws Exception {
 		String emailBody = createRawEmailString(toAddresses, from, subject, bodyText);
 		byte[] emailBytes = emailBody.getBytes("UTF-8");
 		String encodedEmail = Base64.encodeBase64URLSafeString(emailBytes);
@@ -71,7 +70,7 @@ public class EmailIntegration {
 		// Setup Mail Session
 		Properties props = new Properties();
 		Session session = Session.getDefaultInstance(props, null);
-
+		
 		// Create a MimeMessage using the session created above
 		MimeMessage email = new MimeMessage(session);
 		email.setFrom(new InternetAddress(fromEmail));
@@ -95,3 +94,7 @@ public class EmailIntegration {
 	}
 
 }
+
+
+
+

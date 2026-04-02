@@ -159,6 +159,7 @@ public class CaptureDataManager {
             if (statement != null) statement.close();
             connection.close();
         } catch (SQLException e) {
+        	System.out.println(new Date() + " Failed to get recent captures: " + e.getMessage());
             System.err.println(new Date() + " CaptureDataManager.getRecentCaptures:");
             e.printStackTrace();
         } finally {
@@ -166,6 +167,7 @@ public class CaptureDataManager {
             try { if (statement != null) statement.close(); } catch (Throwable t){}; 
             try { if (connection != null) connection.close(); } catch (Throwable t){}; 
         }
+        System.out.println("returning from getRecentCaptures()");
         return detailsMap;
     }
     

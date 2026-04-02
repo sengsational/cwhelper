@@ -65,7 +65,10 @@ public class CaptureTrayIcon {
         if (capture.target.isWatch()) popupTextStop = "Stop Watching";
         final MenuItem itemStop = new MenuItem(popupTextStop);
         final MenuItem itemExtend = new MenuItem("Extend 10 Minutes"); // DRS 20181124
-
+        final MenuItem spacer1 = new MenuItem(" "); spacer1.setEnabled(false);
+        final MenuItem spacer2 = new MenuItem(" "); spacer2.setEnabled(false);
+        final MenuItem spacer3 = new MenuItem(" "); spacer3.setEnabled(false);
+        
         PopupMenu popup = new PopupMenu();
         
         listener = new ActionListener(){
@@ -104,10 +107,13 @@ public class CaptureTrayIcon {
             }
         };
         itemStop.addActionListener(listener);
+        popup.add(spacer1);
         popup.add(itemStop);
+        popup.add(spacer2);
         if (!capture.target.isWatch()) {
             itemExtend.addActionListener(listener); // DRS 20181124
             popup.add(itemExtend); // DRS 20181124
+            popup.add(spacer3);
         }
         trayMessage[1] = capture.target.getFileNameOrWatch();
         if (capture.target.title != null){

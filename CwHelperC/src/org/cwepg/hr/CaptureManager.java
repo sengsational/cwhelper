@@ -128,6 +128,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public void run(){
         ShutdownHookThread.setRunThread(Thread.currentThread());
     	System.out.println("CaptureManager.run() starting (version " + version + ")");
+    	try {ProcessHandle.current().info().command().ifPresent(System.out::println);} catch (Throwable t) {}
     	CaptureManager.running = true;
         //CaptureManager.runThread = Thread.currentThread();
     	//if (CaptureManager.pollIntervalSeconds > 0) ClockChecker.getInstance(); //starts itself
@@ -205,7 +206,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 try {Thread.sleep(100);} catch (Exception e){}; // prevent looping if this is still be due to run a few ms later
             }
             if (runFlag && emailer != null && emailer.isValid() && emailer.isDue()) { //isDue() blocks for 2 seconds if called >1 time in 10 min
-                emailer.send();
+                emailer.send(); 
                 // On the same schedule as the emailer, try to set the PC clock to the offset in the settings
                 try { if (clockOffset != 0) alterPcClock(clockOffset, 5, true); } catch (Throwable t){ System.out.println(new Date() + " ERROR: Could not set PC clock." );}
             }

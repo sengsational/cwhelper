@@ -15,7 +15,22 @@ module cwhelper {
     requires com.sun.jna.platform;
     requires com.sun.jna;
     requires ucanaccess;
+	requires mailapi;
+	requires smtp;
+	requires com.google.api.client;
+	requires com.google.api.client.json.gson;
+	requires com.google.api.services.gmail;
+	requires com.google.api.client.auth;
+	requires google.api.client;
+	requires com.google.api.client.extensions.jetty.auth;
+	requires com.google.api.client.extensions.java6.auth;
 }
+
+/**
+ * Terry's actual command from 4/1/2026 (no kidding):
+ * set JAVA_HOME "C:\Program Files (x86)\BellSoft\LibericaJDK-11\"
+*  & $JAVA_HOME\bin\jlink.exe --module-path $JAVA_HOME\jmods --add-modules "java.base,java.compiler,java.desktop,java.naming,java.scripting,java.security.jgss,java.security.sasl,java.sql,jdk.crypto.ec,jdk.httpserver,jdk.unsupported,java.datatransfer,java.logging,java.transaction.xa,java.xml" --output .\custom-runtime --strip-debug --no-man-pages --no-header-files --compress=2
+ */
 
 /** This worked to generate output on Linux with 1097 version fat jar
  * 
@@ -29,6 +44,7 @@ jlink \
   --add-modules java.security.jgss \
   --add-modules java.security.sasl \
   --add-modules java.sql \
+  --add-modules jdk.crypto.ec \
   --add-modules jdk.httpserver \
   --add-modules jdk.unsupported \
   --add-modules java.datatransfer \
