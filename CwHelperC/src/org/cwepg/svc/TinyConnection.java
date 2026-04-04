@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -28,6 +29,8 @@ import org.cwepg.hr.Capture;
 import org.cwepg.hr.CaptureManager;
 import org.cwepg.hr.Emailer;
 import org.cwepg.hr.EmailerOauth;
+import org.cwepg.hr.ScheduleDataManager;
+import org.cwepg.hr.ScheduleDetails;
 import org.cwepg.hr.ShutdownHookThread;
 import org.cwepg.hr.Slot;
 import org.cwepg.hr.Target;
@@ -458,6 +461,26 @@ class TinyConnection implements Runnable {
                 tunerManager.addAltChannels(CaptureManager.alternateChannels); // DRS 20200305 - Added line - Should have been added 20200225
                 if (action.equals("/channels2")) out.print(HEAD + "<br>" + tunerManager.getWebChannelListSingleFusion() + FOOT);
                 else out.print(HEAD + "<br>" + tunerManager.getWebChannelList() + FOOT);
+            } else if (action.equals("/capturedirect")) {
+                String scheduleId = (String)request.get("id");
+                System.out.println("id [" + scheduleId + "]");
+                if (scheduleId != null && isParsableInt(scheduleId)) {
+                	ScheduleDetails details = ScheduleDataManager.getScheduleDetailsFromId(Integer.parseInt(scheduleId));
+                	String dateTime = details.getDateTime();
+                	String duration = details.getDurationMinutes();
+                    Slot slot = new Slot(dateTime, duration);
+                    System.out.println("slot [" + slot + "]"); 
+                    String channel = details.getChannelName();
+                    System.out.println("channel [" + channel + "]");
+                    //getAvailableCapturesForChannelNameAndSlot(String channelName, Slot slot, String protocol, boolean isVirtualChannel)
+                    List<Capture> x = TunerManager.getAvailableCapturesForChannelNameAndSlot(channel, slot, "8vsb", true);
+                    for (Capture capture : x) {
+						System.out.println("DEBUG: " + capture);
+					}
+                	out.print(HEAD + " -- will return captures here --" + FOOT);	
+                } else {
+                	out.print(HEAD + "id not specified or not as expected" + FOOT);	
+                }
             } else if (action.equals("/capture")){ // ************* CAPTURE ***************
                 synchronized (locker){
                     String channelName = (String)request.get("channelname");
@@ -927,6 +950,15 @@ class TinyConnection implements Runnable {
                 }
                 System.out.println(new Date() + " " + response);
                 out.print(HEAD + response + FOOT);
+            } else if (action.equals("/list")) { // ************* LIST ***************
+                String response = " list command didn't work ";
+                try {
+                    String[] inputs = {(String)request.get("name")};
+                    out.print(HEAD + captureManager.getWebSchedulesList(inputs) + FOOT);
+                } catch (Exception e) { 
+                    response += e.getMessage(); 
+                    out.print(HEAD + response + FOOT);
+                }
             } else if (action.equals("/token")) {
                 String username = (String)request.get("username");
                 String password = (String)request.get("password");
@@ -978,7 +1010,12 @@ class TinyConnection implements Runnable {
 		}
 	}
 
-    private String[] getResourceAsString(String resourceFileName) {
+    private boolean isParsableInt(String scheduleId) {
+    	try { Integer.parseInt(scheduleId); } catch (Throwable t) {return false;};
+    	return true;
+	}
+
+	private String[] getResourceAsString(String resourceFileName) {
         String[] returnString = new String[2];
         StringBuilder stringBuilder = new StringBuilder();
         BufferedReader bufferedReader = null;

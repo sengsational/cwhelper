@@ -35,6 +35,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     private static CaptureManager captureManager;
     private static TunerManager tunerManager;
     private static CaptureDataManager captureDataManager;
+    private static ScheduleDataManager scheduleDataManager;
     //private static TinyWebServer webServer;
     private static Emailer emailer;
     private static WakeupEvent wakeupEvent; // null wakeupEvent signals no wakeup event
@@ -101,6 +102,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         if (captureManager == null){
             version = getVersionFromResource();
             captureDataManager = CaptureDataManager.getInstance();
+            scheduleDataManager = ScheduleDataManager.getInstance();
             captureManager = new CaptureManager(); // settings are loaded here. RestartManager thread starts here.
             tunerManager = TunerManager.getInstance();
             if (tunerManager.noTuners()) tunerManager.countTuners(false); // THIS IS WHERE WE RUN COUNT TUNERS FOR THE FIRST TIME. 
@@ -758,6 +760,53 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 xmlBuf.append("<recentCapture " + details.getXml() + "/>\n");
             } else {
                 System.out.println(new Date() + " ERROR: recentCaptures list had a null object.");
+            }
+        }
+        buf.append("</table>\n");
+        xmlBuf.append("</xml>\n");
+        return new String(buf) + new String(xmlBuf);
+    }
+
+    public String getWebSchedulesList(String[] inputs) {
+        //inputs = {(String)request.get("name")};
+    	boolean limited = true;
+        boolean noInputs = false;
+        String name = "";
+        if (inputs != null) {
+            for (int i = 0; i < inputs.length; i++) {
+                if (inputs[i] != null && !inputs[i].equals("")) {
+                    noInputs = false;
+                    if (i == 0 && inputs[0] != null) name = inputs[0];
+                }
+            }
+        } else {
+            noInputs = true;
+        }
+        
+        StringBuffer buf = new StringBuffer("<table border=\"1\">\n");
+        StringBuffer xmlBuf = new StringBuffer("\n<xml id=\"matchingSchedules\">\n");
+        boolean headersDone = false;
+
+        TreeMap<Integer, ScheduleDetails> schedules = null;
+        if (noInputs && limited) {
+            schedules = scheduleDataManager.getNextSchedules("LIMIT 50", "");
+        } else if (limited) {
+            schedules = scheduleDataManager.getNextSchedules("LIMIT 50", name);
+        } else {
+            schedules = scheduleDataManager.getNextSchedules("", name);
+        }
+        
+        for (Iterator<ScheduleDetails> iter = schedules.descendingMap().values().iterator(); iter.hasNext();) {
+            ScheduleDetails details = (ScheduleDetails) iter.next();
+            if (details != null){
+                if (!headersDone){
+                    buf.append("<tr>" + details.getHtmlHeadings() + "</tr>\n");
+                    headersDone = true;
+                }
+                buf.append("<tr>" + details.getHtml() + "</tr>\n");
+                xmlBuf.append("<recentCapture " + details.getXml() + "/>\n");
+            } else {
+                System.out.println(new Date() + " ERROR: nextSchedules list had a null object.");
             }
         }
         buf.append("</table>\n");

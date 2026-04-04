@@ -26,7 +26,10 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.UIManager;
 
+import org.cwepg.svc.CommandLine;
+import org.cwepg.svc.DefaultBrowserCommandLine;
 import org.cwepg.svc.SplashScreenCloser;
+import org.cwepg.svc.VlcCommandLine;
 
 public class TrayIconManager implements Runnable {
     
@@ -149,13 +152,12 @@ public class TrayIconManager implements Runnable {
             imageFromIcon = image;
         }
 
-        final String[][] menuAndActions = {{" ","Open Configuration Page"," ","configure"," "}, {" ","Shutdown"," ","checkedshutdown"," "}}; // DRS20250422 - Removed access to VCR page
+        final String[][] menuAndActions = {{"Open Configuration Page", "configure"}, {"Shutdown", "checkedshutdown"}}; // DRS20250422 - Removed access to VCR page
         
         ArrayList<MenuItem> menuItems = new ArrayList<MenuItem>();
         for(int i = 0; i < menuAndActions.length; i++) {
             //System.out.println("menu: " + menuAndActions[i][0] + " " + menuAndActions[i][1]);
             final MenuItem item = new MenuItem(menuAndActions[i][0]);
-            if (menuAndActions[i][0].equals(" ")) item.setEnabled(false); // DRS 20260331 - Added spacers
             menuItems.add(item);
         }
         
@@ -179,11 +181,13 @@ public class TrayIconManager implements Runnable {
 
                 if (!"".equals(webPage)) { 
                     try {
-                        System.out.println(new Date() + " Opening web browser to " + webPage + " page.");
-                        if(Desktop.isDesktopSupported()) { 
-                            Desktop desktop = Desktop.getDesktop();
-                            desktop.browse(new URI("http://localhost:8181/" + webPage));
-                        }
+                        //System.out.println(new Date() + " Opening web browser to " + webPage + " page.");
+                        //if(Desktop.isDesktopSupported()) { 
+                        //    Desktop desktop = Desktop.getDesktop();
+                        //    desktop.browse(new URI("http://localhost:8181/" + webPage));
+                        //}
+                    	CommandLine runningCommandLine = (CommandLine) new DefaultBrowserCommandLine("http://localhost:8181/" + webPage, 0);
+                    	runningCommandLine.runProcess();
                     } catch (Exception e) {
                         System.out.println(new Date() + " Error trying open " + webPage + " web page. " + e.getMessage());
                         System.err.println(new Date() + " Error trying open " + webPage + " web page. " + e.getMessage());
