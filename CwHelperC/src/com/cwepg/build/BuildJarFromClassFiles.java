@@ -69,7 +69,7 @@ public class BuildJarFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1101";
+            revision = "1102";
         } else {
         	String fullVersion = "";
         	try {
@@ -341,8 +341,12 @@ public class BuildJarFromClassFiles {
             while ((entry = jis.getNextJarEntry()) != null) {
             	if (entry.getName().contains("module-info")) {
             		System.out.println("inputJar " + inputJar + " had module.info.class removed. " + entry.getName());
+            		continue;
             	}
-            		
+            	
+            	// Only include sqlite native for Windows
+            	if (entry.getName().contains("sqlite/native") && !entry.getName().contains("Windows")) continue;
+            	
             	CheckEntry checkEntry = new CheckEntry(entry, inputJarFileName);
                 try {
                 	if (!checkEntry.isDirectory()) checkEntryList.add(checkEntry);
