@@ -1007,6 +1007,7 @@ class TinyConnection implements Runnable {
             try {out.flush(); out.close();} catch (Exception e2) {/* ignore */}
             try {dataout.close();} catch (Exception e2) {/* ignore */}
             try {client.close();} catch (IOException e2) {/* ignore */}
+            System.out.println("TinyConnection.run() complete for [" + req + "] " + new Date());
 		}
 	}
 

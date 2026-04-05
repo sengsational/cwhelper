@@ -38,7 +38,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     private static ScheduleDataManager scheduleDataManager;
     //private static TinyWebServer webServer;
     private static Emailer emailer;
-    private static WakeupEvent wakeupEvent; // null wakeupEvent signals no wakeup event
+    static WakeupEvent wakeupEvent; // null wakeupEvent signals no wakeup event
     private static TrayIconManager trayIconManager;
     private static Thread eventLoopThread;
     private static boolean wakeupEventMessageDone = false;
@@ -424,26 +424,18 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     }
     
 	public static String shutdown(String who){
-        if (!runFlag) {
-            System.out.println(new Date() + " CaptureManager runFlag is already false (" + who + ")");
-            return "Thanks, but a shutdown was already in process.";
-        }
+		ShutdownAll shutdownAll = new ShutdownAll(runFlag, who, activeCaptures);
+		
+		Thread shutdownThread = new Thread(
+			    null,           
+			    shutdownAll, 
+			    "ShutdownThread", 
+			    0,              
+			    false           // inheritThreadLocals: set to false to stop inheritance
+			);
+			shutdownThread.start();
         
-        if (activeCaptures.size() != 0  && !who.contains("ENDSESSION")) {
-            System.out.println(new Date() + " Active capture(s) prevented shutdown (" + who + ")");
-            return "Active capture(s) prevented shutdown";
-        }
-        
-        System.out.println(new Date() + " Shutdown request being processed.");
-        
-        runFlag = false;
-        System.out.println(new Date() + " CaptureManager runFlag is false and requesting interrupt.");
-        CaptureManager.requestInterrupt("CaptureManager.shutdown(" + who + ")");
-        if (CaptureManager.wakeupEvent != null){
-            CaptureManager.wakeupEvent.interruptTimer(WakeupEvent.KILL);
-        }
-        
-        return "Shutdown Requested";
+        return "Shutdown Thread Started";
     }
     
     // Helpers for the run method

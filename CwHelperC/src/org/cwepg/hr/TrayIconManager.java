@@ -193,9 +193,7 @@ public class TrayIconManager implements Runnable {
                         System.err.println(new Date() + " Error trying open " + webPage + " web page. " + e.getMessage());
                         e.printStackTrace();
                     }
-                } else if (arg0.getActionCommand().startsWith("Shutdown")) {
-                    CaptureManager.shutdown("trayIcon");
-                }
+                } 
             }
         };
 

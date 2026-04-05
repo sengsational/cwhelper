@@ -194,8 +194,8 @@ public class RegistryHelperFusion {
 
         } catch (Throwable e) {
             System.out.println(new Date() + " ERROR: getFusionRegistryEntries " + e.getMessage());
-            System.err.println(new Date() + " ERROR: getFusionRegistryEntries " + e.getMessage());
-            e.printStackTrace();
+            //System.err.println(new Date() + " ERROR: getFusionRegistryEntries " + e.getMessage());
+            //e.printStackTrace();
         }
         return fusionRegistryEntries;
     }
