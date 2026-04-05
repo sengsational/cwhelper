@@ -47,14 +47,14 @@ class TinyConnection implements Runnable {
     protected CaptureManager captureManager;
     protected TunerManager tunerManager;
     // TMP20231206 I think that the following 2 lines are what's needed for the new GitHub-hosted CW_EPG_Remote scheme
-    private static final String ACORS_HEAD = "Access-Control-Allow-Origin: https://tpeterson94070.github.io\n"; 
-	private static final String HEAD = "HTTP/1.0 200 OK\n" + ACORS_HEAD + "Content-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
+    private static final String ACORS_HEAD = "Access-Control-Allow-Origin: https://tpeterson94070.github.io\r\n"; 
+	private static final String HEAD = "HTTP/1.0 200 OK\r\nConnection: close\r\n" + ACORS_HEAD + "Content-type: text/html\r\n\r\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
     // After initial testing I need to set up the hosted site to know what is the GitHub host domain
     // Removing the following line for the above replacement
-	// private static final String HEAD = "HTTP/1.0 200 OK\nContent-type: text/html\n\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
-    private static final String HEAD_SHORT = "HTTP/1.0 200 OK\nContent-type: text/html\n\n";
-    private static final String HEAD_JS = "HTTP/1.0 200 OK\nContent-type: text/javascript\n\n";
-    private static final String HEAD_JSON = "HTTP/1.0 200 OK\nContent-type: application/json\n\n";
+	// private static final String HEAD = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-type: text/html\r\n\r\n<html><body><h2>CW_EPG Helper Interface</h2><br>";
+    private static final String HEAD_SHORT = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-type: text/html\r\n\r\n";
+    private static final String HEAD_JS = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-type: text/javascript\r\n\r\n";
+    private static final String HEAD_JSON = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-type: application/json\r\n\r\n";
     private static final String FOOT = "</body></html>";
     private static final String CRLF = "\r\n";
     private static final SimpleDateFormat clock = new SimpleDateFormat("HH:mm:ss");
@@ -766,7 +766,7 @@ class TinyConnection implements Runnable {
                         byte[] bytes = new byte[1024];
                         in = new FileInputStream(filePath);
                         int count;
-                        dataout.writeBytes("HTTP/1.0 200 OK\r\n");
+                        dataout.writeBytes("HTTP/1.0 200 OK\r\nConnection: close\r\n");
                         // TMP20231206 I think that the following line is what's needed for the new GitHub-hosted CW_EPG_Remote scheme 
                         dataout.writeBytes(ACORS_HEAD + "\r\n"); 
                         // This is the domain for the TMS WEB Core server and I need to set up the hosted site to know exactly what is the GitHub host origin name 
