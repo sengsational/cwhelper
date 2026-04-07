@@ -730,7 +730,10 @@ class TinyConnection implements Runnable {
             } else if (action.equals("/properties")){ // ************* PROPERTIES ***************
                 out.print(HEAD + captureManager.getProperties(false) + FOOT);
             } else if (action.equals("/shutdown")){ // ************* SHUTDOWN ***************
-                out.print(HEAD + CaptureManager.shutdown("web") + FOOT);
+            	String webResponse = "<html><body><h2>CW_EPG Helper Interface</h2><br>" + CaptureManager.shutdown("web") + FOOT;
+            	int contentLength = webResponse.getBytes(StandardCharsets.UTF_8).length;
+            	String specialHeaderForShutdown = "HTTP/1.0 200 OK\r\nContent-Length: " + contentLength + "\r\nContent-Type: text/html\r\n\r\n";
+                out.print(specialHeaderForShutdown + webResponse);
             } else if (action.equals("/actives")){ // ************* ACTIVITIES ***************
                 out.print(HEAD + captureManager.getActiveWebCapturesList() + FOOT);
             } else if (action.equals("/recent")){ // ************* RECENT ***************

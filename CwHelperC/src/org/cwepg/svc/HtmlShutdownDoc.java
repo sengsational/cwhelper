@@ -34,8 +34,7 @@ public class HtmlShutdownDoc {
         buf.append("document.getElementById(Id).value = x }\n");
         buf.append("\n");
         buf.append("function KillCWHelper() { // Jump to /shutdown\n");
-        buf.append("window.location.href= vID(\"destination\") + ':8181/shutdown'\n");
-        buf.append("window.close()}\n");
+        buf.append("window.location.href= vID(\"destination\") + ':8181/shutdown' }\n");
         buf.append("\n");
         buf.append("function getJumpURL() {\n");
         buf.append("if (document.URL.substring(0,4).toLowerCase() == \"http\") { // Not running a file\n");
