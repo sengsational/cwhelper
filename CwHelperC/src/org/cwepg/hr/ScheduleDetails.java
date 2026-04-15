@@ -26,6 +26,7 @@ public class ScheduleDetails implements Cloneable {
     
     /* Instance data from database fields */
     /* from EP_DATA */
+    /*         ====== */
     Integer id = -1; 
     private String titles = "";
     private String episodeTitle150 = ""; 
@@ -45,6 +46,7 @@ public class ScheduleDetails implements Cloneable {
     private Boolean used;
     
     /* from CW_DATA */
+    /*         ======= */
     private Integer id2 = -1;
     private String channel = "";
     private String stationId = "";
@@ -61,6 +63,7 @@ public class ScheduleDetails implements Cloneable {
 	private Boolean used2 = false;
 	
     /* from CH_DATA */
+	/*         ======= */
     private Integer id3 = -1;
     private String stnId = "";
     private String callSign = "";
@@ -95,32 +98,32 @@ public class ScheduleDetails implements Cloneable {
         "USED", //16
         
         //Must align with CW_DATA
-        "ID", //17
+        "ID", //17                                         <<<<<<<<<<<<<<<<<<DUPLICATE MUST USE INDEX
         "CHANNEL", //18
         "stationID", //19
         "programID", //20
         "MAPPED", //21
         "airDateTime", //22
         "duration", //23
-        "md5", //24
+        "md5", //24                                         <<<<<<<<<<<<<<<<<<DUPLICATE MUST USE INDEX
         "new", //25
         "audioProperties", //26
         "videoProperties", //27
         "ratings", //28
         "multipart", //29
-        "USED", //30
+        "USED", //30                                         <<<<<<<<<<<<<<<<<<DUPLICATE MUST USE INDEX
 
         //Must align with CH_DATA
         "ID1", //31
         "STN_ID", //32
         "CALLSIGN", //33
-        "CHANNEL", //34
+        "CHANNEL", //34                                         <<<<<<<<<<<<<<<<<<DUPLICATE MUST USE INDEX
         "MINOR", //35
         "STNTYPE", //36
         "NAME", //37
         "RFCHANNEL", //38
         "PSIP", //39
-        "MAPPED", //40
+        "MAPPED", //40                                         <<<<<<<<<<<<<<<<<<DUPLICATE MUST USE INDEX
         "AFFILIATE" //41
     }; 
     
@@ -142,34 +145,6 @@ public class ScheduleDetails implements Cloneable {
     public ScheduleDetails() {
     }
 
-    public String[] getTildeSeparatedFieldNamesWithValues() {
-        StringBuffer fields = new StringBuffer();
-        StringBuffer values = new StringBuffer();
-        fields.append("id~");values.append("'" + this.id + "'~");
-        fields.append("titles~");values.append("'" + this.titles + "'~");
-        fields.append("episodeTitle150~");values.append("'" + this.episodeTitle150 + "'~"); 
-        fields.append("descriptions~");values.append("'" + this.descriptions + "'~"); 
-        fields.append("originalAirDate~");values.append("'" + this.originalAirDate + "'~"); //YYYY-MM-DD
-        fields.append("programID~");values.append("'" + this.programID + "'~");
-        fields.append("contentRating~");values.append("'" + this.contentRating + "'~");
-        fields.append("showType~");values.append("'" + this.showType + "'~");
-        fields.append("contentAdvisory~");values.append("'" + this.contentAdvisory + "'~");
-        fields.append("movie~");values.append("'" + this.movie + "'~");
-        fields.append("genres~");values.append("'" + this.genres + "'~");
-        fields.append("cast~");values.append("'" + this.cast + "'~");
-        fields.append("crew~");values.append("'" + this.crew + "'~");
-        fields.append("metadata~");values.append("'" + this.metadata + "'~");
-        fields.append("entityType ~");values.append("'" + this.entityType + "'~");
-        fields.append("md5~");values.append("'" + this.md5 + "'~");
-        fields.append("used~");values.append("'" + this.used + "'~");
-        fields.append("id2~");values.append("'" + this.id2 + "'~");
-        fields.append("channel~");values.append("'" + this.channel + "'~");
-        fields.append("stationId~");values.append("'" + this.stationId+ "'~");
-        String[] result = new String[2];
-        result[FIELDS] = fields.toString();
-        result[VALUES] = values.toString();
-        return result;
-    }
 
     public void setFromDb(ResultSet rs, boolean debug) {
         try {
@@ -183,7 +158,7 @@ public class ScheduleDetails implements Cloneable {
             originalAirDate = rs.getString(fieldNames[4]); //YYYY-MM-DD
             programID = rs.getString(fieldNames[5]);
             contentRating = rs.getString(fieldNames[6]);
-            showType = rs.getString(fieldNames[7]);;
+            showType = rs.getString(fieldNames[7]);
             contentAdvisory = rs.getString(fieldNames[8]);
             movie = rs.getString(fieldNames[9]);
             genres = rs.getString(fieldNames[10]);
@@ -194,32 +169,31 @@ public class ScheduleDetails implements Cloneable {
             md5 = rs.getString(fieldNames[15]);
             used = rs.getBoolean(fieldNames[16]);
             
-            id2 = rs.getInt(fieldNames[17]);
+            id2 = rs.getInt(17);
             channel = rs.getString(fieldNames[18]);
             stationId = rs.getString(fieldNames[19]);
             programId = rs.getString(fieldNames[20]);
             mapped = rs.getBoolean(fieldNames[21]);
             airDateTime = rs.getString(fieldNames[22]); 
             duration = rs.getInt(fieldNames[23]);
-            md52= rs.getString(fieldNames[24]);
+            md52= rs.getString(24);
             gnew = rs.getBoolean(fieldNames[25]);
             audioProperties = rs.getString(fieldNames[26]);
             videoProperties = rs.getString(fieldNames[27]);
             ratings = rs.getString(fieldNames[28]);
             multipart = rs.getString(fieldNames[29]);
-            used2 = rs.getBoolean(fieldNames[30]);
+            used2 = rs.getBoolean(30);
 
             id3 = rs.getInt(fieldNames[31]);
-            stnId = rs.getString(fieldNames[32]);
+            stnId = rs.getString(fieldNames[32]); 
             callSign = rs.getString(fieldNames[33]);
-            channel3 = rs.getString(fieldNames[34]);
-            System.out.println("channel3 [" + channel3 + "]");
+            channel3 = rs.getString(34);
             minor = rs.getString(fieldNames[35]);
             stnType = rs.getString(fieldNames[36]);
             name3 = rs.getString(fieldNames[37]);
             rfChannel = rs.getString(fieldNames[38]);
             psip = rs.getString(fieldNames[39]);
-            mapped3 = rs.getBoolean(fieldNames[40]);
+            mapped3 = rs.getBoolean(40);
             affiliate = rs.getString(fieldNames[41]);
             
         } catch (SQLException e) {
@@ -355,6 +329,35 @@ public class ScheduleDetails implements Cloneable {
         return values;
     }
 
+    public String[] getTildeSeparatedFieldNamesWithValues() {
+        StringBuffer fields = new StringBuffer();
+        StringBuffer values = new StringBuffer();
+        fields.append("id~");values.append("'" + this.id + "'~");
+        fields.append("titles~");values.append("'" + this.titles + "'~");
+        fields.append("episodeTitle150~");values.append("'" + this.episodeTitle150 + "'~"); 
+        fields.append("descriptions~");values.append("'" + this.descriptions + "'~"); 
+        fields.append("originalAirDate~");values.append("'" + this.originalAirDate + "'~"); //YYYY-MM-DD
+        fields.append("programID~");values.append("'" + this.programID + "'~");
+        fields.append("contentRating~");values.append("'" + this.contentRating + "'~");
+        fields.append("showType~");values.append("'" + this.showType + "'~");
+        fields.append("contentAdvisory~");values.append("'" + this.contentAdvisory + "'~");
+        fields.append("movie~");values.append("'" + this.movie + "'~");
+        fields.append("genres~");values.append("'" + this.genres + "'~");
+        fields.append("cast~");values.append("'" + this.cast + "'~");
+        fields.append("crew~");values.append("'" + this.crew + "'~");
+        fields.append("metadata~");values.append("'" + this.metadata + "'~");
+        fields.append("entityType ~");values.append("'" + this.entityType + "'~");
+        fields.append("md5~");values.append("'" + this.md5 + "'~");
+        fields.append("used~");values.append("'" + this.used + "'~");
+        fields.append("id2~");values.append("'" + this.id2 + "'~");
+        fields.append("channel~");values.append("'" + this.channel + "'~");
+        fields.append("stationId~");values.append("'" + this.stationId+ "'~");
+        String[] result = new String[2];
+        result[FIELDS] = fields.toString();
+        result[VALUES] = values.toString();
+        return result;
+    }
+    
     public String getXml() {
         String[] values = getArray(VALUES);
         StringBuffer buf = new StringBuffer();
@@ -384,7 +387,8 @@ public class ScheduleDetails implements Cloneable {
     /************************************* TESTING ***************************************/
     
     public static void main(String[] args) throws Exception {
-    	boolean testRegex = true;
+    	
+    	boolean testRegex = false;
     	if (testRegex) {
     		        String input = "[{\"title120\":\"Animal Control\",\"titleLanguage\":\"en\"}]";
     		        
@@ -398,8 +402,9 @@ public class ScheduleDetails implements Cloneable {
     		        }
     	}
     	
-        boolean testDatabaseRead = false;
-        if (testDatabaseRead){
+        boolean testDatabaseRead = true;
+        boolean isRunningOnWindows = false;
+        if (testDatabaseRead && isRunningOnWindows){
             Connection connection = null;
             Statement statement = null;
             ResultSet rs = null;

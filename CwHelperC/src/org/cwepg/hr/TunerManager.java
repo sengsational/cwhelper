@@ -629,8 +629,26 @@ public class TunerManager {
             } else if (fileDevices.contains(device)){
                 System.out.println(new Date() + " " + device + " was NOT live.");
                 // Device not live, but is contained in the discover.txt.  Might need time to start-up.
+                //DRS 20260415 - Added 4 +  'if' block - Terry suggested poking the tuner using http
+                int maxSeconds = 2;
+                boolean quiet = false;
+                boolean isPost = false;
+                String liveDiscoverText = LineUpHdhr.getPage("http://ipv4-api.hdhomerun.com/discover", maxSeconds, quiet, isPost);
+                if (liveDiscoverText != null && liveDiscoverText.contains(device)) {
+                	System.out.println(new Date() + " " + device + " found in response to http discover.");
+                    String localLiveDiscoverText = getLiveDiscoverText(CaptureManager.discoverRetries, CaptureManager.discoverDelay);
+                    ArrayList<String> localLiveDevices = findTunerDevicesFromText(localLiveDiscoverText, writeOutputToFile);
+                    if (localLiveDevices.contains(device)) {
+                        reallyDeadDevice = false; // device now active, on a retry
+                        System.out.println(new Date() + " device " + device + " came alive.");
+                    } else {
+                        System.out.println(new Date() + " device " + device + " did not come alive after http discover.");
+                    }
+                } else {
+                	System.out.println(new Date() + " http discover responded with " + liveDiscoverText + " and does not contain " + device);
+                }
                 //DRS 20130126 - moved code out into new method
-                if (deviceHasValidCapture(device, null)){
+                if (deviceHasValidCapture(device, null) && reallyDeadDevice){
                     for (int retries = 0; retries < 3; retries++){
                         System.out.println(new Date() + " device " + device + " was not live, but had valid current or future captures.  Waiting 15 seconds to try again.");
                         try {Thread.sleep(15000);} catch (Exception e){};
@@ -642,7 +660,7 @@ public class TunerManager {
                             break; // out of for loop
                         }
                     }
-                } else {
+                } else if (reallyDeadDevice) {
                     System.out.println(new Date() + " device " + device + " was not live, and did not have current or future captures.  Not retrying discover.");
                 }
                 if (reallyDeadDevice){
@@ -655,7 +673,18 @@ public class TunerManager {
         return devices;
     }
 
-    // DRS 20120315 - Added method - if there are valid captures, then wait, try again, and set liveDevice.
+    //DRS 20260415 - Added method
+    private boolean httpDiscoverResponded(String device) {
+        //String fileDiscoverText = getFileDiscoverText(); // each fileDiscoverText line looks like this "hdhomerun device 1010CC54 found at 192.168.3.209"
+        //HashMap<String, String> ipAddressMap = getIpMap(fileDiscoverText, "");
+        //String ip = ipAddressMap.get(device);
+        //if (ip != null) {
+        //}
+
+		return false;
+	}
+
+	// DRS 20120315 - Added method - if there are valid captures, then wait, try again, and set liveDevice.
     private String getFileDiscoverText() {
         String fileDiscoverText = "";
         BufferedReader in = null;
@@ -2596,7 +2625,7 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
     }
     
     public static void main(String[] args) throws Exception {
-    	boolean testIpv6 = true;
+    	boolean testIpv6 = false;
     	if (testIpv6) {
     		String liveDiscoverText = "hdhomerun device 1075D4B1 found at 192.168.1.16\n\r" + 
     				"hdhomerun device 1075D4B1 found at fe80::218:ddff:fe07:5d4b%7\n\r" +
@@ -2657,13 +2686,14 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             System.out.println("TunerManager.main() replacementCapture2: " + replacementCapture2);
         }
         
-        boolean testIpMap = false;
+        boolean testIpMap = true;
         if (testIpMap) {
             String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.181.254\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
             //String fileDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.3.188\nhdhomerun device 1075D4B1 found at 192.168.1.16\nhdhomerun device 1080F19F found at 192.168.1.18";
             //fileDiscoverText = "";
-            String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.212.64\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
+            //String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.212.64\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
             //String liveDiscoverText = "hdhomerun device 1076C3A7 found at 169.254.217.171\nhdhomerun device 1080F19F found at 192.168.1.18\nhdhomerun device 1075D4B1 found at 192.168.1.16";
+            String liveDiscoverText = "";
             HashMap<String, String> ipMap = getIpMap(fileDiscoverText, liveDiscoverText);
             Set<String> keys = ipMap.keySet();
             for (Object object : keys) {

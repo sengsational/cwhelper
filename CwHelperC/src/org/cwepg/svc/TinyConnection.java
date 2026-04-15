@@ -465,6 +465,7 @@ class TinyConnection implements Runnable {
                 String scheduleId = (String)request.get("id");
                 System.out.println("id [" + scheduleId + "]");
                 if (scheduleId != null && isParsableInt(scheduleId)) {
+                	ScheduleDataManager.getInstance();
                 	ScheduleDetails details = ScheduleDataManager.getScheduleDetailsFromId(Integer.parseInt(scheduleId));
                 	String dateTime = details.getDateTime();
                 	String duration = details.getDurationMinutes();

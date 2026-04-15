@@ -9,11 +9,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TreeMap;
 
 public class ScheduleDataManager {
 
-    private static ScheduleDataManager captureDataManager;
+    private static ScheduleDataManager scheduleDataManager;
     
     public static final String epData = "EP_DATA";
     public static final String cwData = "CW_DATA";
@@ -24,14 +25,14 @@ public class ScheduleDataManager {
     }
 
     public static ScheduleDataManager getInstance() {
-        if (captureDataManager == null){
-            captureDataManager = new ScheduleDataManager();
+        if (scheduleDataManager == null){
+            scheduleDataManager = new ScheduleDataManager();
             File dbFile = new File(CaptureManager.dataPath + ScheduleDataManager.dbFileName);
             if (!dbFile.exists()) {
                 System.out.println(new Date() + " ERROR: No CW_EPG database file found: " + CaptureManager.dataPath + ScheduleDataManager.dbFileName + ".");
             } 
         }
-        return captureDataManager;
+        return scheduleDataManager;
     }
 
     public TreeMap<Integer, ScheduleDetails> getNextSchedules(String limitSqlText, String name) {
@@ -84,7 +85,7 @@ public class ScheduleDataManager {
 
             while (rs.next()){
                 ScheduleDetails details = new ScheduleDetails();
-                details.setFromDb(rs, false);
+                details.setFromDb(rs, true);
                 detailsMap.put(details.id, details);
             }
             if (preparedStatement != null) preparedStatement.close();
@@ -142,11 +143,26 @@ public class ScheduleDataManager {
 
 
 
-    /**************** MAIN **********************/
+    /**************** MAIN 
+     * @throws SlotException **********************/
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SlotException {
         
-        boolean testReadScheduleDetails = true;
+    	boolean testReadById = true;
+    	boolean isRunningOnWindows = false;
+    	if (testReadById && isRunningOnWindows) {
+        	ScheduleDetails details = ScheduleDataManager.getScheduleDetailsFromId(Integer.parseInt("258545"));
+        	String dateTime = details.getDateTime();
+        	String duration = details.getDurationMinutes();
+            Slot slot = new Slot(dateTime, duration);
+            System.out.println("slot [" + slot + "]"); 
+            String channel = details.getChannelName();
+            System.out.println("channel [" + channel + "]");
+            //getAvailableCapturesForChannelNameAndSlot(String channelName, Slot slot, String protocol, boolean isVirtualChannel)
+            //List<Capture> x = TunerManager.getAvailableCapturesForChannelNameAndSlot(channel, slot, "8vsb", true);
+    	}
+    	
+        boolean testReadScheduleDetails = false;
         if (testReadScheduleDetails) {
         	String dataPath = "/home/owner/CW_EPG/";
             System.out.println("data path " + dataPath);
