@@ -28,7 +28,8 @@ public class LineUpHdhr extends LineUp {
     HdhrCommandLine mCommandLine = null;
 //    private String liveXml;
 	
-    public void scan(Tuner tuner, boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
+    public boolean scan(Tuner tuner, boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
+    	boolean success = true;
         String extraInfo = "";
         try {
             StackTraceElement[] trace = Thread.currentThread().getStackTrace();
@@ -55,7 +56,7 @@ public class LineUpHdhr extends LineUp {
                 } else {
                     xmlOutput = this.scanAndGetXmlOutputFromDevice(tuner, maxSeconds);
                 }
-                loadChannelsFromXmlString(xmlOutput, xmlFileName, airCatSource, tuner);
+                success = loadChannelsFromXmlString(xmlOutput, xmlFileName, airCatSource, tuner);
             } else if (!useExistingFile){
                 debugBuf.append("(#2) useExistingFile: false ");
                 scanOutput = getScanOutputFromDevice(tuner, maxSeconds);
@@ -105,6 +106,7 @@ public class LineUpHdhr extends LineUp {
                 }
             }
             System.out.println(new Date() + " " + debugBuf.toString());  // 20240211 TMP - moved to print for all paths
+            return success;
       } catch (Exception t) {
             System.out.println(new Date() + " ERROR: Exception in LineUpHdhr.scan(): " + t.getClass().getName() + " " + t.getMessage());
             System.out.println(new Date() + " ERROR: " + debugBuf.toString());
@@ -172,20 +174,28 @@ public class LineUpHdhr extends LineUp {
         return startNumber;
     }
 
-    private void loadChannelsFromXmlString(String programDefinitionString, String xmlFileName, String airCatSource, Tuner tuner) throws Exception {
-        if (programDefinitionString == null || "".equals(programDefinitionString)) System.out.println(new Date() + " ERROR: nothing to parse for tuner " + tuner);
-        BufferedReader in = new BufferedReader(new StringReader(programDefinitionString));
-        ArrayList<String> programDefinitions = getProgramDefinitions(((TunerHdhr)tuner), in);
-        double priority = getStartPriority(tuner.getDeviceId(), tuner.number);
-        System.out.println(new Date() + " Clearing channels for tuner: " + tuner.getFullName());
-        tuner.lineUp.clearAllChannels(); // DRS 2019 12 15 - Added Line
-        int count = 0;
-        for (String programDefinition : programDefinitions) {
-        	// DRS 20241208 - altered 2 - issue #49
-            boolean added = addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
-            if (added) count++;
+    private boolean loadChannelsFromXmlString(String programDefinitionString, String xmlFileName, String airCatSource, Tuner tuner) throws Exception {
+        if (programDefinitionString == null || "".equals(programDefinitionString)) {
+        	System.out.println(new Date() + " ERROR: nothing to parse for tuner " + tuner);
+        	return false;
+        } else if (programDefinitionString.contains("ERROR: (initialized)")) {
+        	System.out.println(new Date() + " ERROR: tuner " + tuner + " did not produce xml.  Message: " + programDefinitionString);
+        	return false;
+        } else {
+            BufferedReader in = new BufferedReader(new StringReader(programDefinitionString));
+            ArrayList<String> programDefinitions = getProgramDefinitions(((TunerHdhr)tuner), in);
+            double priority = getStartPriority(tuner.getDeviceId(), tuner.number);
+            System.out.println(new Date() + " Clearing channels for tuner: " + tuner.getFullName());
+            tuner.lineUp.clearAllChannels(); // DRS 2019 12 15 - Added Line
+            int count = 0;
+            for (String programDefinition : programDefinitions) {
+            	// DRS 20241208 - altered 2 - issue #49
+                boolean added = addChannel(new ChannelDigital(programDefinition, airCatSource, xmlFileName, tuner, priority++));
+                if (added) count++;
+            }
+            System.out.println(new Date() + " " + count + " channels added to tuner: " + tuner.getFullName());
+            return true;
         }
-        System.out.println(new Date() + " " + count + " channels added to tuner: " + tuner.getFullName());
     }
     
     private ArrayList<String> getProgramDefinitions(TunerHdhr tuner, String fileNameString) throws Exception {
@@ -499,8 +509,8 @@ public class LineUpHdhr extends LineUp {
     public static String getXmlOutputFromDevice(Tuner tuner, int maxSeconds) {
         TunerHdhr aTuner = (TunerHdhr)tuner;
         String lineupPage = getPage("http://" + aTuner.ipAddressTuner + "/lineup.xml?tuning", maxSeconds, false, false);
-        if (lineupPage.length() == 0) {
-            System.out.println(new Date() + " ERROR: unable to get lineup xml.");
+        if (lineupPage.length() == 0 || lineupPage.contains("ERROR")) {
+            System.out.println(new Date() + " ERROR: unable to get lineup xml. " + lineupPage);
         }
         return lineupPage;
     }
@@ -578,7 +588,7 @@ public class LineUpHdhr extends LineUp {
     }
     
     static String getPage(String url, int maxSeconds, boolean quiet, boolean isPost) {
-        int maxTries = 5;
+        int maxTries = 3;
         return getPage(url, maxSeconds, quiet, isPost, maxTries);
     }
 
@@ -607,6 +617,15 @@ public class LineUpHdhr extends LineUp {
                 
             } catch (Exception e) {
                 System.out.println(new Date() + " Failed to get http page. " + url + " " + e.getMessage());
+                String extraInfo = "";
+                try {
+                    StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+                    for(int j = 1; j < 5; i++) {
+                        extraInfo += trace[j].getClassName() + "." + trace[j].getMethodName() + "() -- ";
+                    }
+                    System.out.println(new Date() + " TM.getPage() Call Stack: " + extraInfo);
+                } catch (Throwable t) {}
+
                 if (e.getMessage().contains("refused")) {
                     TunerManager.getInstance().removeHdhrByUrl(url);
                     errorResponse = "ERROR: refused";

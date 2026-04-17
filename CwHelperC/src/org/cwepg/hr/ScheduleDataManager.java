@@ -29,7 +29,7 @@ public class ScheduleDataManager {
             scheduleDataManager = new ScheduleDataManager();
             File dbFile = new File(CaptureManager.dataPath + ScheduleDataManager.dbFileName);
             if (!dbFile.exists()) {
-                System.out.println(new Date() + " ERROR: No CW_EPG database file found: " + CaptureManager.dataPath + ScheduleDataManager.dbFileName + ".");
+                System.out.println(new Date() + " WARNING: No CW_EPG schedule database file found: " + CaptureManager.dataPath + ScheduleDataManager.dbFileName + ".");
             } 
         }
         return scheduleDataManager;

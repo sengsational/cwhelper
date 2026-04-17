@@ -189,12 +189,12 @@ public class TunerMyhd extends Tuner {
     }
 
 
-    public void scanRefreshLineUp(){
-        ((LineUpMyhd)this.lineUp).scan(this);
+    public boolean scanRefreshLineUp(){
+        return ((LineUpMyhd)this.lineUp).scan(this);
     }
     
-    public void scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
-        scanRefreshLineUp();
+    public boolean scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
+        return scanRefreshLineUp();
     }
 
     public void addToCapturesList(Capture newCapture, boolean writeIt) throws CaptureScheduleException {

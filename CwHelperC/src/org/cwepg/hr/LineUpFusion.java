@@ -17,7 +17,7 @@ public class LineUpFusion extends LineUp {
         scan(tuner);
     }
     
-    public void scan(Tuner tuner){
+    public boolean scan(Tuner tuner){
         this.channels.clear();
         ArrayList list = RegistryHelperFusion.getChannels(tuner);
         Iterator iter = list.iterator();
@@ -26,6 +26,7 @@ public class LineUpFusion extends LineUp {
             this.addChannel(channel);
         }
         System.out.println(new Date() + " Got " + this.channels.size() + " channels from the registry.");
+        return true;
     }
     
     public static void main(String[] args) throws Exception {

@@ -213,8 +213,8 @@ public class TunerExternal extends Tuner {
     }
 
     @Override
-    public void scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
-        ((LineUpExternal)this.lineUp).scan(this, useExistingFile, signalType, maxSeconds);
+    public boolean scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
+        return ((LineUpExternal)this.lineUp).scan(this, useExistingFile, signalType, maxSeconds);
     }
 
     @Override

@@ -260,8 +260,8 @@ public class TunerHdhr extends Tuner {
 		return tunerDecimalName < TunerHdhr.MAX_DUAL_INPUT;
 	}
 
-    public void scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception  {
-        ((LineUpHdhr)this.lineUp).scan(this, useExistingFile, signalType, maxSeconds);
+    public boolean scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception  {
+        return ((LineUpHdhr)this.lineUp).scan(this, useExistingFile, signalType, maxSeconds);
     }
     
     public void interruptScan() {

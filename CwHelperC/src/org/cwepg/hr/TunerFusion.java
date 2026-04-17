@@ -590,12 +590,12 @@ public class TunerFusion extends Tuner {
         return this.tunerType;
     }
 
-    public void scanRefreshLineUp(){
-        ((LineUpFusion)this.lineUp).scan(this);
+    public boolean scanRefreshLineUp(){
+        return ((LineUpFusion)this.lineUp).scan(this);
     }
     
-    public void scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
-        scanRefreshLineUp();
+    public boolean scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception {
+        return scanRefreshLineUp();
     }
 
     public List<Capture> getCaptures(){

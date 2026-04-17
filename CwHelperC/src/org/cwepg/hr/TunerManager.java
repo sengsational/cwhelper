@@ -95,6 +95,7 @@ public class TunerManager {
         
         // Next, loop through existing tuners looking for changed/deleted tuners
         ArrayList<Tuner> deletedTuners = new ArrayList<Tuner>();
+        String skipTuners = "";
         for (Iterator<String> iter = tuners.keySet().iterator(); iter.hasNext();) {
             Tuner existingTuner = tuners.get(iter.next());
             if (refreshedTuners.contains(existingTuner)){
@@ -109,7 +110,15 @@ public class TunerManager {
                 }
                 refreshedTuners.remove(existingTuner);
                 // but the old (existing tuner) might have different lineup, so refresh that
-                if (refreshLineup) refreshLineup(existingTuner); // THIS CLEARS ANY EXISTING CHANNELS // DRS 20220606 - Added Conditional
+                if (refreshLineup) {
+                	if(skipTuners.contains(existingTuner.id)) {
+                		System.out.println(new Date() + " Tuner " + existingTuner + " being skipped.");
+                		continue;
+                	} else {
+                    	boolean success = refreshLineup(existingTuner); // THIS CLEARS ANY EXISTING CHANNELS // DRS 20220606 - Added Conditional
+                		if (!success) skipTuners+=existingTuner.id;
+                	}
+                }
             } else {
                 // this existing tuner is changed or deleted
                 // see if we can find it by name
@@ -201,15 +210,17 @@ public class TunerManager {
     }
 
     
-    private void refreshLineup(Tuner existingTuner) {
+    private boolean refreshLineup(Tuner existingTuner) {
+    	boolean success = true;
         try {
-            existingTuner.scanRefreshLineUp(true, existingTuner.lineUp.signalType, 10000);
+            success = existingTuner.scanRefreshLineUp(true, existingTuner.lineUp.signalType, 10000);
         } catch (Throwable e){
             String msg = new Date() + " ERROR: Could not refresh lineup for an existing tuner " + existingTuner;
             System.out.println(msg);
             System.err.println(msg);
             e.printStackTrace();
         }
+        return success;
     }
 
     /* This Method Only Used in Testing */

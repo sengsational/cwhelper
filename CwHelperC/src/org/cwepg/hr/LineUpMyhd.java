@@ -16,7 +16,7 @@ public class LineUpMyhd extends LineUp {
         scan(tuner);
     }
     
-    public void scan(Tuner tuner){
+    public boolean scan(Tuner tuner){
         this.channels.clear();
         ArrayList list = RegistryHelperMyhd.getChannels(tuner);
         Iterator iter = list.iterator();
@@ -25,6 +25,7 @@ public class LineUpMyhd extends LineUp {
             this.addChannel(channelDigital);
         }
         //System.out.println(new Date() + " Got " + this.channels.size() + " channels from the registry.");
+        return true;
     }
     
     public static void main(String[] args) throws Exception {

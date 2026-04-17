@@ -41,7 +41,7 @@ public abstract class Tuner { //implements Comparable {
     	this.lineUp = lineUp;
     }
     
-    public abstract void scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception; 
+    public abstract boolean scanRefreshLineUp(boolean useExistingFile, String signalType, int maxSeconds) throws Exception; 
 
     /*
      * methods for adding captures to this tuner
