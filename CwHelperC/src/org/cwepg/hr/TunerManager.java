@@ -115,8 +115,12 @@ public class TunerManager {
                 		System.out.println(new Date() + " Tuner " + existingTuner + " being skipped.");
                 		continue;
                 	} else {
+                		System.out.println(new Date() + " Tuner " + existingTuner.id + " being processed.  Not in [" + skipTuners + "]");
                     	boolean success = refreshLineup(existingTuner); // THIS CLEARS ANY EXISTING CHANNELS // DRS 20220606 - Added Conditional
-                		if (!success) skipTuners+=existingTuner.id;
+                		if (!success) {
+                			System.out.println(new Date() + " TunerManager.countTuners() refreshLineup(" + existingTuner.getFullName() + ") failed. Adding " + existingTuner.id +" to skipTuners.");
+                			skipTuners+=existingTuner.id;
+                		}
                 	}
                 }
             } else {
@@ -124,31 +128,31 @@ public class TunerManager {
                 // see if we can find it by name
                 boolean found = false;
                 for (Tuner tuner : refreshedTuners) {
-                    if (tuner.getFullName().equals(existingTuner.getFullName())){
-                        // take the attributes off of the tuner we just created
-                        // and update the existing tuner.
+                    if (tuner.getFullName().equals(existingTuner.getFullName())){ // take the attributes off of the tuner we just created and update the existing tuner.
                         found = true;
                         existingTuner.setAnalogFileExtension(tuner.getAnalogFileExtension());
                         existingTuner.setLiveDevice(tuner.getLiveDevice());
-                        existingTuner.setRecordPath(tuner.getRecordPath());
-                        // We just remove the tuner from the refreshedTuners list
-                        // (since anything left in the list, we will be adding later
-                        // and we don't want to add this because the existing tuner
-                        // just got updated with what we needed).
-                        refreshedTuners.remove(existingTuner);
-                        // but the old (existing tuner) might have different lineup, so refresh that
-                        refreshLineup(existingTuner);
+                        existingTuner.setRecordPath(tuner.getRecordPath());  // We just remove the tuner from the refreshedTuners list (since anything left in the list, we will be adding later and we don't want to add this because the existing tuner  just got updated with what we needed).
+                        refreshedTuners.remove(existingTuner);  // but the old (existing tuner) might have different lineup, so refresh that
+                    	if(skipTuners.contains(existingTuner.id)) {
+                    		System.out.println(new Date() + " Tuner " + existingTuner + " being skipped..");
+                    		continue;
+                    	} else {
+                    		System.out.println(new Date() + " Tuner " + existingTuner.id + " being processed..  Not in [" + skipTuners + "]");
+                        	boolean success = refreshLineup(existingTuner); 
+                    		if (!success) {
+                    			System.out.println(new Date() + " TunerManager.countTuners() refreshLineup(" + existingTuner.getFullName() + ") failed.. Adding " + existingTuner.id +" to skipTuners.");
+                    			skipTuners+=existingTuner.id;
+                    		}
+                    	}
                     }
                     if (found) break;
                 }
-                if (!found){
-                    // The latest and best list from our recent refresh did not
-                    // include the tuner, we must conclude it's gone now, so 
-                    // we will delete it shortly.
+                if (!found){ // The latest and best list from our recent refresh did not include the tuner, we must conclude it's gone now, so we will delete it shortly.
                     deletedTuners.add(existingTuner);
                 }
             }
-        }
+        } //END, loop through existing tuners looking for changed/deleted tuners
         
         //remove any deleted tuners
         for (Tuner tuner : deletedTuners) {
@@ -156,7 +160,6 @@ public class TunerManager {
             TunerManager.tuners.remove(tuner.getFullName());
             tuner.removeAllCaptures(true); //before deleting a tuner, delete it's captures
         }
-        
         
         // DRS 20210415 - Added 'for' loop + 1 - Concurrent Modification Exception
         for (Tuner tuner : nonResponsiveTuners) {
@@ -213,7 +216,8 @@ public class TunerManager {
     private boolean refreshLineup(Tuner existingTuner) {
     	boolean success = true;
         try {
-            success = existingTuner.scanRefreshLineUp(true, existingTuner.lineUp.signalType, 10000);
+            success = existingTuner.scanRefreshLineUp(true, existingTuner.lineUp.signalType, 10000); //DRS 20260418 <<<<<<<<<HERE
+            if (!success) System.out.println(new Date() + " TunerManager.refreshLineup(" + existingTuner.getFullName() +") scan failed.");
         } catch (Throwable e){
             String msg = new Date() + " ERROR: Could not refresh lineup for an existing tuner " + existingTuner;
             System.out.println(msg);
@@ -986,8 +990,14 @@ public class TunerManager {
                 try {
                     System.out.println("running scan for tuner " + tuner.getFullName());
                     //((TunerHdhr)tuner).scanRefreshLineUp(useExistingFile, signalType, maxSeconds);
-                    tuner.scanRefreshLineUp(useExistingFile, signalType, maxSeconds);
-                    returnValue += "OK,";
+                    boolean success = tuner.scanRefreshLineUp(useExistingFile, signalType, maxSeconds); //DRS 20260418 <<<<<<<<<HERE IS NOT IT
+                    if (success) {
+                        returnValue += "OK,";
+                    } else {
+                    	System.out.println(new Date() + " TunerManager.scanRefreshLineUpTm(" + tuner.getFullName() +") scan failed.");
+                    	returnValue += "ERROR  + scanRefreshLineup() reported failure";
+                    	nonResponsiveTuners.add(tuner);
+                    }
                 } catch (Throwable e) {
                     returnValue += "ERROR " + e.getMessage() + ",";
                 }

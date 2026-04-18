@@ -100,7 +100,7 @@ public class LineUpHdhr extends LineUp {
                     loadChannelsFromScanOutput(scanOutput, tuner);
                 } else if (noXmlFileOrScanFileAvailable) {
                     scanOutput = LineUpHdhr.getXmlOutputFromDevice(tuner, maxSeconds);
-                    loadChannelsFromXmlString(scanOutput, xmlFileName, airCatSource, tuner);
+                    success = loadChannelsFromXmlString(scanOutput, xmlFileName, airCatSource, tuner);
                 } else {
                     System.out.println(new Date() + " ERROR: no valid hdhr xml file and no previous scan file.");
                 }
@@ -620,11 +620,12 @@ public class LineUpHdhr extends LineUp {
                 String extraInfo = "";
                 try {
                     StackTraceElement[] trace = Thread.currentThread().getStackTrace();
-                    for(int j = 1; j < 5; i++) {
-                        extraInfo += trace[j].getClassName() + "." + trace[j].getMethodName() + "() -- ";
+                    for(int j = 1; j < 10 && j < trace.length; j++) {
+                    	int startAtLoc = trace[j].getClassName().lastIndexOf(".") +1;
+                        extraInfo += trace[j].getClassName().substring(startAtLoc) + "." + trace[j].getMethodName() + "()[" + trace[j].getLineNumber() +"] -- ";
                     }
                     System.out.println(new Date() + " TM.getPage() Call Stack: " + extraInfo);
-                } catch (Throwable t) {}
+                } catch (Throwable t) {System.out.println(new Date() + " Exception: " + t.getMessage() + " " + extraInfo);}
 
                 if (e.getMessage().contains("refused")) {
                     TunerManager.getInstance().removeHdhrByUrl(url);

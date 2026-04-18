@@ -24,6 +24,7 @@ module cwhelper {
 	requires google.api.client;
 	requires com.google.api.client.extensions.jetty.auth;
 	requires com.google.api.client.extensions.java6.auth;
+	requires org.apache.httpcomponents.httpclient;
 }
 
 /**
