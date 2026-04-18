@@ -171,11 +171,24 @@ public class TunerManager {
         
         // any tuners left in the refreshed list need to be added to the tuner manager
         for (Tuner tuner : refreshedTuners) {
-            System.out.println(new Date() + " Adding new or changed: " + tuner.getFullName());
-            // refreshed tuners are not added to the tuner manager and did not pick-up captures from file, so do both
-            TunerManager.tuners.put(tuner.getFullName(), tuner);
-            tuner.addCapturesFromStore();
-            try {refreshLineup(tuner);} catch (Throwable t) {System.out.println(new Date() + " Problem refreshing lineup on new or changed tuner " + t.getMessage());};
+            try {
+            	if(skipTuners.contains(tuner.id)) {
+            		System.out.println(new Date() + " Tuner " + tuner + " being skipped..");
+            		continue;
+            	} else {
+            		System.out.println(new Date() + " Tuner " + tuner.id + " being processed..  Not in [" + skipTuners + "]");
+                	boolean success = refreshLineup(tuner); 
+            		if (!success) {
+            			System.out.println(new Date() + " TunerManager.countTuners() refreshLineup(" + tuner.getFullName() + ") failed.. Adding " + tuner.id +" to skipTuners.");
+            			skipTuners+=tuner.id;
+            		} else {
+                        System.out.println(new Date() + " Adding new or changed: " + tuner.getFullName());
+                        // refreshed tuners are not added to the tuner manager and did not pick-up captures from file, so do both
+                        TunerManager.tuners.put(tuner.getFullName(), tuner);
+                        tuner.addCapturesFromStore();
+            		}
+            	}
+            } catch (Throwable t) {System.out.println(new Date() + " Problem refreshing lineup on new or changed tuner " + t.getMessage());};
         }
         mCountingTuners = false;
         System.out.println(new Date() + " TunerManager.countTuners returned " + TunerManager.tuners.size() + " tuners.\n" + new Date() + " ============================================");
