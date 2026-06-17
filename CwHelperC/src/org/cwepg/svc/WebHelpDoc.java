@@ -56,8 +56,6 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>interrupt</td><td>ie (anything)</td><td>Interrupt any/all scans going on at the moment.  Note that you will be left with a empty or parital channel list!  If present, will override anything else on this command.</td></tr>\n");
         buf.append("<tr><td>/channels</td><td>-</td><td>-</td><td>Lists channels known to this application.  Channels need NOT be known in order to schedule a recording (as long as the channels are known externally).</td></tr>\n");
         buf.append("<tr><td>/capture</td><td>channelname</td><td>ie 23.3</td><td>RF channel dot program number (for HDHR and Fusion captures).  If this parameter is specified as an asterisk with an HDHR tuner, multiple back-to-back recordings will be scheduled for every channel on the tuner.  The purpose of this is to test reception for people who have antennas connected to their HDHR units.</td></tr>\n");
-        buf.append("<tr><td>-</td><td>channelVirtual</td><td>ie 3.1:1</td><td>Virtual channel number dot virtual subchannel colon tuner number (for MyHD captures)</td></tr>\n");
-        buf.append("<tr><td>-</td><td>rfchannel</td><td>ie 23</td><td>RF channel (for MyHD captures -optionally specified when input has duplicate virtuals).</td></tr>\n");
         buf.append("<tr><td>-</td><td>datetime</td><td>ie 01/31/08 22:30</td><td>Start date/time in MM/DD HH:mm</td></tr>\n");
         buf.append("<tr><td>-</td><td>durationminutes</td><td>ie 60</td><td>Use this -or- datetimeend</td></tr>\n");
         buf.append("<tr><td>-</td><td>datetimeend</td><td>ie 01/31/08 23:30</td><td>End date/time in MM/DD HH:mm.  Use this or durationminutes.</td></tr>\n");
