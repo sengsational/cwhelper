@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 import java.text.DecimalFormat;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -17,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeMap;
 
 import org.cwepg.hr.CaptureHdhr.DeviceUnavailableException;
@@ -30,6 +32,9 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static final long LEAD_TIME_MS = 2000;
     public static final int LL_OFFSET = 10;
     public static final DecimalFormat DF = new DecimalFormat("0.0");
+    
+    // Keep track of the last known timezone, initialized at startup
+    private static ZoneId lastKnownZoneId = ZoneId.systemDefault();
 
     public static String version = "0,0,0,0"; // DRS 20210424 - Value is pulled from version.txt resource at startup.
     private static CaptureManager captureManager;
@@ -507,6 +512,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     
     // Called by Web UI and writeIt is true
     public static void scheduleCapture(Capture newCapture, boolean writeIt) throws CaptureScheduleException {
+    	checkUpdateTimeZone(); //DRS 20260616 - #80 Update host timezone change
         if (newCapture.hasEnded()) throw new CaptureScheduleException("Capture in the past! " + newCapture);
         boolean found = false;
         boolean channelMustBeInTheLineup = true;
@@ -522,7 +528,19 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         if (!found) throw new CaptureScheduleException ("no tuner available for " + newCapture);
     }
 
-    public void updateFileName(String sequence, String fileName) throws Exception {
+    //DRS 20260616 - #80
+    public static synchronized void checkUpdateTimeZone() {
+        System.clearProperty("user.timezone");
+        TimeZone.setDefault(null);
+        ZoneId currentOsZoneId = ZoneId.systemDefault();
+        if (!currentOsZoneId.equals(lastKnownZoneId)) {
+            lastKnownZoneId = currentOsZoneId;
+            TimeZone.setDefault(TimeZone.getTimeZone(currentOsZoneId));
+            System.out.println("OS Timezone change detected! Updated to: " + currentOsZoneId);
+        }
+    }
+
+	public void updateFileName(String sequence, String fileName) throws Exception {
         tunerManager.updateFileName(sequence, fileName);
     }
 
