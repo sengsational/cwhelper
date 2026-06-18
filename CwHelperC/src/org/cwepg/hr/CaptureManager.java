@@ -512,7 +512,6 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     
     // Called by Web UI and writeIt is true
     public static void scheduleCapture(Capture newCapture, boolean writeIt) throws CaptureScheduleException {
-    	checkUpdateTimeZone(); //DRS 20260616 - #80 Update host timezone change
         if (newCapture.hasEnded()) throw new CaptureScheduleException("Capture in the past! " + newCapture);
         boolean found = false;
         boolean channelMustBeInTheLineup = true;

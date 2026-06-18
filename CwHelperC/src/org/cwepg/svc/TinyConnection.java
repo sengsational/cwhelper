@@ -506,6 +506,7 @@ class TinyConnection implements Runnable {
                     System.out.println("protocol [" + protocol + "]");
                     System.out.println("rfchannel [" + rfChannel + "]");
                     System.out.println("recurring [" + recurring + "]"); //Sun 1, Mon 2 ... (Calendar.SUNDAY, Calendar.MONDAY ...)
+                	CaptureManager.checkUpdateTimeZone(); //DRS 20260616 - #80 Update host timezone change
                     Slot slot = null;
                     if (durationMinutes != null){
                         slot = new Slot(dateTime, durationMinutes);
