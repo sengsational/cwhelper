@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -528,7 +529,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     }
 
     //DRS 20260616 - #80
-    public static synchronized void checkUpdateTimeZone() {
+    public static synchronized SimpleDateFormat checkUpdateTimeZone() {
         System.clearProperty("user.timezone");
         TimeZone.setDefault(null);
         ZoneId currentOsZoneId = ZoneId.systemDefault();
@@ -537,6 +538,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             TimeZone.setDefault(TimeZone.getTimeZone(currentOsZoneId));
             System.out.println("OS Timezone change detected! Updated to: " + currentOsZoneId);
         }
+        return new SimpleDateFormat("HH:mm:ss");
     }
 
 	public void updateFileName(String sequence, String fileName) throws Exception {

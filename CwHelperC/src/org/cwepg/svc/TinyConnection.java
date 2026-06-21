@@ -57,7 +57,7 @@ class TinyConnection implements Runnable {
     private static final String HEAD_JSON = "HTTP/1.0 200 OK\r\nConnection: close\r\nContent-type: application/json\r\n\r\n";
     private static final String FOOT = "</body></html>";
     private static final String CRLF = "\r\n";
-    private static final SimpleDateFormat clock = new SimpleDateFormat("HH:mm:ss");
+    private static SimpleDateFormat clock = new SimpleDateFormat("HH:mm:ss");
     private static final Object locker = new Object();
     protected static String mLastRequest = "";
 
@@ -506,7 +506,7 @@ class TinyConnection implements Runnable {
                     System.out.println("protocol [" + protocol + "]");
                     System.out.println("rfchannel [" + rfChannel + "]");
                     System.out.println("recurring [" + recurring + "]"); //Sun 1, Mon 2 ... (Calendar.SUNDAY, Calendar.MONDAY ...)
-                	CaptureManager.checkUpdateTimeZone(); //DRS 20260616 - #80 Update host timezone change
+                	clock = CaptureManager.checkUpdateTimeZone(); //DRS 20260616 - #80 Update host timezone change & update SimpleDateFormat (time zone is sticky)
                     Slot slot = null;
                     if (durationMinutes != null){
                         slot = new Slot(dateTime, durationMinutes);
