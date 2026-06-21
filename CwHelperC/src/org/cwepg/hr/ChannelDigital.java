@@ -257,7 +257,7 @@ public class ChannelDigital extends Channel implements Comparable {
             try {this.virtualChannel = Integer.parseInt(this.channelVirtual);} catch (Throwable t) {System.out.println(new Date() + " ERROR: Unable to parse channelVirtual " + this.channelVirtual);}
             this.virtualSubchannel = 0;
         }
-        System.out.println(new Date() + "vhr:" + virtualHandlingRequired + "notAllTrad" + !CaptureManager.allTraditionalHdhr);
+
         if (virtualHandlingRequired && !CaptureManager.allTraditionalHdhr) { //DRS 20260620 - Added skip for all traditional #82
 //            if (isVirtualCable) {
 //                String appendString = ".0:1-qam256";  // I suspect that this should use the stated protocol (which is "auto") but let's leave it alone
@@ -274,7 +274,6 @@ public class ChannelDigital extends Channel implements Comparable {
 //                this.protocol = "8vsb";
 //            }
             try {
-            	System.out.println("USING FREQUENCY AND PID FOR VIRTUAL CHANNEL: " + this.channelVirtual + "  " + this.alphaDescription);
               this.frequency = String.valueOf(this.virtualChannel);
               this.pid = String.valueOf(this.virtualSubchannel);
                 
@@ -283,7 +282,6 @@ public class ChannelDigital extends Channel implements Comparable {
                 e.printStackTrace();
             } 
         } else {
-        	System.out.println("USING RF MHZ FOR CHANNEL: " + this.channelVirtual + "  " + this.alphaDescription);
             // DRS 20181025 traditional existing code here
 //            this.protocol = getFromXml(hdhrXml, "Modulation");  // TMP 20240206 moved up
             if (this.protocol == null) {
