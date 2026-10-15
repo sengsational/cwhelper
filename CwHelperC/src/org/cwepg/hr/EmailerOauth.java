@@ -173,7 +173,7 @@ public class EmailerOauth extends Emailer {
             if (Emailer.sendRecorded.toUpperCase().equals("TRUE") && recentWebCaptures.length() > 0) content.append("<h1>Recently Recorded</h1><br>" + recentWebCaptures + "<BR><BR>");
             if (Emailer.sendScheduled.toUpperCase().equals("TRUE") && scheduledWebCaptures.length() > 0) content.append("<h1>Scheduled for Recording</h1><br>" + scheduledWebCaptures + "<BR><BR>");
             boolean alertExists = tm.foundDiskFullAlertCondition(Emailer.lowDiskGb);
-            if (!Emailer.lowDiskGb.equals("-1") && alertExists) content.append("<h1>Disk Status Alert</h1><br>" + tm.getWebTunerList());
+            if (!Emailer.lowDiskGb.equals("-1") && alertExists) content.append("<h1>Disk Status Alert</h1><br>" + tm.getWebTunerList(Emailer.lowDiskGb));
 
             if (content.length() > 0){
             	Message message = integration.sendHtmlEmail(logonUser, getToAddresses(), logonUser, subject, new String(content));

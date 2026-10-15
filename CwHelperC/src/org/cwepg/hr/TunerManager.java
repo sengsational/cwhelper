@@ -2411,6 +2411,17 @@ public class TunerManager {
         return new String(buf);
     }
     
+	public String getWebTunerList(String lowDiskGbString) {
+		int lowDiskGb = 0;
+		try {
+			lowDiskGb = Integer.parseInt(lowDiskGbString);
+		} catch (Throwable t) {
+			System.out.println(new Date()  + " Unable to parse " + lowDiskGbString + " so no remaining GB will be in the result");
+			return getWebTunerList(0);
+		}
+		return getWebTunerList(lowDiskGb);
+	}
+    
     public String getWebTunerList() {
         return getWebTunerList(0);
     }
@@ -2801,7 +2812,4 @@ channelList["1075D4B1-0"] = '<select id="channel"> '
             System.out.println("tunerPathAsOptions\n" + tunerManager.getTunerPathAsOptions());
         }
     }
-
-
-
 }
