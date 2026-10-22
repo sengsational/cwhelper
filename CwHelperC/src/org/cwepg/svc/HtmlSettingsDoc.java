@@ -46,7 +46,7 @@ public class HtmlSettingsDoc {
         buf.append("}\n");
         buf.append("\n");
         buf.append("function setIt(paramName, paramValue) {\n");
-        buf.append("setConfiguration(\"?\" + paramName + \"=\" + paramValue.toLowerCase());\n");
+        buf.append("setConfiguration(\"?\" + paramName + \"=\" + encodeURIComponent(paramName.toLowerCase() == \"remoteapppath\" ? paramValue : paramValue.toLowerCase()));\n");
         buf.append("setConfiguration(\"\"); // call again to confirm setting change\n");
         buf.append("}\n");
         buf.append("</script>\n");

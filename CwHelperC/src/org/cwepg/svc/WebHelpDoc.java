@@ -29,6 +29,7 @@ public class WebHelpDoc {
         //From xls sheet:
         buf.append("<tr><td>Action</td><td>Name</td><td>Value</td><td>Description</td></tr>\n");
         buf.append("<tr><td>/set</td><td>alternatechannels</td><td>ie 58.3^42.1,18.2^64.3</td><td>To define pairs of channels that have identical programming for when the signal quality is poor and hdhrrecordmonitorseconds is configured.  Comma separated channel pairs with each pair separated by '^'. Format is '(channelName; i.e., RF.PID)'.  These are defined in the beginning of the log.  RESTART required to take effect! </td></tr>\n");
+        buf.append("<tr><td>/set</td><td>remoteapppath</td><td>ie g:\\my drive\\</td><td>Remote application path. Default is an empty string.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>clockoffset</td><td>ie -30</td><td>Seconds fast (+) or slow (-) to set the PC clock from an Internet timeserver when the program starts.  Negative means the clock will be slow, extending the end of a program and trimming the beginning.  The default is '0', and will cause the system NOT to attempt any PC clock manipulation.</td></tr>\n");
         buf.append("<tr><td>/set</td><td>discoverdelay</td><td>ie 1000</td><td>Number of milliseconds between discover retries</td></tr>\n");
         buf.append("<tr><td>/set</td><td>discoverretries</td><td>ie 5</td><td>Number of times the hdhr discover command should be retried</td></tr>\n");

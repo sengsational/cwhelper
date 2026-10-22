@@ -341,6 +341,20 @@ class TinyConnection implements Runnable {
                     }
                     out.print(HEAD + message + FOOT);
                 }
+
+                setItem = (String)request.get("remoteapppath");
+                if (setItem != null){
+                    goodSettingCount++;
+                    String message = "remoteapppath=";
+                    try {
+                        String remoteAppPath = setItem;
+                        CaptureManager.setRemoteAppPath(remoteAppPath);
+                        message = message + remoteAppPath;
+                    } catch (Throwable t){
+                        message = message + "(ERROR) " + t.getMessage();
+                    }
+                    out.print(HEAD + message + FOOT);
+                }
                 
                 setItem = (String)request.get("discoverdelay");
                 if (setItem != null){

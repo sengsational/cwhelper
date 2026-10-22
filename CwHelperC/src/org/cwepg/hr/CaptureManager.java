@@ -81,6 +81,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static int discoverDelay = 1000;
     public static int clockOffset = 0;
     public static String alternateChannels = "";
+    public static String remoteAppPath = "";
     public static boolean allTraditionalHdhr = false;
     public static boolean rerunDiscover = false;
     public static boolean useHdhrCommandLine = true; // DRS 20200707 - Added instance variable allow hdhr via http
@@ -939,6 +940,11 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         saveSettings();
     }
 
+    public static void setRemoteAppPath(String remoteAppPath) {
+        CaptureManager.remoteAppPath = remoteAppPath;
+        saveSettings();
+    }
+
     public static void setDiscoverDelay(int discoverDelay) {
         CaptureManager.discoverDelay = discoverDelay;
         saveSettings();
@@ -983,6 +989,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         try {nextProperty = "hdhrRecordMonitorSeconds"; props.put(nextProperty, "" + CaptureManager.hdhrRecordMonitorSeconds);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
         try {nextProperty = "hdhrBadRecordingPercent"; props.put(nextProperty, "" + CaptureManager.hdhrBadRecordingPercent);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
         try {nextProperty = "alternateChannels"; props.put(nextProperty, CaptureManager.alternateChannels);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
+        try {nextProperty = "remoteAppPath"; props.put(nextProperty, CaptureManager.remoteAppPath);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
         //try {nextProperty = "pollIntervalSeconds"; props.put(nextProperty, "" + CaptureManager.pollIntervalSeconds);} catch (Throwable t) {System.out.println(new Date() + "ERROR: Failed to save property " + nextProperty + ".");}
         
         System.out.println(new Date() + " There are " +  props.size() + " property value being saved.");
@@ -1055,6 +1062,8 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                     CaptureManager.hdhrBadRecordingPercent = Float.parseFloat(props.getProperty(key));
                 } else if (key != null && key.equals("alternateChannels")){
                     CaptureManager.alternateChannels = props.getProperty(key);
+                } else if (key != null && key.equals("remoteAppPath")){
+                    CaptureManager.remoteAppPath = props.getProperty(key);
                 } else if (key != null && key.equals("discoverDelay")){
                     CaptureManager.discoverDelay = Integer.parseInt(props.getProperty(key));
                 } else if (key != null && key.equals("clockOffset")){
@@ -1190,6 +1199,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             buf2.append("hdhrRecordMonitorSeconds=\"" + CaptureManager.hdhrRecordMonitorSeconds + "\"\n"); 
             buf2.append("hdhrBadRecordingPercent=\"" + CaptureManager.hdhrBadRecordingPercent + "\"\n"); 
             buf2.append("alternateChannels=\"" + CaptureManager.alternateChannels + "\"\n"); 
+            buf2.append("remoteAppPath=\"" + CaptureManager.remoteAppPath + "\"\n");
             //buf2.append("pollIntervalSeconds=\"" + CaptureManager.pollIntervalSeconds + "\"\n"); 
             //buf2.append("recreateIconUponWakeup=\"" + CaptureManager.recreateIconUponWakeup + "\"\n"); DRS 20210301 -  Removed - No longer needed (used with now removed ClockChecker)
             buf2.append("allTraditionalHdhr=\"" + CaptureManager.allTraditionalHdhr + "\"\n"); 
@@ -1218,6 +1228,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 "<tr><td>HdhrRecordMonitorSeconds:</td><td>" + CaptureManager.hdhrRecordMonitorSeconds + "</td></tr>" + 
                 "<tr><td>HdhrBadRecordingPercent:</td><td>" + CaptureManager.hdhrBadRecordingPercent + "</td></tr>" + 
                 "<tr><td>AlternateChannels:</td><td>" + CaptureManager.alternateChannels + "</td></tr>" + 
+                "<tr><td>RemoteAppPath:</td><td>" + CaptureManager.remoteAppPath + "</td></tr>" +
                 //"<tr><td>PollIntervalSeconds:</td><td>" + CaptureManager.pollIntervalSeconds + "</td></tr>" + 
                 //"<tr><td>RecreateIconUponWakeup:</td><td>" + CaptureManager.recreateIconUponWakeup + "</td></tr>" + DRS 20210301 -  Removed - No longer needed (used with now removed ClockChecker)
                 "<tr><td>AllTraditionalHdhr:</td><td>" + CaptureManager.allTraditionalHdhr + "</td></tr>" + 
@@ -1243,6 +1254,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 "hdhrRecordMonitorSeconds=\"" + CaptureManager.hdhrRecordMonitorSeconds + "\" " + 
                 "hdhrBadRecordingPercent=\"" + CaptureManager.hdhrBadRecordingPercent + "\" " + 
                 "alternateChannels=\"" + CaptureManager.alternateChannels + "\" " + 
+                "remoteAppPath=\"" + CaptureManager.remoteAppPath + "\" " +
                 //"pollIntervalSeconds=\"" + CaptureManager.pollIntervalSeconds + "\" " + 
                 //"recreateIconUponWakeup=\"" + CaptureManager.recreateIconUponWakeup + "\" " + DRS 20210301 -  Removed - No longer needed (used with now removed ClockChecker)
                 "allTraditionalHdhr=\"" + CaptureManager.allTraditionalHdhr + "\" " + 
