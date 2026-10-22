@@ -111,6 +111,7 @@ public class WebHelpDoc {
         buf.append("<tr><td>-</td><td>minutetosend</td><td>ie 30</td><td>To send at 4:30 PM (defaults to 5PM)</td></tr>\n");
         buf.append("<tr><td>-</td><td>durationminutes</td><td>ie 10</td><td>Amount of time a non-parameter (helper) will be prevented from sleeping.</td></tr>\n");
         buf.append("<tr><td>-</td><td>parameters</td><td>-</td><td>Parameters to put on the cwepg command line after 'cwepg.exe'.</td></tr>\n");
+        buf.append("<tr><td>-</td><td>adhoc</td><td>ie true</td><td>Schedule an additional one-shot autorun without changing the daily event. Requires hourtosend (0-23), minutetosend (0-59), and positive durationminutes (autorun timeout). Runs at the next occurrence of that local time with -wol and without -auto, -download, or -detail; other supplied parameters are retained. Multiple requests queue independent events. Ad-hoc events are not persisted across helper restarts.</td></tr>\n");
         buf.append("<tr><td>/vcr</td><td>-</td><td>-</td><td>Go to a page which allows the manual creation of captures.</td></tr>\n");
         buf.append("<tr><td>/clock</td><td>-</td><td>-</td><td>Get a report of how far off the system clock is from us.pool.ntp.org.</td></tr>\n");
         buf.append("<tr><td>/help</td><td>-</td><td>-</td><td>This page.</td></tr>\n");

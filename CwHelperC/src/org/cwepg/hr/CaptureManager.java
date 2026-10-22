@@ -44,6 +44,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     private static ScheduleDataManager scheduleDataManager;
     //private static TinyWebServer webServer;
     private static Emailer emailer;
+    private static final java.util.List<AdHocWakeupEvent> adHocWakeupEvents = new java.util.concurrent.CopyOnWriteArrayList<AdHocWakeupEvent>();
     static WakeupEvent wakeupEvent; // null wakeupEvent signals no wakeup event
     private static TrayIconManager trayIconManager;
     private static Thread eventLoopThread;
@@ -209,6 +210,14 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
 			}
             sleeping = false;
 
+            for (AdHocWakeupEvent event : adHocWakeupEvents) {
+                if (event.isFinished()) adHocWakeupEvents.remove(event);
+                else if (runFlag && event.isDue() && event.claim()) {
+                    if (CaptureManager.isSleepManaged) WakeupManager.preventSleep();
+                    new Thread(event, "Thread-AdHocWakeupEvent").start();
+                    try {Thread.sleep(100);} catch (Exception e){}; // prevent looping if this is still be due to run a few ms later
+                }
+            }
             if (runFlag && wakeupEvent != null && wakeupEvent.isValid() && !WakeupEvent.isRunning() && wakeupEvent.isDue()){  //isDue() blocks for 2 seconds if called >1 time in 10 min
                 new Thread(wakeupEvent, "Thread-WakeupEvent").start();
                 if (CaptureManager.isSleepManaged) WakeupManager.preventSleep(); // DRS 20210322 - Added 1 - Moved from the WakeupEvent.run() method
@@ -345,7 +354,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 }
 			}
 	    	// DRS 20201231 - Added if/else - Do "allow sleep" here, every loop, instead of when removing capture.
-            if (activeCaptures.size() == 0 && !WakeupEvent.isRunning() && !(Math.abs(getMsUntilNextEvent(true)) < 30000)) { //DRS 20250101 - Added pending activity clause - Issue #54 // DRS 20210104 - Added isRunning clause - prevent allow sleep if WakeupEvent is running
+            if (activeCaptures.size() == 0 && !WakeupEvent.isRunning() && !isAdHocAutorunRunning() && !(Math.abs(getMsUntilNextEvent(true)) < 30000)) { //DRS 20250101 - Added pending activity clause - Issue #54 // DRS 20210104 - Added isRunning clause - prevent allow sleep if WakeupEvent is running
                 //System.out.println(new Date() + " allowSleep() has been issued.");                        
                 if (isSleepManaged) WakeupManager.allowSleep();
             } else { //everything in the 'else' is logging only.
@@ -415,6 +424,11 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
                 emailer.removeHardwareWakeupEvent("CaptureManager shutdown email");
             }
 
+            for (AdHocWakeupEvent event : adHocWakeupEvents) {
+                event.removeHardwareWakeupEvent("CaptureManager shutdown ad-hoc wakeup");
+            }
+            adHocWakeupEvents.clear();
+
             // Cancel any wait thread && remove wakeup
             if (wakeupEvent != null){
                 wakeupEvent.interruptTimer(WakeupEvent.CANCEL);
@@ -461,6 +475,15 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             }
         }
         
+        for (AdHocWakeupEvent event : adHocWakeupEvents) {
+            if (event.isActive() || event.isFinished()) continue;
+            Calendar next = event.getNextTriggerTimeCalendar();
+            if (nextEventCalendar == null || next.before(nextEventCalendar)) {
+                nextEventCalendar = next;
+                nextEventType = "adHocWakeupEvent";
+            }
+        }
+
         // at this point, we have nextCaptureCalendar set for either the emailer or wakeupEvent, but it could be way off in the future
         
     	// this loop gets the next event for each tuner
@@ -1144,6 +1167,17 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         CaptureManager.wakeupEventMessageDone = false;
         wakeupEvent = object;
         requestInterrupt("setWakeupEvent");
+    }
+    
+    public static void scheduleAdHocWakeupEvent(AdHocWakeupEvent event) {
+        event.setWakeup("Ad-hoc autorun scheduled");
+        adHocWakeupEvents.add(event);
+        requestInterrupt("Ad-hoc autorun scheduled");
+    }
+
+    private static boolean isAdHocAutorunRunning() {
+        for (AdHocWakeupEvent event : adHocWakeupEvents) if (event.isActive()) return true;
+        return false;
     }
 
     public static void registerKeepAwakeEvent() {

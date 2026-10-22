@@ -804,6 +804,16 @@ class TinyConnection implements Runnable {
                     System.out.println(new Date() + " /getdbfile unable to send file. File [" + filePath + "] not found.");
                     out.print(HEAD +  " /getdbfile unable to send file. File [" + filePath + "] not found." + FOOT);
                 }
+            } else if (action.equals("/wakeupevent") && "true".equalsIgnoreCase((String) request.get("adhoc"))) {
+                try {
+                    org.cwepg.hr.AdHocWakeupEvent event = new org.cwepg.hr.AdHocWakeupEvent(
+                            (String) request.get("hourtosend"), (String) request.get("minutetosend"),
+                            (String) request.get("durationminutes"), (String) request.get("parameters"));
+                    CaptureManager.scheduleAdHocWakeupEvent(event);
+                    out.print(HEAD + "Ad-hoc autorun scheduled for " + event.getNextTriggerTimeCalendar().getTime() + FOOT);
+                } catch (IllegalArgumentException e) {
+                    out.print(HEAD + "Invalid ad-hoc wakeup event: " + e.getMessage() + FOOT);
+                }
             } else if (action.equals("/wakeupevent")){ // ************* WAKEUPEVENT ***************
                 String hourToSend = (String)request.get("hourtosend");
                 String minuteToSend = (String)request.get("minutetosend");
