@@ -26,6 +26,7 @@ import org.cwepg.hr.CaptureHdhr.DeviceUnavailableException;
 import org.cwepg.svc.RestartManager;
 import org.cwepg.svc.SplashScreenCloser;
 import org.cwepg.svc.TinyWebServer;
+import org.cwepg.svc.WakeOnLanListener;
 
 public class CaptureManager implements Runnable { //, ServiceStatusHandler { //DRS 20080822 Comment Service Specific Code
     public static final String propertiesFileName = "CaptureManagerSettings.txt";
@@ -48,6 +49,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     static WakeupEvent wakeupEvent; // null wakeupEvent signals no wakeup event
     private static TrayIconManager trayIconManager;
     private static Thread eventLoopThread;
+    private WakeOnLanListener wakeOnLanListener;
     private static boolean wakeupEventMessageDone = false;
     private static long memoryInUse;
     private static String nextEventType = "";
@@ -83,6 +85,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static int clockOffset = 0;
     public static String alternateChannels = "";
     public static String remoteAppPath = "";
+    public static boolean isUsingRemote = false;
     public static boolean allTraditionalHdhr = false;
     public static boolean rerunDiscover = false;
     public static boolean useHdhrCommandLine = true; // DRS 20200707 - Added instance variable allow hdhr via http
@@ -93,6 +96,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     private CaptureManager(){
         //ServiceStatusManager.setServiceStatusHandler(this); //DRS 20080822 Comment Service Specific Code
         loadSettings();
+        isUsingRemote = getRemoteAppPathValidity();
         System.out.println(new Date() + "\n" + getProperties(true));
         if (clockOffset != 0) alterPcClock(clockOffset, 5, true);
         // loadHtmlPages(htmlFileNames); // DRS 20240224 - No longer needed - https://github.com/sengsational/cwhelper/issues/16
@@ -102,6 +106,13 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         eventLoopThread.setDaemon(true); // Make the thread a daemon so it doesn't prevent program from exiting.
         eventLoopThread.start();
         RestartManager.registerApplicationRestart(); //DRS 20210318 - Moved this out - Tell the OS we will cooperate with shutdowns.
+
+        if (isUsingRemote) {
+            wakeOnLanListener = new WakeOnLanListener();
+            Thread listenerThread = new Thread(wakeOnLanListener, "WakeOnLanListener");
+            listenerThread.setDaemon(true);
+            listenerThread.start();
+        }
 
     }
     
@@ -394,6 +405,9 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             
             // Kill the Windows Message listener
             if (eventLoopThread != null) eventLoopThread.interrupt();
+
+            // Kill the WOL listenter, if it's there
+            if (wakeOnLanListener != null) wakeOnLanListener.shutdown();
 
             // Stop the web interface since there's nothing to talk to any more
             webServer.setRunning(false);
@@ -1032,6 +1046,43 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         }
     }
 
+    private static boolean getRemoteAppPathValidity() {
+        String examinedPath = "<none>";
+        String pathType = "invalid string";
+        boolean valid = false;
+        String reason = "No path was supplied.";
+        if (remoteAppPath != null && remoteAppPath.isEmpty()) {
+            pathType = "empty string";
+        } else if (remoteAppPath != null) {
+            try {
+                File file = new File(remoteAppPath);
+                examinedPath = file.getAbsolutePath();
+                if (!file.isAbsolute()) {
+                    reason = "The supplied path is not fully qualified.";
+                } else if (file.isFile()) {
+                    pathType = "fully qualified filename";
+                    valid = true;
+                    reason = "The file exists.";
+                } else if (file.isDirectory()) {
+                    pathType = "fully qualified directory path";
+                    valid = true;
+                    reason = "The directory exists.";
+                } else if (!file.exists() && file.getParentFile() != null && file.getParentFile().isDirectory()) {
+                    pathType = "fully qualified filename";
+                    valid = true;
+                    reason = "The file does not exist, but its parent directory [" + file.getParent() + "] exists.";
+                } else {
+                    reason = "The path does not identify an existing file or directory, or a filename with an existing parent directory.";
+                }
+            } catch (SecurityException e) {
+                reason = "The path could not be examined: " + e.getMessage();
+            }
+        }
+        System.out.println(new Date() + " remoteAppPath [" + remoteAppPath + "]: " + pathType
+                + "; examined fully qualified path [" + examinedPath + "]; valid=" + valid + ". " + reason);
+        return valid;
+    }
+
     public static void loadSettings() {
         String path = "";
         if (!CaptureManager.dataPath.equals("")){
@@ -1169,10 +1220,42 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         requestInterrupt("setWakeupEvent");
     }
     
-    public static void scheduleAdHocWakeupEvent(AdHocWakeupEvent event) {
+    public static boolean scheduleAdHocWakeupEvent(AdHocWakeupEvent event) {
+        if (!isUsingRemote || remoteAppPath == null || remoteAppPath.isEmpty()) return false;
+        try {
+            java.nio.file.Path path = new File(remoteAppPath).getAbsoluteFile().toPath();
+            if (!matchesRemoteFile(path.getRoot().toFile(), path, 0)) {
+                System.out.println(new Date() + " Ad-hoc autorun skipped: no existing file matches remoteAppPath [" + remoteAppPath + "].");
+                return false;
+            }
+        } catch (SecurityException | java.nio.file.InvalidPathException e) {
+            System.out.println(new Date() + " Ad-hoc autorun skipped: could not examine remoteAppPath [" + remoteAppPath + "]: " + e.getMessage());
+            return false;
+        }
         event.setWakeup("Ad-hoc autorun scheduled");
         adHocWakeupEvents.add(event);
         requestInterrupt("Ad-hoc autorun scheduled");
+        return true;
+    }
+
+    // Match each path component separately so '*' never crosses a directory boundary.
+    private static boolean matchesRemoteFile(File directory, java.nio.file.Path path, int index) {
+        if (index == path.getNameCount()) return directory.isFile();
+        String name = path.getName(index).toString();
+        if (!name.contains("*")) return matchesRemoteFile(new File(directory, name), path, index + 1);
+        StringBuilder regex = new StringBuilder();
+        for (String part : name.split("\\*", -1)) {
+            if (regex.length() > 0) regex.append(".*");
+            regex.append(java.util.regex.Pattern.quote(part));
+        }
+        int flags = java.util.regex.Pattern.DOTALL;
+        if (File.separatorChar == '\\') flags |= java.util.regex.Pattern.CASE_INSENSITIVE | java.util.regex.Pattern.UNICODE_CASE;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regex.toString(), flags);
+        File[] matches = directory.listFiles((parent, child) -> pattern.matcher(child).matches());
+        if (matches != null) {
+            for (File match : matches) if (matchesRemoteFile(match, path, index + 1)) return true;
+        }
+        return false;
     }
 
     private static boolean isAdHocAutorunRunning() {

@@ -8,12 +8,14 @@ package org.cwepg.svc;
 import static com.sun.jna.Library.OPTION_FUNCTION_MAPPER;
 import static com.sun.jna.Library.OPTION_TYPE_MAPPER;
 
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.cwepg.hr.AdHocWakeupEvent;
 import org.cwepg.hr.Capture;
 import org.cwepg.hr.CaptureManager;
 
@@ -125,8 +127,16 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
             CaptureManager.shutdown("WM_ENDSESSION/ENDSESSION_CLOSEAPP");
             return new WinDef.LRESULT(WIN_FALSE); // Done... don't call extLib.DefWindowProc.
         } else if (uMsg == WM_TIMECHANGE) {
-            System.out.println(new Date() + " Requesting CaptureManager interrupt to re-align.");
-            CaptureManager.requestInterrupt("WM_TIMECHANGE");
+        	if (CaptureManager.isUsingRemote) {
+                System.out.println(new Date() + " WM_TIMECHANGE detected. Scheduling ad-hoc autorun will interrupt.");
+                Calendar now = Calendar.getInstance();
+                CaptureManager.scheduleAdHocWakeupEvent(new AdHocWakeupEvent(
+                        Integer.toString(now.get(Calendar.HOUR_OF_DAY)),
+                        Integer.toString(now.get(Calendar.MINUTE)), "10", "-wol"));
+        	} else {
+                System.out.println(new Date() + " Requesting CaptureManager interrupt to re-align.");
+                CaptureManager.requestInterrupt("WM_TIMECHANGE");
+        	}
         } else {
             //System.out.println(new Date() + " RestartManager: Taking no action on " + uMsg);
         }

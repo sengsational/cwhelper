@@ -28,11 +28,38 @@ public class AdHocWakeupEventTest {
         assert second.getAutorunFile().getParameters().equals("-wol");
         assert AdHocWakeupEvent.wolParameters("\"-auto\" -details \"x -detail y\"").equals("-details \"x -detail y\" -wol");
         Calendar when = first.getNextTriggerTimeCalendar();
-        assert when.getTimeInMillis() > System.currentTimeMillis();
+        assert when.get(Calendar.HOUR_OF_DAY) == 0 && when.get(Calendar.MINUTE) == 0;
         when.add(Calendar.DATE, 5);
         assert !when.equals(first.getNextTriggerTimeCalendar());
-        CaptureManager.scheduleAdHocWakeupEvent(first);
-        CaptureManager.scheduleAdHocWakeupEvent(second);
+        java.nio.file.Path remoteDirectory = java.nio.file.Files.createTempDirectory("remote-app-test");
+        java.nio.file.Path remoteFile = java.nio.file.Files.createFile(remoteDirectory.resolve("remote[1].exe"));
+        CaptureManager.remoteAppPath = remoteFile.toString();
+        CaptureManager.isUsingRemote = false;
+        assert !CaptureManager.scheduleAdHocWakeupEvent(first);
+        CaptureManager.isUsingRemote = true;
+        CaptureManager.remoteAppPath = "";
+        assert !CaptureManager.scheduleAdHocWakeupEvent(first);
+        java.io.PrintStream originalOut = System.out;
+        java.io.ByteArrayOutputStream log = new java.io.ByteArrayOutputStream();
+        try {
+            System.setOut(new java.io.PrintStream(log));
+            for (String path : new String[] {remoteDirectory.resolve("missing.exe").toString(),
+                    remoteDirectory.resolve("missing*.exe").toString(), remoteDirectory.toString()}) {
+                CaptureManager.remoteAppPath = path;
+                assert !CaptureManager.scheduleAdHocWakeupEvent(first);
+                assert log.toString().contains(path);
+                log.reset();
+            }
+        } finally {
+            System.setOut(originalOut);
+        }
+        assert first.timers == 0;
+        CaptureManager.remoteAppPath = remoteFile.toString();
+        assert CaptureManager.scheduleAdHocWakeupEvent(first);
+        CaptureManager.remoteAppPath = remoteDirectory.getParent().resolve("remote-app-test*").resolve("*remote[1]*.exe").toString();
+        assert CaptureManager.scheduleAdHocWakeupEvent(second);
+        java.nio.file.Files.delete(remoteFile);
+        java.nio.file.Files.delete(remoteDirectory);
         assert first.timers == 1 && second.timers == 1;
         assert CaptureManager.getMsUntilNextEvent(true) <= first.getNextTriggerTimeCalendar().getTimeInMillis() - System.currentTimeMillis() + 100;
         java.lang.reflect.Field trigger = AdHocWakeupEvent.class.getDeclaredField("trigger");
