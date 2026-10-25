@@ -44,7 +44,7 @@ public class AdHocWakeupEventTest {
         try {
             System.setOut(new java.io.PrintStream(log));
             for (String path : new String[] {remoteDirectory.resolve("missing.exe").toString(),
-                    remoteDirectory.resolve("missing*.exe").toString(), remoteDirectory.toString()}) {
+                    new java.io.File(remoteDirectory.toFile(), "missing*.exe").toString(), remoteDirectory.toString()}) {
                 CaptureManager.remoteAppPath = path;
                 assert !CaptureManager.scheduleAdHocWakeupEvent(first);
                 assert log.toString().contains(path);
@@ -56,7 +56,9 @@ public class AdHocWakeupEventTest {
         assert first.timers == 0;
         CaptureManager.remoteAppPath = remoteFile.toString();
         assert CaptureManager.scheduleAdHocWakeupEvent(first);
-        CaptureManager.remoteAppPath = remoteDirectory.getParent().resolve("remote-app-test*").resolve("*remote[1]*.exe").toString();
+        // Do not construct wildcard patterns with Path: Windows rejects '*' before scheduling.
+        CaptureManager.remoteAppPath = new java.io.File(new java.io.File(remoteDirectory.getParent().toFile(),
+                "remote-app-test*"), "*remote[1]*.exe").toString();
         assert CaptureManager.scheduleAdHocWakeupEvent(second);
         java.nio.file.Files.delete(remoteFile);
         java.nio.file.Files.delete(remoteDirectory);

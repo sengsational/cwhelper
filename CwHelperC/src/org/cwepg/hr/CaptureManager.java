@@ -1223,12 +1223,18 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     public static boolean scheduleAdHocWakeupEvent(AdHocWakeupEvent event) {
         if (!isUsingRemote || remoteAppPath == null || remoteAppPath.isEmpty()) return false;
         try {
-            java.nio.file.Path path = new File(remoteAppPath).getAbsoluteFile().toPath();
-            if (!matchesRemoteFile(path.getRoot().toFile(), path, 0)) {
+            // File permits wildcard names on Windows; converting them to Path rejects '*'.
+            File root = new File(remoteAppPath).getAbsoluteFile();
+            List<String> path = new ArrayList<String>();
+            while (root.getParentFile() != null) {
+                path.add(0, root.getName());
+                root = root.getParentFile();
+            }
+            if (!matchesRemoteFile(root, path, 0)) {
                 System.out.println(new Date() + " Ad-hoc autorun skipped: no existing file matches remoteAppPath [" + remoteAppPath + "].");
                 return false;
             }
-        } catch (SecurityException | java.nio.file.InvalidPathException e) {
+        } catch (SecurityException e) {
             System.out.println(new Date() + " Ad-hoc autorun skipped: could not examine remoteAppPath [" + remoteAppPath + "]: " + e.getMessage());
             return false;
         }
@@ -1239,9 +1245,9 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
     }
 
     // Match each path component separately so '*' never crosses a directory boundary.
-    private static boolean matchesRemoteFile(File directory, java.nio.file.Path path, int index) {
-        if (index == path.getNameCount()) return directory.isFile();
-        String name = path.getName(index).toString();
+    private static boolean matchesRemoteFile(File directory, List<String> path, int index) {
+        if (index == path.size()) return directory.isFile();
+        String name = path.get(index);
         if (!name.contains("*")) return matchesRemoteFile(new File(directory, name), path, index + 1);
         StringBuilder regex = new StringBuilder();
         for (String part : name.split("\\*", -1)) {
