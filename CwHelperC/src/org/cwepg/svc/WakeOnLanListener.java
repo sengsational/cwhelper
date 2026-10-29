@@ -3,8 +3,12 @@ package org.cwepg.svc;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
 
 import org.cwepg.hr.AdHocWakeupEvent;
@@ -29,13 +33,42 @@ public class WakeOnLanListener implements Runnable {
             while (!stopped) {
                 packet.setLength(buffer.length);
                 socket.receive(packet);
-                if (isMagicPacket(packet)) handleSignal(System.nanoTime());
+                processPacket(packet);
             }
         } catch (IOException e) {
             if (!stopped) System.out.println(new Date() + " WakeOnLanListener failed: " + e);
         } finally {
             shutdown();
         }
+    }
+
+    void processPacket(DatagramPacket packet) {
+        byte[] mac = getMagicPacketMac(packet);
+        if (mac == null) return;
+        // Log every sender and target, including ignored and duplicate signals.
+        StringBuilder target = new StringBuilder();
+        for (byte octet : mac) {
+            if (target.length() > 0) target.append(':');
+            target.append(String.format("%02X", octet & 0xff));
+        }
+        System.out.println(new Date() + " WakeOnLanListener received magic packet from "
+                + packet.getAddress().getHostAddress() + " (UDP source port "
+                + packet.getPort() + ", " + packet.getLength() + " bytes, target MAC " + target + ").");
+        try {
+            if (!isLocalMac(mac)) return;
+        } catch (SocketException e) {
+            System.out.println(new Date() + " WakeOnLanListener could not check local MAC addresses; ignoring packet: " + e);
+            return;
+        }
+        handleSignal(System.nanoTime());
+    }
+
+    protected boolean isLocalMac(byte[] mac) throws SocketException {
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces != null && interfaces.hasMoreElements()) {
+            if (Arrays.equals(mac, interfaces.nextElement().getHardwareAddress())) return true;
+        }
+        return false;
     }
 
     synchronized void handleSignal(long now) {
@@ -60,6 +93,10 @@ public class WakeOnLanListener implements Runnable {
     }
 
     static boolean isMagicPacket(DatagramPacket packet) {
+        return getMagicPacketMac(packet) != null;
+    }
+
+    static byte[] getMagicPacketMac(DatagramPacket packet) {
         byte[] bytes = packet.getData();
         int end = packet.getOffset() + packet.getLength();
         for (int start = packet.getOffset(); start + 102 <= end; start++) {
@@ -69,9 +106,9 @@ public class WakeOnLanListener implements Runnable {
             for (i = 6; i < 102; i++) {
                 if (bytes[start + i] != bytes[start + 6 + (i - 6) % 6]) break;
             }
-            if (i == 102) return true;
+            if (i == 102) return Arrays.copyOfRange(bytes, start + 6, start + 12);
         }
-        return false;
+        return null;
     }
 
     public synchronized void shutdown() {

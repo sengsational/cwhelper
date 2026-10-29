@@ -19,7 +19,9 @@ public class TestWakeOnLan {
                     "Usage: TestWakeOnLan [destination address] [MAC address] [UDP port]");
         }
         String destination = args.length > 0 ? args[0] : "127.0.0.1";
-        String mac = args.length > 1 ? args[1] : "02:00:00:00:00:01";
+        //String mac = args.length > 1 ? args[1] : "02:00:00:00:00:01"; //00-CE-39-D1-49-1C This is the HTPC
+        String mac = args.length > 1 ? args[1] : "00:CE:39:D1:49:1C"; //00-CE-39-D1-49-1C This is the HTPC
+        //String mac = args.length > 1 ? args[1] : "00:CE:39:D1:01:01"; //00-CE-39-D1-01-01 This is NOT the HTPC
         int port = args.length > 2 ? Integer.parseInt(args[2]) : 9;
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("UDP port must be between 1 and 65535");
