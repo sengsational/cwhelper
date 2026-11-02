@@ -8,6 +8,9 @@ package org.cwepg.svc;
 import static com.sun.jna.Library.OPTION_FUNCTION_MAPPER;
 import static com.sun.jna.Library.OPTION_TYPE_MAPPER;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.zone.ZoneOffsetTransition;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -59,6 +62,23 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
     private static Thread runThread;
     private static WinDef.HWND window;
     private static boolean shutdownInProgress = false;
+    // Allow a little notification latency beyond the expected first minute.
+    private static final long TRANSITION_LOOKBACK_SECONDS = 120;
+    private Instant lastHandledTimeZoneTransition;
+    private static final long MIN_TIME_CHANGE_MILLIS = 60_000;
+    private long lastTimeChangeMillis;
+    private long lastTimeChangeNanos;
+    private int lastTimeChangeOffsetSeconds;
+
+    public RestartManager() {
+        this(Instant.now(), System.nanoTime(), ZoneId.systemDefault());
+    }
+
+    RestartManager(Instant now, long nanoTime, ZoneId zone) {
+        lastTimeChangeMillis = now.toEpochMilli();
+        lastTimeChangeNanos = nanoTime;
+        lastTimeChangeOffsetSeconds = zone.getRules().getOffset(now).getTotalSeconds();
+    }
     
     @Override
     public void run() {
@@ -127,6 +147,16 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
             CaptureManager.shutdown("WM_ENDSESSION/ENDSESSION_CLOSEAPP");
             return new WinDef.LRESULT(WIN_FALSE); // Done... don't call extLib.DefWindowProc.
         } else if (uMsg == WM_TIMECHANGE) {
+            Instant timeChangeNow = Instant.now();
+            long timeChangeNanos = System.nanoTime();
+            ZoneId timeChangeZone = ZoneId.systemDefault();
+            if (!isSignificantTimeChange(timeChangeNow, timeChangeNanos, timeChangeZone)) {
+                return new WinDef.LRESULT(0);
+            }
+            if (isNewTimeZoneTransition(timeChangeNow, timeChangeZone)) {
+                System.out.println(new Date() + " WM_TIMECHANGE: recent time zone transition detected. Refreshing scheduled machine wakeups.");
+                CaptureManager.refreshScheduledWakeups();
+            }
         	if (CaptureManager.isUsingRemote) {
                 System.out.println(new Date() + " WM_TIMECHANGE detected. Scheduling ad-hoc autorun will interrupt.");
                 Calendar now = Calendar.getInstance();
@@ -141,6 +171,36 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
             //System.out.println(new Date() + " RestartManager: Taking no action on " + uMsg);
         }
         return this.extLib.DefWindowProc(hwnd, uMsg, wParam, lParam); // Pass the message to the default window procedure
+    }
+
+    synchronized boolean isSignificantTimeChange(Instant now, long nanoTime, ZoneId zone) {
+        // WM_TIMECHANGE supplies no old/new times. Estimate the clock correction
+        // by subtracting monotonic elapsed time from wall-clock elapsed time.
+        long nowMillis = now.toEpochMilli();
+        long elapsedMillis = (nanoTime - lastTimeChangeNanos) / 1_000_000;
+        long correctionMillis = nowMillis - lastTimeChangeMillis - elapsedMillis;
+        int offsetSeconds = zone.getRules().getOffset(now).getTotalSeconds();
+        long offsetChangeMillis = (offsetSeconds - lastTimeChangeOffsetSeconds) * 1000L;
+        // Update even for ignored messages so small corrections do not accumulate.
+        lastTimeChangeMillis = nowMillis;
+        lastTimeChangeNanos = nanoTime;
+        lastTimeChangeOffsetSeconds = offsetSeconds;
+        // DST changes the local offset without changing the UTC clock.
+        return Math.abs(correctionMillis) >= MIN_TIME_CHANGE_MILLIS
+                || Math.abs(offsetChangeMillis) >= MIN_TIME_CHANGE_MILLIS;
+    }
+
+    synchronized boolean isNewTimeZoneTransition(Instant now, ZoneId zone) {
+        // Zone IDs do not change at DST boundaries. Compare actual transition instants
+        // so both the spring gap and the repeated hour in autumn are handled.
+        ZoneOffsetTransition transition = zone.getRules().previousTransition(now.plusNanos(1));
+        if (transition == null) return false;
+        Instant transitionTime = transition.getInstant();
+        if (transitionTime.isBefore(now.minusSeconds(TRANSITION_LOOKBACK_SECONDS))
+                || transitionTime.equals(lastHandledTimeZoneTransition)) return false;
+        lastHandledTimeZoneTransition = transitionTime;
+        System.out.println(new Date() + " isNewTimeZoneTransition() returning true");
+        return true;
     }
     
     public static void registerApplicationRestart() {

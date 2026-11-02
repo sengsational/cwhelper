@@ -566,6 +566,52 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         if (!found) throw new CaptureScheduleException ("no tuner available for " + newCapture);
     }
 
+    /** Re-arm existing future machine wakeups after a time zone transition. */
+    public static void refreshScheduledWakeups() {
+        long now = System.currentTimeMillis();
+        refreshScheduledWakeup(emailer, now);
+        if (!WakeupEvent.isRunning()) refreshScheduledWakeup(wakeupEvent, now);
+        for (AdHocWakeupEvent event : adHocWakeupEvents) {
+            if (!event.isActive() && !event.isFinished()) refreshScheduledWakeup(event, now);
+        }
+
+        // Use the in-memory schedules: getCaptures() can reload an owning store or
+        // discover tuners, neither of which is needed to replace existing handles.
+        List<Capture> scheduledCaptures = new ArrayList<Capture>();
+        for (Iterator<Tuner> iter = TunerManager.iterator(); iter.hasNext();) {
+            scheduledCaptures.addAll(iter.next().captures);
+        }
+        for (Capture capture : scheduledCaptures) {
+            try {
+                // A missing handle also preserves intentionally disabled wakeups.
+                if (capture.wakeupHandle == null || capture.getStartHandled() || capture.getEndHandled()
+                        || activeCaptures.contains(capture) || capture.slot.start.getTimeInMillis() <= now) continue;
+                capture.removeWakeup();
+                capture.setWakeup();
+            } catch (RuntimeException e) {
+                System.out.println(new Date() + " ERROR: Unable to refresh capture wakeup after time zone transition: " + e.getMessage());
+            }
+        }
+    }
+
+    static void refreshScheduledWakeup(TimedEvent event, long now) {
+        if (event == null) return;
+        try {
+            if (event.wakeupHandle == null || event.getNextTriggerTimeCalendar().getTimeInMillis() <= now) return;
+            String who = "Time zone transition: " + event.getClass().getSimpleName();
+            event.removeHardwareWakeupEvent(who);
+            // WakeupEvent.run() uses this alias to clear the timer when it starts.
+            if (event instanceof WakeupEvent) WakeupEvent.eventHandle = null;
+            event.setWakeup(who);
+            if (event instanceof WakeupEvent) {
+                WakeupEvent.eventHandle = event.wakeupHandle;
+                WakeupEvent.handleName = event.wakeupHandle == null ? null : event.wakeupHandle.toString();
+            }
+        } catch (RuntimeException e) {
+            System.out.println(new Date() + " ERROR: Unable to refresh timed event wakeup after time zone transition: " + e.getMessage());
+        }
+    }
+
     //DRS 20260616 - #80
     public static synchronized SimpleDateFormat checkUpdateTimeZone() {
         System.clearProperty("user.timezone");
