@@ -809,7 +809,7 @@ class TinyConnection implements Runnable {
                     org.cwepg.hr.AdHocWakeupEvent event = new org.cwepg.hr.AdHocWakeupEvent(
                             (String) request.get("hourtosend"), (String) request.get("minutetosend"),
                             (String) request.get("durationminutes"), (String) request.get("parameters"));
-                    if (CaptureManager.scheduleAdHocWakeupEvent(event)) {
+                    if (CaptureManager.scheduleAdHocWakeupEvent(event, true, false)) {
                         out.print(HEAD + "Ad-hoc autorun scheduled for " + event.getNextTriggerTimeCalendar().getTime() + FOOT);
                     } else {
                         out.print(HEAD + "Ad-hoc autorun skipped: remote mode must be enabled and remoteAppPath must match an existing file." + FOOT);

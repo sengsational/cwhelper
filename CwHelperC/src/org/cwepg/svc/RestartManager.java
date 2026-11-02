@@ -132,7 +132,7 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
                 Calendar now = Calendar.getInstance();
                 CaptureManager.scheduleAdHocWakeupEvent(new AdHocWakeupEvent(
                         Integer.toString(now.get(Calendar.HOUR_OF_DAY)),
-                        Integer.toString(now.get(Calendar.MINUTE)), "10", "-wol"));
+                        Integer.toString(now.get(Calendar.MINUTE)), "10", "-wol"), true, true);
         	} else {
                 System.out.println(new Date() + " Requesting CaptureManager interrupt to re-align.");
                 CaptureManager.requestInterrupt("WM_TIMECHANGE");

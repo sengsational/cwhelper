@@ -1220,27 +1220,29 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         requestInterrupt("setWakeupEvent");
     }
     
-    public static boolean scheduleAdHocWakeupEvent(AdHocWakeupEvent event) {
+    public static boolean scheduleAdHocWakeupEvent(AdHocWakeupEvent event, boolean requestInterrupt, boolean checkForFile) {
         if (!isUsingRemote || remoteAppPath == null || remoteAppPath.isEmpty()) return false;
-        try {
-            // File permits wildcard names on Windows; converting them to Path rejects '*'.
-            File root = new File(remoteAppPath).getAbsoluteFile();
-            List<String> path = new ArrayList<String>();
-            while (root.getParentFile() != null) {
-                path.add(0, root.getName());
-                root = root.getParentFile();
-            }
-            if (!matchesRemoteFile(root, path, 0)) {
-                System.out.println(new Date() + " Ad-hoc autorun skipped: no existing file matches remoteAppPath [" + remoteAppPath + "].");
+        if (checkForFile) {
+            try {
+                // File permits wildcard names on Windows; converting them to Path rejects '*'.
+                File root = new File(remoteAppPath).getAbsoluteFile();
+                List<String> path = new ArrayList<String>();
+                while (root.getParentFile() != null) {
+                    path.add(0, root.getName());
+                    root = root.getParentFile();
+                }
+                if (!matchesRemoteFile(root, path, 0)) {
+                    System.out.println(new Date() + " Ad-hoc autorun skipped: no existing file matches remoteAppPath [" + remoteAppPath + "].");
+                    return false;
+                }
+            } catch (SecurityException e) {
+                System.out.println(new Date() + " Ad-hoc autorun skipped: could not examine remoteAppPath [" + remoteAppPath + "]: " + e.getMessage());
                 return false;
             }
-        } catch (SecurityException e) {
-            System.out.println(new Date() + " Ad-hoc autorun skipped: could not examine remoteAppPath [" + remoteAppPath + "]: " + e.getMessage());
-            return false;
         }
         event.setWakeup("Ad-hoc autorun scheduled");
         adHocWakeupEvents.add(event);
-        requestInterrupt("Ad-hoc autorun scheduled");
+        if (requestInterrupt)  requestInterrupt("Ad-hoc autorun scheduled");
         return true;
     }
 

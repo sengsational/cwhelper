@@ -11,6 +11,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
 import java.util.Date;
 import java.util.StringTokenizer;
 
@@ -219,7 +222,41 @@ public class WakeupEvent extends TimedEvent implements Runnable {
         System.out.println(new Date() + " WakeupEvent thread ended (" + COMMAND[currentCommand] + ").");
         isRunning = false;
         System.out.println(new Date() + " WakeupEvent is ending.");
+        if (CaptureManager.isUsingRemote) {
+            System.out.println(new Date() + " Scheduling Ad-hoc autoruns.");
+            Calendar rescheduledAt = Calendar.getInstance();
+            for (AdHocWakeupEvent event : createAdHocWakeupEvents(rescheduledAt)) {
+                CaptureManager.scheduleAdHocWakeupEvent(event, false, false);
+            }
+        }
         CaptureManager.requestInterrupt("WakeupEvent.run (ending)");
+    }
+
+    // Include the midnight ending this day, but leave at least five minutes before the first run.
+    List<AdHocWakeupEvent> createAdHocWakeupEvents(Calendar now) {
+        List<AdHocWakeupEvent> events = new ArrayList<AdHocWakeupEvent>();
+        Calendar midnight = (Calendar) now.clone();
+        midnight.add(Calendar.DATE, 1);
+        midnight.set(Calendar.HOUR_OF_DAY, 0);
+        midnight.set(Calendar.MINUTE, 0);
+        midnight.set(Calendar.SECOND, 0);
+        midnight.set(Calendar.MILLISECOND, 0);
+        Calendar next = (Calendar) now.clone();
+        next.set(Calendar.MINUTE, now.get(Calendar.MINUTE) < 30 ? 0 : 30);
+        next.set(Calendar.SECOND, 0);
+        next.set(Calendar.MILLISECOND, 0);
+        next.add(Calendar.MINUTE, 30);
+        if (next.getTimeInMillis() - now.getTimeInMillis() <= 5 * 60 * 1000L) {
+            next.add(Calendar.MINUTE, 30);
+        }
+        while (!next.after(midnight)) {
+            events.add(new AdHocWakeupEvent(next, durationMinutes, osParameters));
+            next.add(Calendar.MINUTE, 30);
+        }
+        for (AdHocWakeupEvent adHocWakeupEvent : events) {
+        	System.out.println(new Date() + " Scheduled: " + adHocWakeupEvent);
+		}
+        return events;
     }
 
     private boolean validOsParameters() {

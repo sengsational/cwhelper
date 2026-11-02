@@ -89,7 +89,7 @@ public class WakeOnLanListener implements Runnable {
         // Scheduling also requests the CaptureManager interrupt.
         CaptureManager.scheduleAdHocWakeupEvent(new AdHocWakeupEvent(
                 Integer.toString(current.get(Calendar.HOUR_OF_DAY)),
-                Integer.toString(current.get(Calendar.MINUTE)), "10", "-wol"));
+                Integer.toString(current.get(Calendar.MINUTE)), "10", "-wol"), true, true);
     }
 
     static boolean isMagicPacket(DatagramPacket packet) {

@@ -12,7 +12,39 @@ public class AdHocWakeupEventTest {
         public void removeHardwareWakeupEvent(String who) { clears++; }
         protected void executeAutorun() { runs++; }
     }
+    private static void checkDailySchedule() {
+        WakeupEvent daily = WakeupEvent.getInstance();
+        // First half-hour, cutoff boundaries, late evening, and year rollover.
+        int[][] cases = {{10, 12, 0, 28, 10, 30}, {10, 25, 0, 27, 11, 0},
+                {10, 24, 59, 28, 10, 30}, {10, 30, 0, 27, 11, 0},
+                {23, 54, 59, 1, 0, 0}, {23, 55, 0, 0, 0, 0}};
+        for (int[] c : cases) {
+            Calendar now = Calendar.getInstance();
+            now.clear();
+            now.set(2026, Calendar.DECEMBER, 31, c[0], c[1], c[2]);
+            long original = now.getTimeInMillis();
+            java.util.List<AdHocWakeupEvent> events = daily.createAdHocWakeupEvents(now);
+            assert now.getTimeInMillis() == original;
+            assert events.size() == c[3] : events.size();
+            if (events.isEmpty()) continue;
+            Calendar first = events.get(0).getNextTriggerTimeCalendar();
+            assert first.get(Calendar.HOUR_OF_DAY) == c[4] && first.get(Calendar.MINUTE) == c[5];
+            assert first.getTimeInMillis() - original > 300000;
+            long previous = first.getTimeInMillis() - 1800000;
+            for (AdHocWakeupEvent event : events) {
+                Calendar trigger = event.getNextTriggerTimeCalendar();
+                assert trigger.getTimeInMillis() - previous == 1800000;
+                assert trigger.get(Calendar.SECOND) == 0 && trigger.get(Calendar.MILLISECOND) == 0;
+                previous = trigger.getTimeInMillis();
+            }
+            Calendar last = events.get(events.size() - 1).getNextTriggerTimeCalendar();
+            assert last.get(Calendar.YEAR) == 2027 && last.get(Calendar.DAY_OF_YEAR) == 1;
+            assert last.get(Calendar.HOUR_OF_DAY) == 0 && last.get(Calendar.MINUTE) == 0;
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        checkDailySchedule();
         CaptureManager.sleeping = true; // Let requestInterrupt return without waiting for an event loop.
         WakeupEvent daily = WakeupEvent.getInstance();
         daily.hourToTrigger = "23";

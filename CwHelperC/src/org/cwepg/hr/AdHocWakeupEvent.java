@@ -25,6 +25,13 @@ public class AdHocWakeupEvent extends TimedEvent implements Runnable {
         autorun = new AutorunFile(hour, minute, duration, wolParameters(parameters), true, CaptureManager.leadTimeSeconds, true, "");
     }
 
+    public AdHocWakeupEvent(Calendar when, String duration, String parameters) {
+        this(Integer.toString(when.get(Calendar.HOUR_OF_DAY)),
+                Integer.toString(when.get(Calendar.MINUTE)), duration, parameters);
+        trigger.setTimeZone(when.getTimeZone());
+        trigger.setTimeInMillis(when.getTimeInMillis());
+    }
+
     private static int number(String value, int min, int max, String name) {
         try {
             int n = Integer.parseInt(value);
