@@ -160,9 +160,13 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
         	if (CaptureManager.isUsingRemote) {
                 System.out.println(new Date() + " WM_TIMECHANGE detected. Scheduling ad-hoc autorun will interrupt.");
                 Calendar now = Calendar.getInstance();
-                CaptureManager.scheduleAdHocWakeupEvent(new AdHocWakeupEvent(
+                boolean successfulRun = CaptureManager.scheduleAdHocWakeupEvent(new AdHocWakeupEvent(
                         Integer.toString(now.get(Calendar.HOUR_OF_DAY)),
                         Integer.toString(now.get(Calendar.MINUTE)), "10", "-wol"), true, true);
+                if (!successfulRun) {
+                    System.out.println(new Date() + " Requesting CaptureManager interrupt to re-align.");
+                    CaptureManager.requestInterrupt("WM_TIMECHANGE");
+                }
         	} else {
                 System.out.println(new Date() + " Requesting CaptureManager interrupt to re-align.");
                 CaptureManager.requestInterrupt("WM_TIMECHANGE");
