@@ -151,7 +151,9 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
             long timeChangeNanos = System.nanoTime();
             ZoneId timeChangeZone = ZoneId.systemDefault();
             if (!isSignificantTimeChange(timeChangeNow, timeChangeNanos, timeChangeZone)) {
-                return new WinDef.LRESULT(0);
+            	System.out.println(new Date() + " WM_TIMECHANGE was detected, but not significant");
+            	// Do not return in case this is what is causing the missed wakeups
+                //return new WinDef.LRESULT(0);
             }
             if (isNewTimeZoneTransition(timeChangeNow, timeChangeZone)) {
                 System.out.println(new Date() + " WM_TIMECHANGE: recent time zone transition detected. Refreshing scheduled machine wakeups.");

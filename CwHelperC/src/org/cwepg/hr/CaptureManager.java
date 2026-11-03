@@ -568,6 +568,7 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
 
     /** Re-arm existing future machine wakeups after a time zone transition. */
     public static void refreshScheduledWakeups() {
+    	System.out.println(new Date() + " CaptureManager.refreshScheduledWakeups() <<<<< ONLY SHOULD RUN ON DAYLIGHT SAVINGS TIME CHANGE >>>>>");
         long now = System.currentTimeMillis();
         refreshScheduledWakeup(emailer, now);
         if (!WakeupEvent.isRunning()) refreshScheduledWakeup(wakeupEvent, now);
