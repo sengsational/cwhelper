@@ -226,7 +226,7 @@ public class WakeupEvent extends TimedEvent implements Runnable {
             System.out.println(new Date() + " Scheduling Ad-hoc autoruns.");
             Calendar rescheduledAt = Calendar.getInstance();
             for (AdHocWakeupEvent event : createAdHocWakeupEvents(rescheduledAt)) {
-                CaptureManager.scheduleAdHocWakeupEvent(event, false, false);
+                CaptureManager.scheduleAdHocWakeupEvent(event, false, true);
             }
         }
         CaptureManager.requestInterrupt("WakeupEvent.run (ending)");

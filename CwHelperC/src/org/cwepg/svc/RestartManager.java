@@ -150,11 +150,6 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
             Instant timeChangeNow = Instant.now();
             long timeChangeNanos = System.nanoTime();
             ZoneId timeChangeZone = ZoneId.systemDefault();
-            if (!isSignificantTimeChange(timeChangeNow, timeChangeNanos, timeChangeZone)) {
-            	System.out.println(new Date() + " WM_TIMECHANGE was detected, but not significant");
-            	// Do not return in case this is what is causing the missed wakeups
-                //return new WinDef.LRESULT(0);
-            }
             if (isNewTimeZoneTransition(timeChangeNow, timeChangeZone)) {
                 System.out.println(new Date() + " WM_TIMECHANGE: recent time zone transition detected. Refreshing scheduled machine wakeups.");
                 CaptureManager.refreshScheduledWakeups();
@@ -162,9 +157,8 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
         	if (CaptureManager.isUsingRemote) {
                 System.out.println(new Date() + " WM_TIMECHANGE detected. Scheduling ad-hoc autorun will interrupt.");
                 Calendar now = Calendar.getInstance();
-                boolean successfulRun = CaptureManager.scheduleAdHocWakeupEvent(new AdHocWakeupEvent(
-                        Integer.toString(now.get(Calendar.HOUR_OF_DAY)),
-                        Integer.toString(now.get(Calendar.MINUTE)), "10", "-wol"), true, true);
+                AdHocWakeupEvent adHocNowEvent = new AdHocWakeupEvent(Integer.toString(now.get(Calendar.HOUR_OF_DAY)), Integer.toString(now.get(Calendar.MINUTE)), "10", "-wol");
+                boolean successfulRun = CaptureManager.scheduleAdHocWakeupEvent(adHocNowEvent, true, true);
                 if (!successfulRun) {
                     System.out.println(new Date() + " Requesting CaptureManager interrupt to re-align.");
                     CaptureManager.requestInterrupt("WM_TIMECHANGE");
@@ -177,23 +171,6 @@ public class RestartManager implements Runnable, StdCallLibrary.StdCallCallback 
             //System.out.println(new Date() + " RestartManager: Taking no action on " + uMsg);
         }
         return this.extLib.DefWindowProc(hwnd, uMsg, wParam, lParam); // Pass the message to the default window procedure
-    }
-
-    synchronized boolean isSignificantTimeChange(Instant now, long nanoTime, ZoneId zone) {
-        // WM_TIMECHANGE supplies no old/new times. Estimate the clock correction
-        // by subtracting monotonic elapsed time from wall-clock elapsed time.
-        long nowMillis = now.toEpochMilli();
-        long elapsedMillis = (nanoTime - lastTimeChangeNanos) / 1_000_000;
-        long correctionMillis = nowMillis - lastTimeChangeMillis - elapsedMillis;
-        int offsetSeconds = zone.getRules().getOffset(now).getTotalSeconds();
-        long offsetChangeMillis = (offsetSeconds - lastTimeChangeOffsetSeconds) * 1000L;
-        // Update even for ignored messages so small corrections do not accumulate.
-        lastTimeChangeMillis = nowMillis;
-        lastTimeChangeNanos = nanoTime;
-        lastTimeChangeOffsetSeconds = offsetSeconds;
-        // DST changes the local offset without changing the UTC clock.
-        return Math.abs(correctionMillis) >= MIN_TIME_CHANGE_MILLIS
-                || Math.abs(offsetChangeMillis) >= MIN_TIME_CHANGE_MILLIS;
     }
 
     synchronized boolean isNewTimeZoneTransition(Instant now, ZoneId zone) {
