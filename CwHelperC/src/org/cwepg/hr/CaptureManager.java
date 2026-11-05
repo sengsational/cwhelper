@@ -224,6 +224,11 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
             for (AdHocWakeupEvent event : adHocWakeupEvents) {
                 if (event.isFinished()) adHocWakeupEvents.remove(event);
                 else if (runFlag && event.isDue() && event.claim()) {
+                    if (!hasMatchingRemoteFile()) {
+                        event.removeHardwareWakeupEvent("Ad-hoc autorun skipped");
+                        adHocWakeupEvents.remove(event);
+                        continue;
+                    }
                     if (CaptureManager.isSleepManaged) WakeupManager.preventSleep();
                     new Thread(event, "Thread-AdHocWakeupEvent").start();
                     try {Thread.sleep(100);} catch (Exception e){}; // prevent looping if this is still be due to run a few ms later
@@ -1276,27 +1281,31 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
      */
     public static boolean scheduleAdHocWakeupEvent(AdHocWakeupEvent event, boolean requestInterrupt, boolean checkForFile) {
         if (!isUsingRemote || remoteAppPath == null || remoteAppPath.isEmpty()) return false;
-        if (checkForFile) {
-            try {
-                // File permits wildcard names on Windows; converting them to Path rejects '*'.
-                File root = new File(remoteAppPath).getAbsoluteFile();
-                List<String> path = new ArrayList<String>();
-                while (root.getParentFile() != null) {
-                    path.add(0, root.getName());
-                    root = root.getParentFile();
-                }
-                if (!matchesRemoteFile(root, path, 0)) {
-                    System.out.println(new Date() + " Ad-hoc autorun skipped: no existing file matches remoteAppPath [" + remoteAppPath + "].");
-                    return false;
-                }
-            } catch (SecurityException e) {
-                System.out.println(new Date() + " Ad-hoc autorun skipped: could not examine remoteAppPath [" + remoteAppPath + "]: " + e.getMessage());
-                return false;
-            }
-        }
+        if (checkForFile && !hasMatchingRemoteFile()) return false;
         event.setWakeup("Ad-hoc autorun scheduled");
         adHocWakeupEvents.add(event);
         if (requestInterrupt)  requestInterrupt("Ad-hoc autorun scheduled");
+        return true;
+    }
+
+    private static boolean hasMatchingRemoteFile() {
+        if (remoteAppPath == null || remoteAppPath.isEmpty()) return false;
+        try {
+            // File permits wildcard names on Windows; converting them to Path rejects '*'.
+            File root = new File(remoteAppPath).getAbsoluteFile();
+            List<String> path = new ArrayList<String>();
+            while (root.getParentFile() != null) {
+                path.add(0, root.getName());
+                root = root.getParentFile();
+            }
+            if (!matchesRemoteFile(root, path, 0)) {
+                System.out.println(new Date() + " Ad-hoc autorun skipped: no existing file matches remoteAppPath [" + remoteAppPath + "].");
+                return false;
+            }
+        } catch (SecurityException e) {
+            System.out.println(new Date() + " Ad-hoc autorun skipped: could not examine remoteAppPath [" + remoteAppPath + "]: " + e.getMessage());
+            return false;
+        }
         return true;
     }
 
