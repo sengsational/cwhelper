@@ -1267,6 +1267,13 @@ public class CaptureManager implements Runnable { //, ServiceStatusHandler { //D
         requestInterrupt("setWakeupEvent");
     }
     
+    /**
+     * 
+     * @param event
+     * @param requestInterrupt - true for immediate run attempt, false for future scheduled runs
+     * @param checkForFile - true for immediate run attempt, false for future scheduled runs
+     * @return true if interrupt done
+     */
     public static boolean scheduleAdHocWakeupEvent(AdHocWakeupEvent event, boolean requestInterrupt, boolean checkForFile) {
         if (!isUsingRemote || remoteAppPath == null || remoteAppPath.isEmpty()) return false;
         if (checkForFile) {

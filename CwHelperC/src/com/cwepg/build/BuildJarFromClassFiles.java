@@ -69,7 +69,7 @@ public class BuildJarFromClassFiles {
         boolean forceRevisionNumber = true; //>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         String revision = "999";
         if (forceRevisionNumber) {
-            revision = "1130";
+            revision = "1131";
         } else {
         	String fullVersion = "";
         	try {
